@@ -4,5 +4,6 @@
 
 <h1 align="center">Lumaris</h1>
 
-https://github.com/user-attachments/assets/8d9434ff-94b1-4fe1-a1fc-c8dd29a83f2c
-
+<video autoplay loop muted playsinline width="100%">
+  <source src="https://github.com/user-attachments/assets/8d9434ff-94b1-4fe1-a1fc-c8dd29a83f2c" type="video/mp4">
+</video>
