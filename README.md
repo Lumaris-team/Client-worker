@@ -4,6 +4,5 @@
 
 <h1 align="center">Lumaris</h1>
 
-<video controls width="100%">
-  <source src="https://raw.githubusercontent.com/danielersen/Lumaris/7a806000ce010e22bf3dc8c08c091d35ad05c9fc/src/frontend/assets/videos/presentation/presentation.mp4" type="video/mp4">
-</video>
+https://github.com/user-attachments/assets/8d9434ff-94b1-4fe1-a1fc-c8dd29a83f2c
+
