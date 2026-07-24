@@ -4,6 +4,4 @@
 
 <h1 align="center">Lumaris</h1>
 
-<h2 align="center">Presentation</h2>
-
-https://github.com/user-attachments/assets/88d1bb14-95ad-43fb-8a96-d68aab7470b0
+https://github.com/user-attachments/assets/31288a2f-e32e-4255-b512-7a6fe9c025a8
