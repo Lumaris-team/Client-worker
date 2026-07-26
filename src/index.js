@@ -10,7 +10,7 @@ import { Pomodoro } from "./backend/database/pomodoro.js";
 import { WebsitesFunction } from "./backend/database/websites.js";
 import { FilesFunction, initializeFolderArchitecture } from "./backend/database/files_management.js";
 import { ToolsFunction } from "./backend/tools/index.js";
- 
+  
 import { sendMail } from "./backend/notifications/mail.js";
 
 async function sendErrorEmail(env, error, context) {
