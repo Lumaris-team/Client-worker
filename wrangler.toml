@@ -32,14 +32,14 @@ binding = "AI_STORAGE"
 id = "AI_STORAGE"
 
 # Workflows
-#[[workflows]]
-#name = "check_grades"
-#binding = "CHECK_GRADES"
-#class_name = "CheckGradesWorkflow"
+[[workflows]]
+name = "check_grades"
+binding = "CHECK_GRADES"
+class_name = "CheckGradesWorkflow"
 
 # Cron triggers
-#[triggers]
-#crons = ["0 */4 * * *"]  # Vérifier les notes toutes les 4 heures
+[triggers]
+crons = ["0 */4 * * *"]  # Vérifier les notes toutes les 4 heures
 
 # Observability
 [observability]
