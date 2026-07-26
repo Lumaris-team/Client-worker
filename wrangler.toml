@@ -11,7 +11,6 @@ MODE = "production" # -> "production" if enabled, or any other name if disabled
 SITE = "enabled" # -> "enabled" if enabled, or any other name if disabled
 JWT_SECRET = "generate-a-secure-random-key"
 JWT = "generate-a-secure-random-key"
-GATEWAY_ID = "dashboard-gateway"
 
 # Production environment
 [env.production]
