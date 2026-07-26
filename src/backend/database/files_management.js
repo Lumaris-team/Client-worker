@@ -497,53 +497,6 @@ export async function FilesFunction(env, path, method, body) {
         }
         return await createFolder(env, relativePath);
       }
-      throw new Error("Invalid POST path");
-    
-    case "DELETE":
-      if (path.startsWith("delete/")) {
-        const relativePath = decodeURIComponent(path.slice("delete/".length));
-        return await deleteFile(env, relativePath);
-      }
-      throw new Error("Invalid DELETE path");
-    
-    case "POST":
-      if (path === "upload") {
-        // Check if body is FormData (multipart)
-        if (body instanceof FormData) {
-          const file = body.get('file');
-          const relativePath = body.get('relativePath');
-          
-          if (!relativePath) {
-            throw new Error("relativePath is required");
-          }
-          if (!file) {
-            throw new Error("file is required");
-          }
-          
-          // Convert file to ArrayBuffer then Buffer
-          const arrayBuffer = await file.arrayBuffer();
-          const fileData = Buffer.from(arrayBuffer);
-          
-          return await writeFile(env, relativePath, null, null, fileData);
-        } else {
-          // Legacy JSON upload
-          const { relativePath, content, url } = body;
-          if (!relativePath) {
-            throw new Error("relativePath is required");
-          }
-          if (!content && !url) {
-            throw new Error("content or url is required");
-          }
-          return await writeFile(env, relativePath, content, url);
-        }
-      }
-      if (path === "folder") {
-        const { relativePath } = body;
-        if (!relativePath) {
-          throw new Error("relativePath is required");
-        }
-        return await createFolder(env, relativePath);
-      }
       if (path === "rename") {
         const { oldPath, newName } = body;
         if (!oldPath || !newName) {
@@ -552,6 +505,13 @@ export async function FilesFunction(env, path, method, body) {
         return await renameItem(env, oldPath, newName);
       }
       throw new Error("Invalid POST path");
+    
+    case "DELETE":
+      if (path.startsWith("delete/")) {
+        const relativePath = decodeURIComponent(path.slice("delete/".length));
+        return await deleteFile(env, relativePath);
+      }
+      throw new Error("Invalid DELETE path");
     
     default:
       throw new Error("Method not allowed");

@@ -11,11 +11,11 @@ function discussionFilePath(category, filename) {
 // Gateway AI storage functions
 async function gatewayRead(env, key) {
   try {
-    if (!env.GATEWAY_AI) {
-      console.warn("Gateway AI binding not configured");
+    if (!env.AI_STORAGE) {
+      console.warn("AI Storage binding not configured");
       return null;
     }
-    const result = await env.GATEWAY_AI.get(key);
+    const result = await env.AI_STORAGE.get(key);
     return result;
   } catch (e) {
     console.error("Gateway AI read error:", e);
@@ -25,11 +25,11 @@ async function gatewayRead(env, key) {
 
 async function gatewayWrite(env, key, value) {
   try {
-    if (!env.GATEWAY_AI) {
-      console.warn("Gateway AI binding not configured");
+    if (!env.AI_STORAGE) {
+      console.warn("AI Storage binding not configured");
       return;
     }
-    await env.GATEWAY_AI.put(key, value);
+    await env.AI_STORAGE.put(key, value);
   } catch (e) {
     console.error("Gateway AI write error:", e);
     throw e;
@@ -139,27 +139,15 @@ export async function addMessagePair(env, category, { discussionId = null, userC
 }
 
 // Simple model caller using Cloudflare Workers AI
-export async function callModel(env, model, prompt, options = {}, gatewayMetadata = null) {
+export async function callModel(env, model, prompt, options = {}) {
   const message = typeof prompt === "string" ? prompt : JSON.stringify(prompt);
   
   // Convert model name to Cloudflare format if needed
   // If model doesn't start with @cf/, try to convert from display name to ID
   let actualModel = model;
   if (!model.startsWith("@cf/")) {
-    // Try to find the matching model ID from categorized models if available
-    if (gatewayMetadata?.categorizedModels) {
-      for (const category of Object.values(gatewayMetadata.categorizedModels)) {
-        const foundModel = category.find(m => 
-          m.name === model || m.name === model.replace(/\s+/g, " ") || 
-          m.name.toLowerCase() === model.toLowerCase()
-        );
-        if (foundModel) {
-          actualModel = foundModel.id;
-          console.log("Converted model name from display name to ID:", model, "->", actualModel);
-          break;
-        }
-      }
-    }
+    // Model name conversion would require metadata - using as-is for now
+    actualModel = model;
   }
   
   // Use Cloudflare Workers AI binding
@@ -179,13 +167,13 @@ export async function callModel(env, model, prompt, options = {}, gatewayMetadat
         // Image generation format
         aiModel = env.AI.run(actualModel, {
           prompt: message,
-        }, options.gatewayMetadata);
+        });
       } else {
         // Text generation format
         aiModel = env.AI.run(actualModel, {
           messages: [{ role: "user", content: message }],
           max_tokens: options.maxTokens || 512,
-        }, options.gatewayMetadata);
+        });
       }
       
       const response = await aiModel;
@@ -204,26 +192,16 @@ export async function callModel(env, model, prompt, options = {}, gatewayMetadat
         result.isImage = true;
       }
       
-      // Add gateway metadata if provided
-      if (gatewayMetadata) {
-        result.gateway = gatewayMetadata;
-      }
       
       return result;
     } catch (error) {
       console.error("Cloudflare AI error:", error);
       const errorResult = { ok: false, error: error.message || "Failed to call AI model" };
-      if (gatewayMetadata) {
-        errorResult.gateway = gatewayMetadata;
-      }
       return errorResult;
     }
   }
 
   // Fallback: mocked response
   const fallbackResult = { ok: true, model: actualModel, response: `Mock response for model=${actualModel} prompt=${message}` };
-  if (gatewayMetadata) {
-    fallbackResult.gateway = gatewayMetadata;
-  }
   return fallbackResult;
 }
