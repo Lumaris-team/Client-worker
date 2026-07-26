@@ -57,7 +57,7 @@ export default {
       } catch (e) {
         body = {};
       }
-    }
+    } 
     
     // =========================
     // ⛔ BLOCK WORKERS.DEV URLS
