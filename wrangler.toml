@@ -29,7 +29,7 @@ binding = "AI"
 # AI Storage (KV namespace)
 [[kv_namespaces]]
 binding = "AI_STORAGE"
-id = "AI_STORAGE"
+id = "6a1cbdb6fa934d679e5a9ac06b761ac7"
 
 # Workflows
 [[workflows]]
