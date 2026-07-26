@@ -5,32 +5,6 @@ compatibility_date = "2026-05-22"
 workers_dev = true
 compatibility_flags = ["nodejs_compat"]
 
-# Environement variables
-[vars]
-MODE = "production" # -> "production" if enabled, or any other name if disabled
-SITE = "enabled" # -> "enabled" if enabled, or any other name if disabled
-JWT_SECRET = "generate-a-secure-random-key"
-JWT = "generate-a-secure-random-key"
-
-# Production environment
-[env.production]
-vars = { JWT_SECRET = "generate-a-secure-random-key", JWT = "generate-a-secure-random-key" }
-
-# Static site
-[assets]
-directory = "./src/frontend"
-binding = "ASSETS"
-
-# Worker AI
-[ai]
-name = "AI"
-binding = "AI"
-
-# AI Storage (KV namespace)
-[[kv_namespaces]]
-binding = "AI_STORAGE"
-id = "AI_STORAGE"
-
 # Worker executed before assets
 run_worker_first = [
   "/sitemap.xml",
@@ -57,6 +31,33 @@ run_worker_first = [
   "/pages/settings",
   "/pages/settings/"
 ]
+
+# Environement variables
+[vars]
+MODE = "production" # -> "production" if enabled, or any other name if disabled
+SITE = "enabled" # -> "enabled" if enabled, or any other name if disabled
+JWT_SECRET = "generate-a-secure-random-key"
+JWT = "generate-a-secure-random-key"
+
+# Production environment
+[env.production]
+vars = { JWT_SECRET = "generate-a-secure-random-key", JWT = "generate-a-secure-random-key" }
+
+# Static site
+[assets]
+directory = "./src/frontend"
+binding = "ASSETS"
+assets_ignore = ["assets/videos/presentation/presentation.mp4"]
+
+# Worker AI
+[ai]
+name = "AI"
+binding = "AI"
+
+# AI Storage (KV namespace)
+[[kv_namespaces]]
+binding = "AI_STORAGE"
+id = "AI_STORAGE"
 
 # Workflows
 #[[workflows]]
