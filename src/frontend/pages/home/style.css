@@ -99,11 +99,11 @@ a {
   min-height: var(--row-2-h);
   display: grid;
   place-items: center;
-  padding: 12px;
+  padding: 8px;
 }
 
 .home-logo {
-  width: 90%;
+  width: 100%;
   height: auto;
   display: block;
   border-radius: 8px;

@@ -101,6 +101,7 @@ const NAVBAR_STYLE = `
     flex-shrink: 0;
     grid-column: 1;
     justify-self: start;
+    border-radius: 8px;
   }
 
   .brand:hover {
@@ -130,6 +131,8 @@ const NAVBAR_STYLE = `
     display: block;
     transform: scale(1);
     transform-origin: center;
+    border-radius: 8px;
+    clip-path: inset(0 round 8px);
   }
 
   .center {
@@ -428,7 +431,7 @@ const NAVBAR_TEMPLATE = `
     <div class="inner">
       <a class="brand" data-home-link href="/pages/home" aria-label="Aller à l'accueil">
         <span class="brand-icon-wrap">
-          <img class="brand-icon" src="/assets/logo/square_black.png" alt="Dashboard">
+          <img class="brand-icon" src="/assets/logo/rectangle_black.png" alt="Dashboard">
         </span>
       </a>
 
