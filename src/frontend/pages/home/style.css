@@ -103,7 +103,7 @@ a {
 }
 
 .home-logo {
-  width: min(150px, 70%);
+  width: 90%;
   height: auto;
   display: block;
   border-radius: 8px;

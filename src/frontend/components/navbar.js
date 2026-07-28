@@ -123,9 +123,8 @@ const NAVBAR_STYLE = `
   }
 
   .brand-icon {
-    width: 60px;
-    height: 52px;
-    border-radius: 8px;
+    width: 100%;
+    height: 100%;
     object-fit: contain;
     object-position: center;
     display: block;
@@ -189,8 +188,7 @@ const NAVBAR_STYLE = `
   }
 
   .feature-icon,
-  .action-icon,
-  .brand-icon-wrap {
+  .action-icon {
     width: 32px;
     height: 32px;
     display: inline-grid;
@@ -200,13 +198,14 @@ const NAVBAR_STYLE = `
   }
 
   .brand-icon-wrap {
-    width: 62px;
-    height: 54px;
+    width: 60px;
+    height: 52px;
     display: inline-grid;
     place-items: center;
     overflow: hidden;
     flex: 0 0 auto;
     border-radius: 8px;
+    background: transparent;
   }
 
   .feature-icon img,
