@@ -197,7 +197,8 @@ const NAVBAR_STYLE = `
     display: inline-grid;
     place-items: center;
     flex: 0 0 auto;
-    overflow: visible;
+    overflow: hidden;
+    border-radius: 8px;
   }
 
   .brand-icon-wrap {
@@ -221,9 +222,10 @@ const NAVBAR_STYLE = `
 
   .feature-icon svg,
   .action-icon svg {
-    width: 20px;
-    height: 20px;
+    width: 32px;
+    height: 32px;
     fill: currentColor;
+    clip-path: inset(0 round 8px);
   }
 
   .feature-label,
@@ -431,7 +433,7 @@ const NAVBAR_TEMPLATE = `
     <div class="inner">
       <a class="brand" data-home-link href="/pages/home" aria-label="Aller à l'accueil">
         <span class="brand-icon-wrap">
-          <img class="brand-icon" src="/assets/logo/rectangle_black.png" alt="Dashboard">
+          <img class="brand-icon" src="/assets/logo/square_black.png" alt="Dashboard">
         </span>
       </a>
 
