@@ -125,7 +125,6 @@ const NAVBAR_STYLE = `
   .brand-icon {
     width: 60px;
     height: 52px;
-    border-radius: 8px;
     object-fit: contain;
     object-position: center;
     display: block;
@@ -206,6 +205,7 @@ const NAVBAR_STYLE = `
     place-items: center;
     overflow: hidden;
     flex: 0 0 auto;
+    border-radius: 8px;
   }
 
   .feature-icon img,
