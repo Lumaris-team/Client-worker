@@ -48,7 +48,26 @@ export async function callModel(env, model, prompt, options = {}, gatewayMetadat
       }
       
       const response = await aiModel;
-      const content = response?.response || response?.output || response?.image || JSON.stringify(response);
+      
+      // Extract content from response
+      let content = response?.response || response?.output || response?.image || JSON.stringify(response);
+      
+      // If content is a JSON string, try to parse it and extract the actual message content
+      if (typeof content === 'string') {
+        try {
+          const parsed = JSON.parse(content);
+          // Handle OpenAI-compatible format with choices array
+          if (parsed.choices && parsed.choices.length > 0 && parsed.choices[0].message) {
+            content = parsed.choices[0].message.content;
+          }
+          // Handle direct content field
+          else if (parsed.content) {
+            content = parsed.content;
+          }
+        } catch (e) {
+          // Not JSON, use as-is
+        }
+      }
       
       // Build result object
       const result = {
