@@ -104,6 +104,35 @@ export async function fetchCloudflareLimits(env) {
       dailyLimit = data.result.limit || data.result.max || 10000;
     }
     
+    // Try to fetch model-specific usage from Gateway AI logs if not available from analytics
+    if (modelUsage.length === 0) {
+      try {
+        console.log("Trying to fetch model usage from Gateway AI logs");
+        const gatewayEndpoint = `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/gateway/${env.GATEWAY_ID}/analytics`;
+        
+        const gatewayResponse = await fetch(gatewayEndpoint, {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${apiToken}`,
+            "Content-Type": "application/json"
+          }
+        });
+        
+        if (gatewayResponse.ok) {
+          const gatewayData = await gatewayResponse.json();
+          if (gatewayData.success && gatewayData.result) {
+            if (gatewayData.result.models) {
+              modelUsage = gatewayData.result.models;
+            } else if (gatewayData.result.by_model) {
+              modelUsage = gatewayData.result.by_model;
+            }
+          }
+        }
+      } catch (e) {
+        console.log("Failed to fetch Gateway analytics:", e.message);
+      }
+    }
+    
     console.log(`Parsed usage: ${dailyUsed}/${dailyLimit}`);
     
     // If we don't have model usage data, try to fetch it separately

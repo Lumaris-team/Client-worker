@@ -14,6 +14,9 @@ const state = {
   conversationName: null,
   isNewConversation: true,
   selectorVisible: true,
+  conversationsOffset: 0,
+  messagesOffset: 0,
+  currentConversationModel: null,
 };
 
 // Mapping from frontend category names to backend category names
@@ -313,14 +316,19 @@ function updateConsumptionDisplay() {
 }
 
 /* ===================== CONVERSATIONS ===================== */
-async function loadConversations() {
+async function loadConversations(offset = 0, limit = 100) {
   try {
-    const data = await aiGet("conversations");
+    const url = `conversations?offset=${offset}&limit=${limit}`;
+    const data = await aiGet(url);
     console.log("Loaded conversations:", data);
-    return data.conversations || [];
+    return {
+      conversations: data.conversations || [],
+      hasMore: data.hasMore || false,
+      error: data.error
+    };
   } catch (error) {
     console.error("Failed to load conversations:", error);
-    return [];
+    return { conversations: [], hasMore: false, error: error.message };
   }
 }
 
@@ -408,6 +416,14 @@ async function sendMessage(message) {
       conversationId: state.conversationId,
       conversationName: state.conversationName,
     });
+
+    // Always send conversation ID and name in subsequent requests
+    if (response.conversationId) {
+      state.conversationId = response.conversationId;
+    }
+    if (response.conversationName) {
+      state.conversationName = response.conversationName;
+    }
 
     // Remove loading message
     const loadingMessage = chatContainer.querySelector(".chat-message.loading");
@@ -554,11 +570,13 @@ function toggleSelector() {
   const toggleSelectorBtn = document.getElementById("toggle-selector-btn");
   if (toggleSelectorBtn) {
     toggleSelectorBtn.style.display = "flex";
-    // Sync active state with visibility
+    // Sync active state with visibility (grayed out when visible)
     if (state.selectorVisible) {
-      toggleSelectorBtn.classList.add("active");
-    } else {
       toggleSelectorBtn.classList.remove("active");
+      toggleSelectorBtn.style.opacity = "0.5";
+    } else {
+      toggleSelectorBtn.classList.add("active");
+      toggleSelectorBtn.style.opacity = "1";
     }
   }
 
@@ -580,6 +598,8 @@ function startNewConversation() {
   state.conversationId = null;
   state.conversationName = null;
   state.isNewConversation = true;
+  state.currentConversationModel = null;
+  state.messagesOffset = 0;
 
   const chatContainer = document.getElementById("chat-container");
   if (!chatContainer) return;
@@ -590,15 +610,16 @@ function startNewConversation() {
   state.selectorVisible = true;
   updateSelectorVisibility();
 
-  // Show and activate toggle-selector button
+  // Show and gray out toggle-selector button (since selector is visible)
   const toggleSelectorBtn = document.getElementById("toggle-selector-btn");
   if (toggleSelectorBtn) {
     toggleSelectorBtn.style.display = "flex";
-    toggleSelectorBtn.classList.add("active");
+    toggleSelectorBtn.classList.remove("active");
+    toggleSelectorBtn.style.opacity = "0.5";
   }
 }
 
-async function showConversations() {
+async function showConversations(offset = 0) {
   // Hide selector when showing conversations
   state.selectorVisible = false;
   updateSelectorVisibility();
@@ -613,23 +634,39 @@ async function showConversations() {
   const chatContainer = document.getElementById("chat-container");
   if (!chatContainer) return;
 
-  // Clear current chat and show loading
-  chatContainer.innerHTML = `
-    <div class="chat-message ai">
-      <div class="chat-bubble">Loading conversations...</div>
-    </div>
-  `;
+  // If this is the first load, clear and show loading
+  if (offset === 0) {
+    state.conversationsOffset = 0;
+    chatContainer.innerHTML = `
+      <div class="chat-message ai">
+        <div class="chat-bubble">Loading conversations...</div>
+      </div>
+    `;
+  }
 
   // Load conversations in background
-  const conversations = await loadConversations();
+  const { conversations, hasMore, error } = await loadConversations(offset, 100);
 
-  // Clear current chat
-  chatContainer.innerHTML = "";
+  // Clear loading message if first load
+  if (offset === 0) {
+    chatContainer.innerHTML = "";
+  }
+
+  if (error) {
+    chatContainer.innerHTML = `
+      <div class="chat-message ai">
+        <div class="chat-bubble" style="color: #ff6b6b;">Error loading conversations: ${escapeHtml(error)}</div>
+      </div>
+    `;
+    return;
+  }
 
   if (!conversations || conversations.length === 0) {
-    chatContainer.innerHTML = `
-      <p class="state-msg">No conversations found.</p>
-    `;
+    if (offset === 0) {
+      chatContainer.innerHTML = `
+        <p class="state-msg">No conversations found.</p>
+      `;
+    }
     return;
   }
 
@@ -639,11 +676,11 @@ async function showConversations() {
       <div class="chat-bubble">
         <strong>${escapeHtml(conv.name || "Untitled")}</strong>
         <p style="margin: 4px 0 0; font-size: 0.85rem; color: var(--muted);">
-          ${new Date(conv.createdAt).toLocaleDateString()}
+          ${new Date(conv.lastPromptDate).toLocaleDateString()}
         </p>
         <button 
           style="margin-top: 8px; padding: 6px 12px; background: var(--accent); border: none; border-radius: 6px; color: #1a1a1a; cursor: pointer; font-size: 0.85rem;"
-          onclick="loadConversation('${conv.id}')"
+          data-load-conv="${conv.id}"
         >
           Load
         </button>
@@ -651,66 +688,134 @@ async function showConversations() {
     </div>
   `).join("");
 
-  chatContainer.innerHTML = conversationsHtml;
+  chatContainer.insertAdjacentHTML("beforeend", conversationsHtml);
+
+  // Add event listeners to load buttons
+  chatContainer.querySelectorAll('[data-load-conv]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const convId = btn.dataset.loadConv;
+      loadConversation(convId);
+    });
+  });
+
+  // Add "Load more" button if there are more conversations
+  if (hasMore) {
+    const loadMoreBtn = document.getElementById("load-more-conversations");
+    if (!loadMoreBtn) {
+      const loadMoreHtml = `
+        <button id="load-more-conversations" style="margin: 8px auto; display: block; padding: 8px 16px; background: var(--accent); border: none; border-radius: 6px; color: #1a1a1a; cursor: pointer; font-size: 0.85rem;">
+          Load more conversations
+        </button>
+      `;
+      chatContainer.insertAdjacentHTML("beforeend", loadMoreHtml);
+      document.getElementById("load-more-conversations").addEventListener("click", () => {
+        showConversations(offset + 100);
+      });
+    }
+  } else {
+    const loadMoreBtn = document.getElementById("load-more-conversations");
+    if (loadMoreBtn) loadMoreBtn.remove();
+  }
 }
 
-async function loadConversation(conversationId) {
+async function loadConversation(conversationId, offset = 0, limit = 100) {
   try {
-    const data = await aiGet(`conversations/${conversationId}`);
+    const url = `conversations/${conversationId}?offset=${offset}&limit=${limit}`;
+    const data = await aiGet(url);
     console.log("Loaded conversation:", data);
 
-    if (data && data.conversation) {
+    if (data && data.messages) {
       state.conversationId = conversationId;
-      state.conversationName = data.conversation.name;
+      state.conversationName = data.conversationName || "Untitled";
       state.isNewConversation = false;
+      state.messagesOffset = offset;
 
       const chatContainer = document.getElementById("chat-container");
       if (!chatContainer) return;
 
-      chatContainer.innerHTML = "";
-
-      // Display messages
-      if (data.conversation.messages && data.conversation.messages.length > 0) {
-        data.conversation.messages.forEach(msg => {
-          if (msg.role === "user") {
-            const userHtml = `
-              <div class="chat-message user">
-                <div class="chat-bubble">${escapeHtml(msg.content)}</div>
-              </div>
-            `;
-            chatContainer.insertAdjacentHTML("beforeend", userHtml);
-          } else if (msg.role === "assistant") {
-            displayAIMessage(msg.content);
-          }
-        });
+      // If this is the first load, clear the container
+      if (offset === 0) {
+        chatContainer.innerHTML = "";
       }
+
+      // Display messages (insert at beginning if offset > 0 for pagination)
+      const messages = data.messages || [];
+      messages.forEach(msg => {
+        if (msg.role === "user") {
+          const userHtml = `
+            <div class="chat-message user">
+              <div class="chat-bubble">${escapeHtml(msg.content)}</div>
+            </div>
+          `;
+          if (offset === 0) {
+            chatContainer.insertAdjacentHTML("beforeend", userHtml);
+          } else {
+            chatContainer.insertAdjacentHTML("afterbegin", userHtml);
+          }
+        } else if (msg.role === "assistant") {
+          const aiHtml = `
+            <div class="chat-message ai">
+              <div class="chat-bubble">${formatMessage(msg.content)}</div>
+            </div>
+          `;
+          if (offset === 0) {
+            chatContainer.insertAdjacentHTML("beforeend", aiHtml);
+          } else {
+            chatContainer.insertAdjacentHTML("afterbegin", aiHtml);
+          }
+        }
+      });
 
       // Hide selector when loading existing conversation
       state.selectorVisible = false;
       updateSelectorVisibility();
 
       // Set model to the conversation's previous model if available
-      if (data.conversation.model) {
-        const categoryModels = state.categorizedModels[state.selectedCategory] || [];
-        const modelData = categoryModels.find(m => m.id === data.conversation.model);
-        if (modelData) {
-          state.selectedModel = modelData.name;
-          // Update model dropdown
-          const modelSelect = document.getElementById("model-select");
-          if (modelSelect) {
-            const trigger = modelSelect.querySelector(".custom-select-trigger");
-            if (trigger) {
-              trigger.textContent = modelData.name;
-            }
-            const options = modelSelect.querySelectorAll(".custom-option");
-            options.forEach(opt => {
-              opt.classList.remove("selected");
-              if (opt.dataset.model === modelData.name) {
-                opt.classList.add("selected");
+      if (offset === 0 && messages.length > 0) {
+        // Find the last user message to get the model used
+        const lastUserMessage = [...messages].reverse().find(m => m.role === "user");
+        if (lastUserMessage && lastUserMessage.model) {
+          state.currentConversationModel = lastUserMessage.model;
+          const categoryModels = state.categorizedModels[state.selectedCategory] || [];
+          const modelData = categoryModels.find(m => m.id === lastUserMessage.model);
+          if (modelData) {
+            state.selectedModel = modelData.name;
+            // Update model dropdown
+            const modelSelect = document.getElementById("model-select");
+            if (modelSelect) {
+              const trigger = modelSelect.querySelector(".custom-select-trigger");
+              if (trigger) {
+                trigger.textContent = modelData.name;
               }
-            });
+              const options = modelSelect.querySelectorAll(".custom-option");
+              options.forEach(opt => {
+                opt.classList.remove("selected");
+                if (opt.dataset.model === modelData.name) {
+                  opt.classList.add("selected");
+                }
+              });
+            }
           }
         }
+      }
+
+      // Add "Load more" button if there are more messages
+      if (data.hasMore) {
+        const loadMoreBtn = document.getElementById("load-more-messages");
+        if (!loadMoreBtn) {
+          const loadMoreHtml = `
+            <button id="load-more-messages" style="margin: 8px auto; display: block; padding: 8px 16px; background: var(--accent); border: none; border-radius: 6px; color: #1a1a1a; cursor: pointer; font-size: 0.85rem;">
+              Load more messages
+            </button>
+          `;
+          chatContainer.insertAdjacentHTML("afterbegin", loadMoreHtml);
+          document.getElementById("load-more-messages").addEventListener("click", () => {
+            loadConversation(conversationId, offset + limit, limit);
+          });
+        }
+      } else {
+        const loadMoreBtn = document.getElementById("load-more-messages");
+        if (loadMoreBtn) loadMoreBtn.remove();
       }
 
       // Show toggle-selector button

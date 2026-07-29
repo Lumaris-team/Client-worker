@@ -5,6 +5,7 @@ import { search_web } from "./search_web.js";
 import { notes_remarks } from "./notes_remarks.js";
 import { readIndex, readDiscussion } from "./core.js";
 import { fetchCloudflareLimits } from "./limits.js";
+import { getConversations, getConversationMessages } from "./gateway_logs.js";
 
 const CATEGORIES = {
   basic,
@@ -409,34 +410,36 @@ export async function AIfunction(env, subpath, method, headers, body) {
   }
 
   if (parts[0] === "conversations" && method === "GET") {
-    // Get all conversations from all categories, sorted by lastPromptDate, max 30
-    const allConversations = [];
+    // Get conversations from Gateway logs with pagination
+    const limit = parseInt(new URL(request.url || "").searchParams.get("limit") || "100");
+    const offset = parseInt(new URL(request.url || "").searchParams.get("offset") || "0");
     
-    for (const category of Object.keys(CATEGORIES)) {
-      const index = await readIndex(env, category);
-      for (const discussion of index) {
-        // Read full discussion to get messages
-        const fullDiscussion = await readDiscussion(env, category, discussion.id);
-        if (fullDiscussion) {
-          allConversations.push({
-            ...fullDiscussion,
-            category: category
-          });
-        }
-      }
-    }
+    const { conversations, error, hasMore } = await getConversations(env, limit, offset);
     
-    // Sort by lastPromptDate (most recent first)
-    allConversations.sort((a, b) => {
-      const dateA = new Date(a.lastPromptDate || a.updatedAt || 0);
-      const dateB = new Date(b.lastPromptDate || b.updatedAt || 0);
-      return dateB - dateA;
-    });
+    // Return max 30 conversations for initial request, but support pagination
+    const limitedConversations = conversations.slice(0, 30);
     
-    // Return max 30 conversations
-    const limitedConversations = allConversations.slice(0, 30);
+    return { 
+      conversations: limitedConversations,
+      hasMore,
+      error
+    };
+  }
+
+  if (parts[0] === "conversations" && parts[1] && method === "GET") {
+    // Get specific conversation messages with pagination
+    const conversationId = parts[1];
+    const limit = parseInt(new URL(request.url || "").searchParams.get("limit") || "100");
+    const offset = parseInt(new URL(request.url || "").searchParams.get("offset") || "0");
     
-    return { conversations: limitedConversations };
+    const { messages, error, hasMore } = await getConversationMessages(env, conversationId, limit, offset);
+    
+    return {
+      conversationId,
+      messages,
+      hasMore,
+      error
+    };
   }
 
   if (parts[0] === "limits" && method === "GET") {

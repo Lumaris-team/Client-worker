@@ -1,21 +1,17 @@
-import { callModel, addMessagePair } from "./core.js";
+import { callModel } from "./core.js";
+import { getGatewayMetadata } from "./gateway_metadata.js";
 
 export async function reasonning(env, model, body = {}) {
 	const category = "reasonning";
 	const prompt = body?.prompt || (`Perform reasoning task: ${body?.query || body?.text || ""}`);
 	
-	const result = await callModel(env, model, prompt, body?.options || {});
+	const result = await callModel(env, model, prompt, body?.options || {}, getGatewayMetadata);
 	
-	const conversationId = body?.conversationId;
-	const conversationName = body?.conversationName;
-	const assistantContent = result?.response ?? String(result);
-	const discussion = await addMessagePair(env, category, {
-		discussionId: conversationId,
-		userContent: prompt,
-		assistantContent,
-		metadata: { model }
-	});
+	// Return conversation info from gateway metadata
+	const gatewayMeta = result?.gatewayMetadata || {};
+	const conversationId = gatewayMeta.conversationId || body?.conversationId;
+	const conversationName = gatewayMeta.conversationName || body?.conversationName;
 	
-	return { result, discussion, conversationId, conversationName };
+	return { result, conversationId, conversationName };
 }
 
