@@ -8,6 +8,10 @@ function generateConversationId() {
 
 // Generate conversation title using simple heuristic (no AI to avoid recursion)
 function generateConversationTitle(prompt) {
+  if (!prompt || typeof prompt !== 'string') {
+    return "New Conversation";
+  }
+  
   // Use first few words of prompt as title
   const words = prompt
     .trim()
@@ -41,7 +45,7 @@ export async function getGatewayMetadata(env, conversationId, conversationName, 
     if (conversationName) {
       metadata.conversationName = conversationName;
     } else if (prompt) {
-      metadata.conversationName = await generateConversationTitle(env, prompt);
+      metadata.conversationName = generateConversationTitle(prompt);
     } else {
       metadata.conversationName = "New Conversation";
     }
