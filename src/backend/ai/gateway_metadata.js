@@ -1,5 +1,4 @@
 import { callModel } from "./core.js";
-import { estimateConsumption, fetchCloudflareModels } from "./index.js";
 
 // Generate a long random ID for conversations
 function generateConversationId() {
@@ -11,26 +10,9 @@ function generateConversationId() {
 
 // Get the cheapest model for title generation
 async function getCheapestModel(env) {
-  try {
-    const models = await fetchCloudflareModels(env);
-    
-    // Filter for text generation models only
-    const textModels = models.filter(model => {
-      const modelType = (model.type || "").toLowerCase();
-      const modelTask = (model.task || "").toLowerCase();
-      return modelType.includes("text") || modelTask.includes("text") || modelTask.includes("generation");
-    });
-    
-    // Sort by consumption (lowest first)
-    textModels.sort((a, b) => estimateConsumption(a) - estimateConsumption(b));
-    
-    // Return the cheapest model
-    return textModels[0]?.id || "@cf/meta/llama-3.1-8b-instruct";
-  } catch (error) {
-    console.error("Failed to get cheapest model:", error);
-    // Fallback to a known cheap model
-    return "@cf/meta/llama-3.1-8b-instruct";
-  }
+  // Use a known cheap model for title generation
+  // Llama 3.1 8B is one of the most cost-effective models
+  return "@cf/meta/llama-3.1-8b-instruct";
 }
 
 // Generate conversation title using AI

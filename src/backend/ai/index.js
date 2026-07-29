@@ -3,7 +3,6 @@ import { pictures } from "./pictures.js";
 import { reasonning } from "./reasonning.js";
 import { search_web } from "./search_web.js";
 import { notes_remarks } from "./notes_remarks.js";
-import { readIndex, readDiscussion } from "./core.js";
 import { fetchCloudflareLimits } from "./limits.js";
 import { getConversations, getConversationMessages } from "./gateway_logs.js";
 
@@ -404,10 +403,6 @@ export async function AIfunction(env, subpath, method, headers, body) {
     return resp;
   }
 
-  if (action === "discussions" && method === "GET") {
-    const list = await readIndex(env, mappedCategory);
-    return { discussions: list };
-  }
 
   if (parts[0] === "conversations" && method === "GET") {
     // Get conversations from Gateway logs with pagination
