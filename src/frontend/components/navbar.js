@@ -131,6 +131,8 @@ const NAVBAR_STYLE = `
     display: block;
     transform: scale(1);
     transform-origin: center;
+    border-radius: 8px;
+    clip-path: inset(0 round 8px);
   }
 
   .center {
