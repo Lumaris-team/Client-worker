@@ -124,15 +124,13 @@ const NAVBAR_STYLE = `
   }
 
   .brand-icon {
-    width: 100%;
-    height: 100%;
+    width: 60px;
+    height: 52px;
     object-fit: contain;
     object-position: center;
     display: block;
     transform: scale(1);
     transform-origin: center;
-    border-radius: 8px;
-    clip-path: inset(0 round 8px);
   }
 
   .center {
@@ -222,8 +220,8 @@ const NAVBAR_STYLE = `
 
   .feature-icon svg,
   .action-icon svg {
-    width: 32px;
-    height: 32px;
+    width: 20px;
+    height: 20px;
     fill: currentColor;
     clip-path: inset(0 round 8px);
   }
