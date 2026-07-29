@@ -75,6 +75,7 @@ export async function callModel(env, model, prompt, options = {}, gatewayMetadat
         model: actualModel,
         response: content,
         raw: response,
+        gatewayMetadata: gatewayMetadata?.gateway?.metadata || null,
       };
       
       // For image models, mark the response as image

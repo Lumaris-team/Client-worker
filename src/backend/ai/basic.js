@@ -12,6 +12,10 @@ export async function basic(env, model, body = {}) {
 	const conversationId = gatewayMeta.conversationId || body?.conversationId;
 	const conversationName = gatewayMeta.conversationName || body?.conversationName;
 	
+	// Include conversation metadata in the result object for frontend
+	result.conversationId = conversationId;
+	result.conversationName = conversationName;
+	
 	return { result, conversationId, conversationName };
 }
 

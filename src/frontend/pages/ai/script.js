@@ -417,13 +417,7 @@ async function sendMessage(message) {
       conversationName: state.conversationName,
     });
 
-    // Always send conversation ID and name in subsequent requests
-    if (response.conversationId) {
-      state.conversationId = response.conversationId;
-    }
-    if (response.conversationName) {
-      state.conversationName = response.conversationName;
-    }
+    console.log("Full response from API:", response);
 
     // Remove loading message
     const loadingMessage = chatContainer.querySelector(".chat-message.loading");
@@ -431,23 +425,38 @@ async function sendMessage(message) {
       loadingMessage.remove();
     }
 
-    if (response && response.response) {
-      displayAIMessage(response.response);
-      
-      // Update conversation ID and name if provided
-      if (response.conversationId) {
-        state.conversationId = response.conversationId;
-      }
-      if (response.conversationName) {
-        state.conversationName = response.conversationName;
-      }
+    // Extract the actual result from the response structure
+    // aiPost already unwraps .resp if present
+    const result = response?.result || response;
+    
+    console.log("Extracted result:", result);
+    
+    // Always send conversation ID and name in subsequent requests
+    // These might be at the top level or inside result
+    const conversationId = response?.conversationId || result?.conversationId;
+    const conversationName = response?.conversationName || result?.conversationName;
+    
+    console.log("Conversation ID:", conversationId, "Conversation Name:", conversationName);
+    
+    if (conversationId) {
+      state.conversationId = conversationId;
+    }
+    if (conversationName) {
+      state.conversationName = conversationName;
+    }
+
+    if (result && result.response) {
+      displayAIMessage(result.response);
       
       // If this was a new conversation, hide selector after first message
-      if (response.isNewConversation) {
+      if (result.isNewConversation) {
         state.selectorVisible = false;
         updateSelectorVisibility();
       }
     } else {
+      console.error("Invalid response structure:", response);
+      console.error("Result:", result);
+      console.error("Result.response:", result?.response);
       showError("Failed to get response from AI");
     }
   } catch (error) {
