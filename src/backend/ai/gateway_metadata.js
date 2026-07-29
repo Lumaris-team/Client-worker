@@ -22,9 +22,13 @@ async function generateConversationTitle(env, prompt) {
     
     const titlePrompt = `Generate a very short title (maximum 3 words) for this conversation: "${prompt.substring(0, 200)}". Return only the title, no punctuation.`;
     
-    const result = await callModel(env, cheapModel, titlePrompt, { maxTokens: 20 });
+    // Call model directly without gateway metadata to avoid infinite recursion
+    const response = await env.AI.run(cheapModel, {
+      messages: [{ role: "user", content: titlePrompt }],
+      max_tokens: 20,
+    });
     
-    let title = result?.response || result?.output || "";
+    let title = response?.response || response?.output || "";
     
     // Clean up the title
     title = title.trim()
