@@ -124,15 +124,15 @@ const NAVBAR_STYLE = `
   }
 
   .brand-icon {
-    width: 58px;
-    height: 58px;
+    width: 60px;
+    height: 52px;
     object-fit: contain;
     object-position: center;
     display: block;
     transform: scale(1);
     transform-origin: center;
-    border-radius: 8px;
-    clip-path: inset(0 round 8px);
+    border-radius: 12px;
+    clip-path: inset(0 round 12px);
   }
 
   .center {
