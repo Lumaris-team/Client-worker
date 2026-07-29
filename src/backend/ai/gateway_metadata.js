@@ -1,5 +1,3 @@
-import { callModel } from "./core.js";
-
 // Generate a long random ID for conversations
 function generateConversationId() {
   const timestamp = Date.now().toString(36);
@@ -8,50 +6,19 @@ function generateConversationId() {
   return `${timestamp}${randomPart}${extraRandom}`;
 }
 
-// Get the cheapest model for title generation
-async function getCheapestModel(env) {
-  // Use a known cheap model for title generation
-  // Llama 3.1 8B is one of the most cost-effective models
-  return "@cf/meta/llama-3.1-8b-instruct";
-}
-
-// Generate conversation title using AI
-async function generateConversationTitle(env, prompt) {
-  try {
-    const cheapModel = await getCheapestModel(env);
-    
-    const titlePrompt = `Generate a very short title (maximum 3 words) for this conversation: "${prompt.substring(0, 200)}". Return only the title, no punctuation.`;
-    
-    // Call model directly without gateway metadata to avoid infinite recursion
-    const response = await env.AI.run(cheapModel, {
-      messages: [{ role: "user", content: titlePrompt }],
-      max_tokens: 20,
-    });
-    
-    let title = response?.response || response?.output || "";
-    
-    // Clean up the title
-    title = title.trim()
-      .replace(/["'.]/g, "")
-      .split(/\s+/)
-      .slice(0, 3)
-      .join(" ");
-    
-    // Capitalize first letter
-    title = title.charAt(0).toUpperCase() + title.slice(1);
-    
-    return title || "New Conversation";
-  } catch (error) {
-    console.error("Failed to generate conversation title:", error);
-    // Fallback: use first few words of prompt
-    return prompt
-      .trim()
-      .split(/\s+/)
-      .slice(0, 3)
-      .join(" ")
-      .charAt(0)
-      .toUpperCase() + prompt.slice(1) || "New Conversation";
-  }
+// Generate conversation title using simple heuristic (no AI to avoid recursion)
+function generateConversationTitle(prompt) {
+  // Use first few words of prompt as title
+  const words = prompt
+    .trim()
+    .split(/\s+/)
+    .slice(0, 3)
+    .join(" ");
+  
+  // Capitalize first letter
+  const title = words.charAt(0).toUpperCase() + words.slice(1);
+  
+  return title || "New Conversation";
 }
 
 // Main function to generate gateway metadata
