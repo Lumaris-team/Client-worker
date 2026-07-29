@@ -124,8 +124,8 @@ const NAVBAR_STYLE = `
   }
 
   .brand-icon {
-    width: 56px;
-    height: 48px;
+    width: 52px;
+    height: 44px;
     object-fit: contain;
     object-position: center;
     display: block;
