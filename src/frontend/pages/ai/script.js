@@ -29,10 +29,12 @@ const CATEGORY_ALIASES = {
 
 /* ===================== API ===================== */
 async function aiGet(sub) {
+  const requestName = `AI GET ${sub}`;
   const res = await authedFetch(`${AI_BASE}/${sub}`, {
     method: "GET",
     headers: {
       Accept: "application/json",
+      "X-Request-Name": requestName,
     },
   });
   const text = await res.text();
@@ -56,11 +58,13 @@ async function aiGet(sub) {
 }
 
 async function aiPost(sub, body) {
+  const requestName = `AI POST ${sub}`;
   const res = await authedFetch(`${AI_BASE}/${sub}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Accept: "application/json",
+      "X-Request-Name": requestName,
     },
     body: JSON.stringify(body),
   });
@@ -631,18 +635,16 @@ async function showConversations(offset = 0) {
   state.selectorVisible = false;
   updateSelectorVisibility();
 
-  // Show toggle-selector button (inactive since selector is hidden)
+  // Hide toggle-selector button when showing conversations
   const toggleSelectorBtn = document.getElementById("toggle-selector-btn");
   if (toggleSelectorBtn) {
-    toggleSelectorBtn.style.display = "flex";
-    toggleSelectorBtn.classList.remove("active");
-    toggleSelectorBtn.style.opacity = "0.5";
+    toggleSelectorBtn.style.display = "none";
   }
 
-  // Show prompt bar
+  // Hide prompt bar when showing conversations
   const promptBar = document.querySelector(".ai-prompt-bar");
   if (promptBar) {
-    promptBar.style.display = "flex";
+    promptBar.style.display = "none";
   }
 
   const chatContainer = document.getElementById("chat-container");
@@ -832,7 +834,7 @@ async function loadConversation(conversationId, offset = 0, limit = 100) {
         if (loadMoreBtn) loadMoreBtn.remove();
       }
 
-      // Show toggle-selector button (inactive since selector is hidden)
+      // Show toggle-selector button (inactive since selector is hidden) when in a conversation
       const toggleSelectorBtn = document.getElementById("toggle-selector-btn");
       if (toggleSelectorBtn) {
         toggleSelectorBtn.style.display = "flex";
@@ -840,7 +842,7 @@ async function loadConversation(conversationId, offset = 0, limit = 100) {
         toggleSelectorBtn.style.opacity = "0.5";
       }
 
-      // Show prompt bar
+      // Show prompt bar when in a conversation
       const promptBar = document.querySelector(".ai-prompt-bar");
       if (promptBar) {
         promptBar.style.display = "flex";

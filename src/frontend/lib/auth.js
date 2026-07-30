@@ -287,6 +287,10 @@ export async function authedFetch(input, init = {}) {
     headers: { ...(init.headers || {}), Authorization: `Bearer ${t}` },
   });
 
+  // Extract a readable name from the URL for debugging
+  const url = typeof input === 'string' ? input : input.url;
+  const urlName = url.split('/').pop() || 'api-request';
+
   let res = await fetch(input, withAuth(token));
   if (res.status === 401) {
     removeItemEverywhere(STORAGE_KEYS.session);
