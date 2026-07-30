@@ -20,11 +20,11 @@ export async function fetchCloudflareLimits(env) {
   }
   
   try {
-    // Try multiple possible API endpoints for usage data
+    // Use the correct Cloudflare Workers AI analytics endpoint
     const endpoints = [
+      `https://api.cloudflare.com/client/v4/accounts/${accountId}/workers_ai_analytics/subrequests`,
       `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/analytics/usage`,
-      `https://api.cloudflare.com/client/v4/accounts/${accountId}/analytics/ai/usage`,
-      `https://api.cloudflare.com/client/v4/accounts/${accountId}/workers/ai/usage`
+      `https://api.cloudflare.com/client/v4/accounts/${accountId}/analytics/ai/usage`
     ];
     
     let data = null;
@@ -47,6 +47,8 @@ export async function fetchCloudflareLimits(env) {
           break;
         } else {
           console.log(`Endpoint ${endpoint} returned status: ${response.status}`);
+          const errorText = await response.text();
+          console.log(`Error response: ${errorText}`);
           lastError = response.status;
         }
       } catch (e) {
@@ -68,7 +70,7 @@ export async function fetchCloudflareLimits(env) {
       };
     }
     
-    // Parse the response - Cloudflare may return different formats
+    // Parse the response - Cloudflare Workers AI analytics returns different format
     let dailyUsed = 0;
     let dailyLimit = 10000;
     let modelUsage = [];
@@ -76,8 +78,24 @@ export async function fetchCloudflareLimits(env) {
     console.log("Parsing Cloudflare response data:", JSON.stringify(data));
     
     if (data.success && data.result) {
-      // Try to extract usage data from different possible structures
-      if (data.result.usage) {
+      // Workers AI analytics format
+      if (data.result.data && Array.isArray(data.result.data)) {
+        // Sum up all usage from the data array
+        dailyUsed = data.result.data.reduce((sum, item) => {
+          return sum + (item.requests || item.count || item.usage || 0);
+        }, 0);
+        
+        // Extract model-specific usage
+        modelUsage = data.result.data.map(item => ({
+          id: item.model || item.model_id || "unknown",
+          name: item.model || item.model_name || item.model_id || "Unknown Model",
+          brand: extractBrandFromModelId(item.model || item.model_id || ""),
+          consumption: item.requests || item.count || item.usage || 0,
+          percentage: 0 // Will calculate later
+        }));
+      } 
+      // Alternative format with direct usage fields
+      else if (data.result.usage) {
         dailyUsed = data.result.usage.requests || data.result.usage.count || data.result.usage.total || 0;
       } else if (data.result.requests) {
         dailyUsed = data.result.requests;
@@ -87,18 +105,38 @@ export async function fetchCloudflareLimits(env) {
         dailyUsed = data.result.total;
       }
       
+      // Try to get limit from different possible structures
       if (data.result.limit) {
         dailyLimit = data.result.limit.requests || data.result.limit.count || data.result.limit.total || 10000;
       } else if (data.result.max) {
         dailyLimit = data.result.max;
       }
       
-      if (data.result.models) {
-        modelUsage = data.result.models;
-      } else if (data.result.model_usage) {
-        modelUsage = data.result.model_usage;
-      } else if (data.result.by_model) {
-        modelUsage = data.result.by_model;
+      // Try to get models from different possible structures
+      if (data.result.models && Array.isArray(data.result.models)) {
+        modelUsage = data.result.models.map(m => ({
+          id: m.id || m.model || "unknown",
+          name: m.name || m.model || "Unknown Model",
+          brand: m.brand || extractBrandFromModelId(m.id || m.model || ""),
+          consumption: m.usage || m.requests || m.count || 0,
+          percentage: m.percentage || 0
+        }));
+      } else if (data.result.model_usage && Array.isArray(data.result.model_usage)) {
+        modelUsage = data.result.model_usage.map(m => ({
+          id: m.id || m.model || "unknown",
+          name: m.name || m.model || "Unknown Model",
+          brand: m.brand || extractBrandFromModelId(m.id || m.model || ""),
+          consumption: m.usage || m.requests || m.count || 0,
+          percentage: m.percentage || 0
+        }));
+      } else if (data.result.by_model && Array.isArray(data.result.by_model)) {
+        modelUsage = data.result.by_model.map(m => ({
+          id: m.id || m.model || "unknown",
+          name: m.name || m.model || "Unknown Model",
+          brand: m.brand || extractBrandFromModelId(m.id || m.model || ""),
+          consumption: m.usage || m.requests || m.count || 0,
+          percentage: m.percentage || 0
+        }));
       }
     } else if (data.result) {
       // Try direct result access
@@ -106,82 +144,19 @@ export async function fetchCloudflareLimits(env) {
       dailyLimit = data.result.limit || data.result.max || 10000;
     }
     
-    // Try to fetch model-specific usage from Gateway AI logs if not available from analytics
-    if (modelUsage.length === 0) {
-      try {
-        console.log("Trying to fetch model usage from Gateway AI logs");
-        const gatewayEndpoint = `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/gateway/${env.GATEWAY_ID}/analytics`;
-        
-        const gatewayResponse = await fetch(gatewayEndpoint, {
-          method: "GET",
-          headers: {
-            "Authorization": `Bearer ${apiToken}`,
-            "Content-Type": "application/json"
-          }
-        });
-        
-        if (gatewayResponse.ok) {
-          const gatewayData = await gatewayResponse.json();
-          if (gatewayData.success && gatewayData.result) {
-            if (gatewayData.result.models) {
-              modelUsage = gatewayData.result.models;
-            } else if (gatewayData.result.by_model) {
-              modelUsage = gatewayData.result.by_model;
-            }
-          }
-        }
-      } catch (e) {
-        console.log("Failed to fetch Gateway analytics:", e.message);
-      }
+    // Calculate percentages for models
+    if (dailyUsed > 0) {
+      modelUsage = modelUsage.map(m => ({
+        ...m,
+        percentage: Math.round((m.consumption / dailyUsed) * 100)
+      }));
     }
     
     console.log(`Parsed usage: ${dailyUsed}/${dailyLimit}`);
+    console.log(`Model usage:`, JSON.stringify(modelUsage));
     
     // Determine the unit - Cloudflare Workers AI uses "neurons" as the unit
     const unit = "neurons";
-    
-    // If we don't have model usage data, try to fetch it separately
-    if (modelUsage.length === 0) {
-      try {
-        console.log("Trying to fetch model-specific usage data");
-        const modelEndpoints = [
-          `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/analytics/usage?group_by=model`,
-          `https://api.cloudflare.com/client/v4/accounts/${accountId}/analytics/ai/usage?group_by=model`
-        ];
-        
-        for (const endpoint of modelEndpoints) {
-          try {
-            const response = await fetch(endpoint, {
-              method: "GET",
-              headers: {
-                "Authorization": `Bearer ${apiToken}`,
-                "Content-Type": "application/json"
-              }
-            });
-            
-            if (response.ok) {
-              const modelData = await response.json();
-              console.log("Model usage API response:", JSON.stringify(modelData));
-              
-              if (modelData.success && modelData.result) {
-                if (modelData.result.data) {
-                  modelUsage = modelData.result.data;
-                } else if (modelData.result.models) {
-                  modelUsage = modelData.result.models;
-                } else if (Array.isArray(modelData.result)) {
-                  modelUsage = modelData.result;
-                }
-                break;
-              }
-            }
-          } catch (e) {
-            console.log(`Model endpoint ${endpoint} failed:`, e.message);
-          }
-        }
-      } catch (e) {
-        console.log("Failed to fetch model-specific usage:", e.message);
-      }
-    }
     
     const percentage = dailyLimit > 0 ? Math.round((dailyUsed / dailyLimit) * 100) : 0;
     
@@ -206,4 +181,17 @@ export async function fetchCloudflareLimits(env) {
       models: []
     };
   }
+}
+
+// Helper function to extract brand from model ID
+function extractBrandFromModelId(modelId) {
+  if (!modelId) return "Unknown";
+  const withoutPrefix = modelId.replace(/^@cf\//, "");
+  const parts = withoutPrefix.split("/");
+  
+  if (parts.length >= 1) {
+    return parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
+  }
+  
+  return "Unknown";
 }
