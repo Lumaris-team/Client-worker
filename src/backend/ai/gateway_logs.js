@@ -16,25 +16,20 @@ export async function fetchGatewayLogs(env, options = {}) {
   const conversationId = options.conversationId || null;
   
   try {
-    // Use Cloudflare Analytics API to fetch Gateway AI logs
+    // Use Cloudflare AI Gateway logs API to fetch Gateway AI logs
     // This endpoint provides access to AI Gateway request logs
-    let endpoint = `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/gateway/analytics`;
+    let endpoint = `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai-gateway/gateways/${gatewayId}/logs`;
     
     // Add query parameters
     const params = new URLSearchParams();
     
-    // Set time range to last 7 days
-    const now = new Date();
-    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-    params.append('since', sevenDaysAgo.toISOString());
-    params.append('until', now.toISOString());
-    
     // Add pagination
-    params.append('limit', limit);
+    params.append('page', '1');
+    params.append('per_page', limit.toString());
     
     endpoint += `?${params.toString()}`;
     
-    console.log(`Fetching Gateway analytics from: ${endpoint}`);
+    console.log(`Fetching Gateway logs from: ${endpoint}`);
     
     const response = await fetch(endpoint, {
       method: "GET",
