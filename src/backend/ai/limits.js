@@ -109,7 +109,7 @@ export async function fetchCloudflareLimits(env) {
     }
     
     // Convert to array
-    const modelUsage = Array.from(modelMap.entries()).map(([name, consumption]) => ({
+    let modelUsage = Array.from(modelMap.entries()).map(([name, consumption]) => ({
       id: name,
       name: name,
       brand: extractBrandFromModelId(name),
