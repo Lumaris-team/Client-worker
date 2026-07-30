@@ -417,8 +417,6 @@ async function sendMessage(message) {
       conversationName: state.conversationName,
     });
 
-    console.log("Full response from API:", response);
-
     // Remove loading message
     const loadingMessage = chatContainer.querySelector(".chat-message.loading");
     if (loadingMessage) {
@@ -429,14 +427,10 @@ async function sendMessage(message) {
     // aiPost already unwraps .resp if present
     const result = response?.result || response;
     
-    console.log("Extracted result:", result);
-    
     // Always send conversation ID and name in subsequent requests
     // These might be at the top level or inside result
     const conversationId = response?.conversationId || result?.conversationId;
     const conversationName = response?.conversationName || result?.conversationName;
-    
-    console.log("Conversation ID:", conversationId, "Conversation Name:", conversationName);
     
     if (conversationId) {
       state.conversationId = conversationId;
@@ -455,8 +449,6 @@ async function sendMessage(message) {
       }
     } else {
       console.error("Invalid response structure:", response);
-      console.error("Result:", result);
-      console.error("Result.response:", result?.response);
       showError("Failed to get response from AI");
     }
   } catch (error) {
@@ -579,13 +571,13 @@ function toggleSelector() {
   const toggleSelectorBtn = document.getElementById("toggle-selector-btn");
   if (toggleSelectorBtn) {
     toggleSelectorBtn.style.display = "flex";
-    // Sync active state with visibility (grayed out when visible)
+    // Sync active state with visibility (active when visible)
     if (state.selectorVisible) {
-      toggleSelectorBtn.classList.remove("active");
-      toggleSelectorBtn.style.opacity = "0.5";
-    } else {
       toggleSelectorBtn.classList.add("active");
       toggleSelectorBtn.style.opacity = "1";
+    } else {
+      toggleSelectorBtn.classList.remove("active");
+      toggleSelectorBtn.style.opacity = "0.5";
     }
   }
 
@@ -619,12 +611,12 @@ function startNewConversation() {
   state.selectorVisible = true;
   updateSelectorVisibility();
 
-  // Show and gray out toggle-selector button (since selector is visible)
+  // Show and activate toggle-selector button (since selector is visible)
   const toggleSelectorBtn = document.getElementById("toggle-selector-btn");
   if (toggleSelectorBtn) {
     toggleSelectorBtn.style.display = "flex";
-    toggleSelectorBtn.classList.remove("active");
-    toggleSelectorBtn.style.opacity = "0.5";
+    toggleSelectorBtn.classList.add("active");
+    toggleSelectorBtn.style.opacity = "1";
   }
 }
 
@@ -633,11 +625,12 @@ async function showConversations(offset = 0) {
   state.selectorVisible = false;
   updateSelectorVisibility();
 
-  // Show toggle-selector button
+  // Show toggle-selector button (inactive since selector is hidden)
   const toggleSelectorBtn = document.getElementById("toggle-selector-btn");
   if (toggleSelectorBtn) {
     toggleSelectorBtn.style.display = "flex";
     toggleSelectorBtn.classList.remove("active");
+    toggleSelectorBtn.style.opacity = "0.5";
   }
 
   const chatContainer = document.getElementById("chat-container");
@@ -827,11 +820,12 @@ async function loadConversation(conversationId, offset = 0, limit = 100) {
         if (loadMoreBtn) loadMoreBtn.remove();
       }
 
-      // Show toggle-selector button
+      // Show toggle-selector button (inactive since selector is hidden)
       const toggleSelectorBtn = document.getElementById("toggle-selector-btn");
       if (toggleSelectorBtn) {
         toggleSelectorBtn.style.display = "flex";
         toggleSelectorBtn.classList.remove("active");
+        toggleSelectorBtn.style.opacity = "0.5";
       }
     }
   } catch (error) {
@@ -845,11 +839,11 @@ async function showLimits() {
   state.selectorVisible = false;
   updateSelectorVisibility();
 
-  // Deactivate toggle-selector button
+  // Deactivate toggle-selector button (inactive since selector is hidden)
   const toggleSelectorBtn = document.getElementById("toggle-selector-btn");
   if (toggleSelectorBtn) {
     toggleSelectorBtn.classList.remove("active");
-    toggleSelectorBtn.style.display = "none";
+    toggleSelectorBtn.style.opacity = "0.5";
   }
 
   const chatContainer = document.getElementById("chat-container");
