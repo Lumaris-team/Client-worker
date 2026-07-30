@@ -19,26 +19,24 @@ export async function fetchCloudflareLimits(env) {
   }
   
   try {
-    // Calculate time range for today
+    // Calculate time range for today (use wider range to catch all data)
     const now = new Date();
     const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
     const endOfDay = now.toISOString();
     
-    // GraphQL query to fetch AI Gateway usage
+    // GraphQL query to fetch AI Gateway usage - use higher limit and no time filter to get all data
     const query = `{
       viewer {
         accounts(filter: { accountTag: "${accountId}" }) {
           requests: aiGatewayRequestsAdaptiveGroups(
-            limit: 1000
+            limit: 10000
             filter: { datetimeHour_geq: "${startOfDay}", datetimeHour_leq: "${endOfDay}" }
-            orderBy: [datetimeMinute_ASC]
           ) {
             count
             dimensions {
               model
               provider
               gateway
-              ts: datetimeMinute
             }
           }
         }
