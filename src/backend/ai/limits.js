@@ -20,11 +20,21 @@ export async function fetchCloudflareLimits(env) {
   }
   
   try {
-    // Use the correct Cloudflare Workers AI analytics endpoint
+    // Use the correct Cloudflare Workers AI analytics endpoint with proper parameters
+    const now = new Date();
+    const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    
     const endpoints = [
+      // Workers AI analytics with time range
+      `https://api.cloudflare.com/client/v4/accounts/${accountId}/workers_ai_analytics/subrequests?since=${yesterday.toISOString()}&until=${now.toISOString()}`,
+      // AI Gateway analytics
+      `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/gateway/analytics?since=${yesterday.toISOString()}&until=${now.toISOString()}`,
+      // Alternative AI analytics endpoints
+      `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/analytics/usage?since=${yesterday.toISOString()}&until=${now.toISOString()}`,
+      `https://api.cloudflare.com/client/v4/accounts/${accountId}/analytics/ai/usage?since=${yesterday.toISOString()}&until=${now.toISOString()}`,
+      // Try without time parameters as fallback
       `https://api.cloudflare.com/client/v4/accounts/${accountId}/workers_ai_analytics/subrequests`,
-      `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/analytics/usage`,
-      `https://api.cloudflare.com/client/v4/accounts/${accountId}/analytics/ai/usage`
+      `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/gateway/analytics`
     ];
     
     let data = null;
