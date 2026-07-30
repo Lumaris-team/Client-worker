@@ -84,15 +84,20 @@ export async function fetchCloudflareLimits(env) {
     // Filter logs for today and group by model
     const now = new Date();
     const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfDayISO = startOfDay.toISOString();
+    
+    console.log(`Filtering logs from ${startOfDayISO} onwards`);
     
     const modelMap = new Map();
     let totalTokens = 0;
+    let filteredCount = 0;
     
     for (const log of allLogs) {
       const logDate = new Date(log.created_at);
       
       // Only count logs from today
       if (logDate >= startOfDay) {
+        filteredCount++;
         const modelName = log.model || "unknown";
         const tokensIn = log.tokens_in || 0;
         const tokensOut = log.tokens_out || 0;
@@ -107,6 +112,8 @@ export async function fetchCloudflareLimits(env) {
         }
       }
     }
+    
+    console.log(`Filtered ${filteredCount} logs from today`);
     
     // Convert to array
     let modelUsage = Array.from(modelMap.entries()).map(([name, consumption]) => ({
