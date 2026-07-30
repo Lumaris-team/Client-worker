@@ -156,7 +156,7 @@ export default {
         })
       } catch (e) {
         console.error("API ERROR:", e?.stack || e);
-        await sendErrorEmail(env, e, "API");
+        await sendErrorEmail(env, e, `API ${url.pathname}`);
         return new Response(JSON.stringify({
           error: e?.message,
         }), {

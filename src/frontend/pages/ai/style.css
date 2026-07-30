@@ -811,11 +811,52 @@ a {
   gap: 12px;
 }
 
+.bento-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 12px;
+  margin: 12px 0;
+}
+
 .bento-block {
   padding: 26px 28px;
   display: flex;
   flex-direction: column;
   gap: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02)),
+    rgba(10, 18, 17, 0.32);
+  backdrop-filter: blur(20px) saturate(1.2);
+  -webkit-backdrop-filter: blur(20px) saturate(1.2);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.2);
+}
+
+.block-eyebrow {
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0;
+}
+
+.card-value {
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0;
+  color: var(--text);
+}
+
+.card-value[data-tone="accent"] {
+  color: var(--accent);
+}
+
+.card-desc {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin: 0;
 }
 
 .limit-item {

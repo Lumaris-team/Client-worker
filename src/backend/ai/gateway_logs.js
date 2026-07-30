@@ -133,23 +133,33 @@ export async function parseConversationsFromLogs(logs) {
 
 // Get conversations list with pagination
 export async function getConversations(env, limit = 100, offset = 0) {
+  console.log(`Fetching conversations list with limit=${limit}, offset=${offset}`);
+  
   const { logs, error } = await fetchGatewayLogs(env, { limit, offset });
   
   if (error) {
-    console.error("Error fetching conversations:", error);
+    console.error("Error fetching conversations list:", error);
     return { conversations: [], error, hasMore: false };
   }
   
+  console.log(`Fetched ${logs.length} logs for conversations list`);
+  
   const conversations = await parseConversationsFromLogs(logs);
+  
+  console.log(`Parsed ${conversations.length} conversations from logs`);
   
   // Determine if there are more conversations
   const hasMore = conversations.length >= limit;
+  
+  console.log(`Returning ${conversations.length} conversations, hasMore=${hasMore}`);
   
   return { conversations, error: null, hasMore };
 }
 
 // Get specific conversation with messages
 export async function getConversationMessages(env, conversationId, limit = 100, offset = 0) {
+  console.log(`Loading conversation messages for conversation ID: ${conversationId}`);
+  
   const { logs, error } = await fetchGatewayLogs(env, { 
     limit, 
     offset, 
@@ -161,12 +171,20 @@ export async function getConversationMessages(env, conversationId, limit = 100, 
     return { messages: [], error, hasMore: false };
   }
   
+  console.log(`Fetched ${logs.length} logs for conversation ${conversationId}`);
+  
   const conversations = await parseConversationsFromLogs(logs);
+  console.log(`Parsed ${conversations.length} conversations from logs`);
+  
   const conversation = conversations.find(c => c.id === conversationId);
   
   if (!conversation) {
+    console.error(`Conversation ${conversationId} not found in parsed conversations`);
+    console.log("Available conversation IDs:", conversations.map(c => c.id));
     return { messages: [], error: "conversation_not_found", hasMore: false };
   }
+  
+  console.log(`Found conversation with ${conversation.messages.length} messages`);
   
   // Sort messages by timestamp
   const sortedMessages = conversation.messages.sort((a, b) => {
@@ -174,6 +192,8 @@ export async function getConversationMessages(env, conversationId, limit = 100, 
   });
   
   const hasMore = sortedMessages.length >= limit;
+  
+  console.log(`Returning ${sortedMessages.length} sorted messages for conversation ${conversationId}`);
   
   return { messages: sortedMessages, error: null, hasMore };
 }
