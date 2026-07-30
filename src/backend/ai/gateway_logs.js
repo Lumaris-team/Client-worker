@@ -11,7 +11,7 @@ export async function fetchGatewayLogs(env, options = {}) {
     return { logs: [], error: "missing_credentials" };
   }
   
-  const limit = options.limit || 100;
+  const limit = options.limit || 50;
   const offset = options.offset || 0;
   const conversationId = options.conversationId || null;
   
@@ -23,9 +23,10 @@ export async function fetchGatewayLogs(env, options = {}) {
     // Add query parameters
     const params = new URLSearchParams();
     
-    // Add pagination
+    // Add pagination - API limits per_page to 50
+    const perPage = Math.min(limit, 50);
     params.append('page', '1');
-    params.append('per_page', limit.toString());
+    params.append('per_page', perPage.toString());
     
     endpoint += `?${params.toString()}`;
     
