@@ -138,7 +138,7 @@ export default {
         if (url.pathname.startsWith("/api/ed/")) {
           resp = await EDfunction(env, url.pathname.slice("/api/ed/".length), method, headers, body);
         } else if (url.pathname.startsWith("/api/ai/")) {
-          resp = await AIfunction(env, url.pathname.slice("/api/ai/".length), method, headers, body);
+          resp = await AIfunction(env, url.pathname.slice("/api/ai/".length), method, headers, body, request);
         } else if (url.pathname.startsWith("/api/pomodoro/")) {
           resp = await Pomodoro(env, url.pathname.slice("/api/pomodoro/".length), method, body);
         } else if (url.pathname.startsWith("/api/websites/")) {

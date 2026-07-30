@@ -294,7 +294,7 @@ export function estimateConsumption(model) {
   return 5; // Default fallback
 }
 
-export async function AIfunction(env, subpath, method, headers, body) {
+export async function AIfunction(env, subpath, method, headers, body, request) {
   const parts = (subpath || "").split("/").filter(Boolean);
   if (parts.length === 0) return { error: "no action" };
 
