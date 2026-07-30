@@ -20,21 +20,21 @@ export async function fetchCloudflareLimits(env) {
   }
   
   try {
-    // Use the correct Cloudflare Workers AI analytics endpoint with proper parameters
+    // Use standard Cloudflare analytics endpoints
     const now = new Date();
     const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
     
     const endpoints = [
-      // Workers AI analytics with time range
-      `https://api.cloudflare.com/client/v4/accounts/${accountId}/workers_ai_analytics/subrequests?since=${yesterday.toISOString()}&until=${now.toISOString()}`,
-      // AI Gateway analytics
-      `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/gateway/analytics?since=${yesterday.toISOString()}&until=${now.toISOString()}`,
-      // Alternative AI analytics endpoints
-      `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/analytics/usage?since=${yesterday.toISOString()}&until=${now.toISOString()}`,
-      `https://api.cloudflare.com/client/v4/accounts/${accountId}/analytics/ai/usage?since=${yesterday.toISOString()}&until=${now.toISOString()}`,
-      // Try without time parameters as fallback
-      `https://api.cloudflare.com/client/v4/accounts/${accountId}/workers_ai_analytics/subrequests`,
-      `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/gateway/analytics`
+      // Standard analytics endpoint with AI filter
+      `https://api.cloudflare.com/client/v4/accounts/${accountId}/analytics_engine/sql?query=SELECT%20SUM(requests)%20AS%20total_requests%20FROM%20analytics_events%20WHERE%20timestamp%20%3E%20%27${yesterday.toISOString()}%27%20AND%20timestamp%20%3C%20%27${now.toISOString()}%27`,
+      // Try GraphQL analytics endpoint
+      `https://api.cloudflare.com/client/v4/accounts/${accountId}/graphql`,
+      // Workers subrequests analytics
+      `https://api.cloudflare.com/client/v4/accounts/${accountId}/analytics/subrequests?since=${yesterday.toISOString()}&until=${now.toISOString()}`,
+      // Standard AI usage endpoint (the one that returned 500, try without params)
+      `https://api.cloudflare.com/client/v4/accounts/${accountId}/analytics/ai/usage`,
+      // Try with different time format
+      `https://api.cloudflare.com/client/v4/accounts/${accountId}/analytics/ai/usage?since=${Math.floor(yesterday.getTime() / 1000)}&until=${Math.floor(now.getTime() / 1000)}`
     ];
     
     let data = null;
