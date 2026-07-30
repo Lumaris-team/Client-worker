@@ -38,7 +38,7 @@ export async function fetchCloudflareLimits(env) {
     // Fetch logs with pagination to get all data
     let allLogs = [];
     let page = 1;
-    const perPage = 100;
+    const perPage = 50;
     
     while (true) {
       const response = await fetch(
