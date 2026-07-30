@@ -20,21 +20,14 @@ export async function fetchCloudflareLimits(env) {
   }
   
   try {
-    // Use standard Cloudflare analytics endpoints
-    const now = new Date();
-    const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-    
+    // Use Cloudflare Radar AI inference summary endpoint
     const endpoints = [
-      // Standard analytics endpoint with AI filter
-      `https://api.cloudflare.com/client/v4/accounts/${accountId}/analytics_engine/sql?query=SELECT%20SUM(requests)%20AS%20total_requests%20FROM%20analytics_events%20WHERE%20timestamp%20%3E%20%27${yesterday.toISOString()}%27%20AND%20timestamp%20%3C%20%27${now.toISOString()}%27`,
-      // Try GraphQL analytics endpoint
-      `https://api.cloudflare.com/client/v4/accounts/${accountId}/graphql`,
-      // Workers subrequests analytics
-      `https://api.cloudflare.com/client/v4/accounts/${accountId}/analytics/subrequests?since=${yesterday.toISOString()}&until=${now.toISOString()}`,
-      // Standard AI usage endpoint (the one that returned 500, try without params)
-      `https://api.cloudflare.com/client/v4/accounts/${accountId}/analytics/ai/usage`,
-      // Try with different time format
-      `https://api.cloudflare.com/client/v4/accounts/${accountId}/analytics/ai/usage?since=${Math.floor(yesterday.getTime() / 1000)}&until=${Math.floor(now.getTime() / 1000)}`
+      // Radar AI inference summary by model (global, no account ID needed)
+      `https://api.cloudflare.com/client/v4/radar/ai/inference/summary/MODEL?dateRange=1d`,
+      // Try with 7d range
+      `https://api.cloudflare.com/client/v4/radar/ai/inference/summary/MODEL?dateRange=7d`,
+      // Try with specific dates
+      `https://api.cloudflare.com/client/v4/radar/ai/inference/summary/MODEL?dateStart=${new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split('T')[0]}&dateEnd=${new Date().toISOString().split('T')[0]}`
     ];
     
     let data = null;
@@ -42,7 +35,7 @@ export async function fetchCloudflareLimits(env) {
     
     for (const endpoint of endpoints) {
       try {
-        console.log(`Trying Cloudflare API endpoint: ${endpoint}`);
+        console.log(`Trying Cloudflare Radar API endpoint: ${endpoint}`);
         const response = await fetch(endpoint, {
           method: "GET",
           headers: {
@@ -53,7 +46,7 @@ export async function fetchCloudflareLimits(env) {
         
         if (response.ok) {
           data = await response.json();
-          console.log("Cloudflare API response:", JSON.stringify(data));
+          console.log("Cloudflare Radar API response:", JSON.stringify(data));
           break;
         } else {
           console.log(`Endpoint ${endpoint} returned status: ${response.status}`);
@@ -80,78 +73,53 @@ export async function fetchCloudflareLimits(env) {
       };
     }
     
-    // Parse the response - Cloudflare Workers AI analytics returns different format
+    // Parse the response - Cloudflare Radar AI inference format
     let dailyUsed = 0;
     let dailyLimit = 10000;
     let modelUsage = [];
     
-    console.log("Parsing Cloudflare response data:", JSON.stringify(data));
+    console.log("Parsing Cloudflare Radar response data:", JSON.stringify(data));
     
     if (data.success && data.result) {
-      // Workers AI analytics format
-      if (data.result.data && Array.isArray(data.result.data)) {
+      // Radar format: data.result contains the summary data
+      const result = data.result;
+      
+      // Try to extract total usage from different possible structures
+      if (result.data && Array.isArray(result.data)) {
         // Sum up all usage from the data array
-        dailyUsed = data.result.data.reduce((sum, item) => {
-          return sum + (item.requests || item.count || item.usage || 0);
+        dailyUsed = result.data.reduce((sum, item) => {
+          return sum + (item.count || item.value || item.usage || 0);
         }, 0);
         
         // Extract model-specific usage
-        modelUsage = data.result.data.map(item => ({
-          id: item.model || item.model_id || "unknown",
-          name: item.model || item.model_name || item.model_id || "Unknown Model",
-          brand: extractBrandFromModelId(item.model || item.model_id || ""),
-          consumption: item.requests || item.count || item.usage || 0,
+        modelUsage = result.data.map(item => ({
+          id: item.id || item.dimensionValue || item.name || "unknown",
+          name: item.name || item.dimensionValue || item.id || "Unknown Model",
+          brand: extractBrandFromModelId(item.name || item.dimensionValue || item.id || ""),
+          consumption: item.count || item.value || item.usage || 0,
           percentage: 0 // Will calculate later
         }));
-      } 
-      // Alternative format with direct usage fields
-      else if (data.result.usage) {
-        dailyUsed = data.result.usage.requests || data.result.usage.count || data.result.usage.total || 0;
-      } else if (data.result.requests) {
-        dailyUsed = data.result.requests;
-      } else if (data.result.count) {
-        dailyUsed = data.result.count;
-      } else if (data.result.total) {
-        dailyUsed = data.result.total;
+      } else if (result.summary) {
+        dailyUsed = result.summary.total || result.summary.count || 0;
+        if (result.summary.byModel && Array.isArray(result.summary.byModel)) {
+          modelUsage = result.summary.byModel.map(m => ({
+            id: m.id || m.name || "unknown",
+            name: m.name || m.id || "Unknown Model",
+            brand: extractBrandFromModelId(m.name || m.id || ""),
+            consumption: m.count || m.value || 0,
+            percentage: 0
+          }));
+        }
+      } else if (result.count || result.total) {
+        dailyUsed = result.count || result.total || 0;
       }
       
-      // Try to get limit from different possible structures
-      if (data.result.limit) {
-        dailyLimit = data.result.limit.requests || data.result.limit.count || data.result.limit.total || 10000;
-      } else if (data.result.max) {
-        dailyLimit = data.result.max;
-      }
-      
-      // Try to get models from different possible structures
-      if (data.result.models && Array.isArray(data.result.models)) {
-        modelUsage = data.result.models.map(m => ({
-          id: m.id || m.model || "unknown",
-          name: m.name || m.model || "Unknown Model",
-          brand: m.brand || extractBrandFromModelId(m.id || m.model || ""),
-          consumption: m.usage || m.requests || m.count || 0,
-          percentage: m.percentage || 0
-        }));
-      } else if (data.result.model_usage && Array.isArray(data.result.model_usage)) {
-        modelUsage = data.result.model_usage.map(m => ({
-          id: m.id || m.model || "unknown",
-          name: m.name || m.model || "Unknown Model",
-          brand: m.brand || extractBrandFromModelId(m.id || m.model || ""),
-          consumption: m.usage || m.requests || m.count || 0,
-          percentage: m.percentage || 0
-        }));
-      } else if (data.result.by_model && Array.isArray(data.result.by_model)) {
-        modelUsage = data.result.by_model.map(m => ({
-          id: m.id || m.model || "unknown",
-          name: m.name || m.model || "Unknown Model",
-          brand: m.brand || extractBrandFromModelId(m.id || m.model || ""),
-          consumption: m.usage || m.requests || m.count || 0,
-          percentage: m.percentage || 0
-        }));
-      }
+      // Radar doesn't provide account-specific limits, use default
+      dailyLimit = 10000;
     } else if (data.result) {
       // Try direct result access
-      dailyUsed = data.result.requests || data.result.count || data.result.total || 0;
-      dailyLimit = data.result.limit || data.result.max || 10000;
+      dailyUsed = data.result.count || data.result.total || data.result.usage || 0;
+      dailyLimit = 10000;
     }
     
     // Calculate percentages for models
