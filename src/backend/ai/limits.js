@@ -1,9 +1,10 @@
-// Using Cloudflare AI Gateway GraphQL API for usage analytics
+// Using Cloudflare AI Gateway logs API for token usage analytics
 
-// Fetch AI usage limits from Cloudflare AI Gateway GraphQL API
+// Fetch AI usage limits from Cloudflare AI Gateway logs API
 export async function fetchCloudflareLimits(env) {
   const accountId = env.CLOUDFLARE_ACCOUNT_ID;
   const apiToken = env.CLOUDFLARE_API_TOKEN;
+  const gatewayId = env.GATEWAY_ID;
   
   if (!accountId || !apiToken) {
     console.log("Cloudflare credentials not configured, returning mock data");
@@ -18,111 +19,122 @@ export async function fetchCloudflareLimits(env) {
     };
   }
   
-  try {
-    // Calculate time range for today (use wider range to catch all data)
-    const now = new Date();
-    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
-    const endOfDay = now.toISOString();
-    
-    // GraphQL query to fetch AI Gateway usage - use higher limit and no time filter to get all data
-    const query = `{
-      viewer {
-        accounts(filter: { accountTag: "${accountId}" }) {
-          requests: aiGatewayRequestsAdaptiveGroups(
-            limit: 10000
-            filter: { datetimeHour_geq: "${startOfDay}", datetimeHour_leq: "${endOfDay}" }
-          ) {
-            count
-            dimensions {
-              model
-              provider
-              gateway
-            }
-          }
-        }
-      }
-    }`;
-    
-    console.log("Fetching AI Gateway analytics via GraphQL");
-    
-    const response = await fetch("https://api.cloudflare.com/client/v4/graphql", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${apiToken}`,
-        "Content-Type": "application/json"
+  if (!gatewayId) {
+    console.log("Gateway ID not configured, returning mock data");
+    return {
+      daily: {
+        used: 0,
+        limit: 10000,
+        percentage: 0,
+        unit: "neurons"
       },
-      body: JSON.stringify({ query })
-    });
+      models: []
+    };
+  }
+  
+  try {
+    console.log("Fetching AI Gateway logs for token usage");
     
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("GraphQL API error:", response.status, errorText);
-      return {
-        daily: {
-          used: 0,
-          limit: 10000,
-          percentage: 0,
-          unit: "neurons"
-        },
-        models: []
-      };
-    }
+    // Fetch logs with pagination to get all data
+    let allLogs = [];
+    let page = 1;
+    const perPage = 100;
     
-    const data = await response.json();
-    console.log("GraphQL response:", JSON.stringify(data));
-    
-    let dailyUsed = 0;
-    let modelUsage = [];
-    
-    // Parse GraphQL response
-    if (data.data && data.data.viewer && data.data.viewer.accounts && data.data.viewer.accounts[0]) {
-      const account = data.data.viewer.accounts[0];
-      if (account.requests && Array.isArray(account.requests)) {
-        // Group by model
-        const modelMap = new Map();
-        
-        for (const request of account.requests) {
-          const modelName = request.dimensions.model || "unknown";
-          const count = request.count || 0;
-          
-          dailyUsed += count;
-          
-          if (modelMap.has(modelName)) {
-            modelMap.set(modelName, modelMap.get(modelName) + count);
-          } else {
-            modelMap.set(modelName, count);
+    while (true) {
+      const response = await fetch(
+        `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai-gateway/gateways/${gatewayId}/logs?page=${page}&per_page=${perPage}`,
+        {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${apiToken}`,
+            "Content-Type": "application/json"
           }
         }
-        
-        // Convert to array
-        modelUsage = Array.from(modelMap.entries()).map(([name, consumption]) => ({
-          id: name,
-          name: name,
-          brand: extractBrandFromModelId(name),
-          consumption: consumption,
-          percentage: 0
-        }));
+      );
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("AI Gateway logs API error:", response.status, errorText);
+        break;
+      }
+      
+      const data = await response.json();
+      
+      if (!data.success || !data.result || data.result.length === 0) {
+        break;
+      }
+      
+      allLogs = allLogs.concat(data.result);
+      
+      // Check if there are more pages
+      if (data.result.length < perPage) {
+        break;
+      }
+      
+      page++;
+      
+      // Safety limit to avoid infinite loops
+      if (page > 100) {
+        break;
       }
     }
+    
+    console.log(`Fetched ${allLogs.length} log entries`);
+    
+    // Filter logs for today and group by model
+    const now = new Date();
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    const modelMap = new Map();
+    let totalTokens = 0;
+    
+    for (const log of allLogs) {
+      const logDate = new Date(log.created_at);
+      
+      // Only count logs from today
+      if (logDate >= startOfDay) {
+        const modelName = log.model || "unknown";
+        const tokensIn = log.tokens_in || 0;
+        const tokensOut = log.tokens_out || 0;
+        const totalTokensForRequest = tokensIn + tokensOut;
+        
+        totalTokens += totalTokensForRequest;
+        
+        if (modelMap.has(modelName)) {
+          modelMap.set(modelName, modelMap.get(modelName) + totalTokensForRequest);
+        } else {
+          modelMap.set(modelName, totalTokensForRequest);
+        }
+      }
+    }
+    
+    // Convert to array
+    const modelUsage = Array.from(modelMap.entries()).map(([name, consumption]) => ({
+      id: name,
+      name: name,
+      brand: extractBrandFromModelId(name),
+      consumption: consumption,
+      percentage: 0
+    }));
     
     // Calculate percentages
-    if (dailyUsed > 0) {
+    if (totalTokens > 0) {
       modelUsage = modelUsage.map(m => ({
         ...m,
-        percentage: Math.round((m.consumption / dailyUsed) * 100)
+        percentage: Math.round((m.consumption / totalTokens) * 100)
       }));
     }
     
     // Default limit (you can adjust this based on your Cloudflare plan)
     const dailyLimit = 10000;
-    const percentage = dailyLimit > 0 ? Math.round((dailyUsed / dailyLimit) * 100) : 0;
+    const percentage = dailyLimit > 0 ? Math.round((totalTokens / dailyLimit) * 100) : 0;
     
-    console.log(`Daily usage: ${dailyUsed}/${dailyLimit} requests`);
+    console.log(`Daily token usage: ${totalTokens}/${dailyLimit} tokens`);
     console.log(`Model usage:`, JSON.stringify(modelUsage));
     
     return {
       daily: {
-        used: dailyUsed,
+        used: totalTokens,
         limit: dailyLimit,
         percentage: percentage,
         unit: "neurons"
@@ -130,7 +142,7 @@ export async function fetchCloudflareLimits(env) {
       models: modelUsage
     };
   } catch (error) {
-    console.error("Failed to fetch AI usage from GraphQL:", error);
+    console.error("Failed to fetch AI usage from logs API:", error);
     return {
       daily: {
         used: 0,
