@@ -387,23 +387,6 @@ export async function AIfunction(env, subpath, method, headers, body) {
     return resp;
   }
 
-  const category = parts[0];
-  const action = parts[1] || "ask";
-  // Map frontend category names to backend category names
-  const mappedCategory = CATEGORY_ALIASES[category] || category;
-  const fn = CATEGORIES[mappedCategory];
-  if (!fn) return { error: "unknown category" };
-
-  if (action === "ask" && method === "POST") {
-    const model = body?.model || env.DEFAULT_AI_MODEL;
-    if (!model) return { error: "No model specified and no default model configured" };
-    // Skip monthly limit check to reduce subrequests
-    // call category function with mapped category name
-    const resp = await fn(env, model, body || {});
-    return resp;
-  }
-
-
   if (parts[0] === "conversations" && method === "GET") {
     // Get conversations from Gateway logs with pagination
     const limit = parseInt(new URL(request.url || "").searchParams.get("limit") || "100");
@@ -426,38 +409,40 @@ export async function AIfunction(env, subpath, method, headers, body) {
     const conversationId = parts[1];
     const limit = parseInt(new URL(request.url || "").searchParams.get("limit") || "100");
     const offset = parseInt(new URL(request.url || "").searchParams.get("offset") || "0");
-    
     const { messages, error, hasMore } = await getConversationMessages(env, conversationId, limit, offset);
-    
-    return {
-      conversationId,
-      messages,
-      hasMore,
-      error
-    };
+    return { conversationId, messages, hasMore, error };
   }
 
   if (parts[0] === "limits" && method === "GET") {
-    // Fetch limits from Cloudflare
     const limits = await fetchCloudflareLimits(env);
-    
-    // Also include model consumption info
     const cloudflareModels = await fetchCloudflareModels(env);
-    const modelsWithConsumption = cloudflareModels
-      .filter(model => !model.deprecated) // Filter out deprecated models
-      .map(model => ({
-      id: model.id,
-      name: model.name,
-      brand: model.brand,
-      consumption: estimateConsumption(model),
-      consumptionPercentage: Math.min(100, Math.round((estimateConsumption(model) / 20) * 100))
+    const modelsWithConsumption = cloudflareModels.filter(m => !m.deprecated).map(m => ({
+      id: m.id,
+      name: m.name,
+      brand: m.brand,
+      consumption: estimateConsumption(m),
+      consumptionPercentage: Math.min(100, Math.round((estimateConsumption(m) / 20) * 100))
     }));
-    
-    return {
-      ...limits,
-      models: modelsWithConsumption
-    };
+    return { ...limits, models: modelsWithConsumption };
+  }
+
+  const category = parts[0];
+  const action = parts[1] || "ask";
+  // Map frontend category names to backend category names
+  const mappedCategory = CATEGORY_ALIASES[category] || category;
+  const fn = CATEGORIES[mappedCategory];
+  if (!fn) return { error: "unknown category" };
+
+  if (action === "ask" && method === "POST") {
+    const model = body?.model || env.DEFAULT_AI_MODEL;
+    if (!model) return { error: "No model specified and no default model configured" };
+    // Skip monthly limit check to reduce subrequests
+    // call category function with mapped category name
+    const resp = await fn(env, model, body || {});
+    return resp;
   }
 
   return { error: "unsupported ai action" };
 }
+
+// ... (rest of the code remains the same)
