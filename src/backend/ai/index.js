@@ -415,13 +415,13 @@ export async function AIfunction(env, subpath, method, headers, body) {
 
   if (parts[0] === "limits" && method === "GET") {
     const limits = await fetchCloudflareLimits(env);
-    const cloudflareModels = await fetchCloudflareModels(env);
-    const modelsWithConsumption = cloudflareModels.filter(m => !m.deprecated).map(m => ({
-      id: m.id,
-      name: m.name,
-      brand: m.brand,
-      consumption: estimateConsumption(m),
-      consumptionPercentage: Math.min(100, Math.round((estimateConsumption(m) / 20) * 100))
+    // Use the model usage data from the limits API instead of estimating
+    const modelsWithConsumption = (limits.models || []).map(m => ({
+      id: m.id || m.model,
+      name: m.name || m.model,
+      brand: m.brand || extractBrand(m.id || m.model),
+      consumption: m.usage || m.consumption || 0,
+      consumptionPercentage: m.percentage || 0
     }));
     return { ...limits, models: modelsWithConsumption };
   }

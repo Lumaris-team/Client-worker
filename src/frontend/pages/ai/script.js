@@ -618,6 +618,12 @@ function startNewConversation() {
     toggleSelectorBtn.classList.add("active");
     toggleSelectorBtn.style.opacity = "1";
   }
+
+  // Show prompt bar
+  const promptBar = document.querySelector(".ai-prompt-bar");
+  if (promptBar) {
+    promptBar.style.display = "flex";
+  }
 }
 
 async function showConversations(offset = 0) {
@@ -631,6 +637,12 @@ async function showConversations(offset = 0) {
     toggleSelectorBtn.style.display = "flex";
     toggleSelectorBtn.classList.remove("active");
     toggleSelectorBtn.style.opacity = "0.5";
+  }
+
+  // Show prompt bar
+  const promptBar = document.querySelector(".ai-prompt-bar");
+  if (promptBar) {
+    promptBar.style.display = "flex";
   }
 
   const chatContainer = document.getElementById("chat-container");
@@ -827,6 +839,12 @@ async function loadConversation(conversationId, offset = 0, limit = 100) {
         toggleSelectorBtn.classList.remove("active");
         toggleSelectorBtn.style.opacity = "0.5";
       }
+
+      // Show prompt bar
+      const promptBar = document.querySelector(".ai-prompt-bar");
+      if (promptBar) {
+        promptBar.style.display = "flex";
+      }
     }
   } catch (error) {
     console.error("Failed to load conversation:", error);
@@ -839,11 +857,16 @@ async function showLimits() {
   state.selectorVisible = false;
   updateSelectorVisibility();
 
-  // Deactivate toggle-selector button (inactive since selector is hidden)
+  // Hide toggle-selector button
   const toggleSelectorBtn = document.getElementById("toggle-selector-btn");
   if (toggleSelectorBtn) {
-    toggleSelectorBtn.classList.remove("active");
-    toggleSelectorBtn.style.opacity = "0.5";
+    toggleSelectorBtn.style.display = "none";
+  }
+
+  // Hide prompt bar
+  const promptBar = document.querySelector(".ai-prompt-bar");
+  if (promptBar) {
+    promptBar.style.display = "none";
   }
 
   const chatContainer = document.getElementById("chat-container");
@@ -872,17 +895,18 @@ async function showLimits() {
   }
 
   // Display limits
+  const unit = limits.daily?.unit || "neurons";
   const limitsHtml = `
     <div class="bento-grid">
       <article class="bento-block limit-item" style="grid-column: span 4;">
         <p class="block-eyebrow">Daily Usage</p>
         <strong class="card-value">${limits.daily?.used || 0}</strong>
-        <p class="card-desc">Requests used today</p>
+        <p class="card-desc">${unit} used today</p>
       </article>
       <article class="bento-block limit-item" style="grid-column: span 4;">
         <p class="block-eyebrow">Limit</p>
         <strong class="card-value">${limits.daily?.limit || 10000}</strong>
-        <p class="card-desc">Daily request limit</p>
+        <p class="card-desc">Daily ${unit} limit</p>
       </article>
       <article class="bento-block limit-item" style="grid-column: span 4;">
         <p class="block-eyebrow">Percentage</p>
@@ -892,12 +916,13 @@ async function showLimits() {
     </div>
     <p class="block-eyebrow" style="margin-top: 16px;">Model Consumption</p>
     <div class="models-info">
-      ${(limits.models || []).map(model => `
-        <article class="bento-block model-item">
-          <span class="model-name">${escapeHtml(model.name)}</span>
-          <span class="model-consumption">${model.consumptionPercentage}%</span>
+      ${(limits.models || []).filter(m => m.consumption > 0).map(model => `
+        <article class="bento-block model-item" style="grid-column: span 12; display: flex; justify-content: space-between; align-items: center; padding: 16px;">
+          <span class="model-name" style="font-weight: 500;">${escapeHtml(model.name)}</span>
+          <span class="model-consumption" style="font-weight: 600;">${model.consumption.toLocaleString()} ${unit}</span>
         </article>
       `).join("")}
+      ${(limits.models || []).filter(m => m.consumption > 0).length === 0 ? '<p style="color: var(--muted);">No models used today.</p>' : ''}
     </div>
   `;
 

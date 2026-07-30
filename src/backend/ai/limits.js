@@ -12,7 +12,8 @@ export async function fetchCloudflareLimits(env) {
       daily: {
         used: 0,
         limit: 10000,
-        percentage: 0
+        percentage: 0,
+        unit: "neurons"
       },
       models: []
     };
@@ -60,7 +61,8 @@ export async function fetchCloudflareLimits(env) {
         daily: {
           used: 0,
           limit: 10000,
-          percentage: 0
+          percentage: 0,
+          unit: "neurons"
         },
         models: []
       };
@@ -135,6 +137,9 @@ export async function fetchCloudflareLimits(env) {
     
     console.log(`Parsed usage: ${dailyUsed}/${dailyLimit}`);
     
+    // Determine the unit - Cloudflare Workers AI uses "neurons" as the unit
+    const unit = "neurons";
+    
     // If we don't have model usage data, try to fetch it separately
     if (modelUsage.length === 0) {
       try {
@@ -184,7 +189,8 @@ export async function fetchCloudflareLimits(env) {
       daily: {
         used: dailyUsed,
         limit: dailyLimit,
-        percentage: percentage
+        percentage: percentage,
+        unit: unit
       },
       models: modelUsage
     };
@@ -194,7 +200,8 @@ export async function fetchCloudflareLimits(env) {
       daily: {
         used: 0,
         limit: 10000,
-        percentage: 0
+        percentage: 0,
+        unit: "neurons"
       },
       models: []
     };
