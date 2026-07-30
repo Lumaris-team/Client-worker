@@ -65,6 +65,7 @@ export async function fetchCloudflareLimits(env) {
       }
       
       allLogs = allLogs.concat(data.result);
+      console.log(`Page ${page}: fetched ${data.result.length} logs, total so far: ${allLogs.length}`);
       
       // Check if there are more pages
       if (data.result.length < perPage) {
@@ -75,6 +76,7 @@ export async function fetchCloudflareLimits(env) {
       
       // Safety limit to avoid infinite loops
       if (page > 100) {
+        console.log("Reached safety limit of 100 pages");
         break;
       }
     }
