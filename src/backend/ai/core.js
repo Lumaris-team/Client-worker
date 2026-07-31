@@ -79,12 +79,15 @@ export async function callModel(env, model, prompt, options = {}, gatewayMetadat
           console.log(`Saving assistant response to Gateway logs - conversationId: ${conversationId}, conversationName: ${gatewayMetadata?.gateway?.metadata?.conversationName}`);
           // Use a very lightweight model call just to log the assistant response with metadata
           // This is necessary because AI Gateway only logs actual AI calls
-          await env.AI.run("@cf/meta/llama-3.2-3b-instruct", {
+          // IMPORTANT: Do this in background without await to avoid blocking the main response
+          env.AI.run("@cf/meta/llama-3.2-3b-instruct", {
             messages: [{ role: "assistant", content: "ACK" }]
-          }, assistantMetadata);
-          console.log("Saved assistant response to Gateway logs");
+          }, assistantMetadata).catch(err => {
+            console.error("Background save of assistant response failed (non-critical):", err.message);
+          });
+          console.log("Initiated assistant response save to Gateway logs (background)");
         } catch (error) {
-          console.error("Failed to save assistant response to Gateway logs (non-critical):", error.message);
+          console.error("Failed to prepare assistant response save (non-critical):", error.message);
           // Don't fail the main request if this fails
         }
       }
