@@ -206,6 +206,8 @@ async function fetchFromGatewayLogs(accountId, apiToken, gatewayId) {
         const tokensOut = log.tokens_out || 0;
         const totalTokensForRequest = tokensIn + tokensOut;
         
+        console.log(`Log: model=${modelName}, tokens_in=${tokensIn}, tokens_out=${tokensOut}, total=${totalTokensForRequest}`);
+        
         totalTokens += totalTokensForRequest;
         
         if (modelMap.has(modelName)) {
