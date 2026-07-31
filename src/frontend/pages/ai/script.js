@@ -314,7 +314,6 @@ function updateConsumptionDisplay() {
       <div class="consumption-bar-container">
         <div class="consumption-bar-fill" style="width: ${percentage}%; background: ${barColor};"></div>
       </div>
-      <span style="margin-left: 8px; font-size: 0.85rem; color: var(--muted);">${percentage}%</span>
     `;
   }
 }

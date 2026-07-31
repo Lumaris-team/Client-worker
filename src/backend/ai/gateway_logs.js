@@ -105,6 +105,7 @@ export async function parseConversationsFromLogs(logs, env = null) {
         continue;
       }
       
+      const logId = log.id || log.event_id || null;
       const metadata = log?.gateway?.metadata || log?.metadata || {};
       const conversationId = metadata.conversationId;
       const conversationName = metadata.conversationName;
