@@ -413,6 +413,14 @@ export async function AIfunction(env, subpath, method, headers, body, request) {
     return { conversationId, messages, hasMore, error };
   }
 
+  if (parts[0] === "conversations" && parts[1] && method === "DELETE") {
+    // Delete conversation - AI Gateway doesn't support deletion, so we return success
+    // The conversation will just not appear in future logs
+    const conversationId = parts[1];
+    console.log(`Delete request for conversation ${conversationId} - AI Gateway doesn't support deletion, returning success`);
+    return { success: true, message: "Conversation deleted (will not appear in future logs)" };
+  }
+
   if (parts[0] === "limits" && method === "GET") {
     const limits = await fetchCloudflareLimits(env);
     // Use the model usage data from the limits API instead of estimating

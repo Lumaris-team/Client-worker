@@ -686,19 +686,25 @@ async function showConversations(offset = 0) {
     return;
   }
 
-  // Display conversations
+  // Display conversations as rows
   const conversationsHtml = conversations.map(conv => `
-    <div class="chat-message ai">
-      <div class="chat-bubble">
-        <strong>${escapeHtml(conv.name || "Untitled")}</strong>
-        <p style="margin: 4px 0 0; font-size: 0.85rem; color: var(--muted);">
-          ${new Date(conv.lastPromptDate).toLocaleDateString()}
-        </p>
+    <div class="conversation-row">
+      <div class="conversation-info">
+        <strong class="conversation-title">${escapeHtml(conv.name || "Untitled")}</strong>
+        <span class="conversation-date">${new Date(conv.lastPromptDate).toLocaleDateString()}</span>
+      </div>
+      <div class="conversation-actions">
         <button 
-          style="margin-top: 8px; padding: 6px 12px; background: var(--accent); border: none; border-radius: 6px; color: #1a1a1a; cursor: pointer; font-size: 0.85rem;"
+          class="conversation-btn load-btn"
           data-load-conv="${conv.id}"
         >
           Load
+        </button>
+        <button 
+          class="conversation-btn delete-btn"
+          data-delete-conv="${conv.id}"
+        >
+          Delete
         </button>
       </div>
     </div>
@@ -711,6 +717,14 @@ async function showConversations(offset = 0) {
     btn.addEventListener('click', () => {
       const convId = btn.dataset.loadConv;
       loadConversation(convId);
+    });
+  });
+
+  // Add event listeners to delete buttons
+  chatContainer.querySelectorAll('[data-delete-conv]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const convId = btn.dataset.deleteConv;
+      deleteConversation(convId);
     });
   });
 
@@ -851,6 +865,33 @@ async function loadConversation(conversationId, offset = 0, limit = 100) {
   } catch (error) {
     console.error("Failed to load conversation:", error);
     showError("Failed to load conversation");
+  }
+}
+
+async function deleteConversation(conversationId) {
+  if (!confirm("Are you sure you want to delete this conversation?")) {
+    return;
+  }
+
+  try {
+    const requestName = `AI DELETE conversations/${conversationId}`;
+    const res = await authedFetch(`${AI_BASE}/conversations/${conversationId}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Request-Name": requestName,
+      },
+    });
+
+    if (res.ok) {
+      // Refresh the conversations list
+      showConversations(0);
+    } else {
+      showError("Failed to delete conversation");
+    }
+  } catch (error) {
+    console.error("Failed to delete conversation:", error);
+    showError("Failed to delete conversation");
   }
 }
 
