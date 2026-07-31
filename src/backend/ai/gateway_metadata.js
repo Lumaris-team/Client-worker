@@ -21,8 +21,8 @@ async function generateConversationTitle(env, prompt, model = null) {
   }
   
   try {
-    // Use provided model or fallback to Llama 3.1 8B
-    const titleModel = model || "@cf/meta/llama-3.1-8b-instruct";
+    // Use provided model or fallback to Llama 3.2 3B (lighter and currently supported)
+    const titleModel = model || "@cf/meta/llama-3.2-3b-instruct";
     console.log(`Generating title using model: ${titleModel}`);
     
     const response = await env.AI.run(titleModel, {

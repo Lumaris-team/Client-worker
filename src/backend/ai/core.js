@@ -1,8 +1,6 @@
 // Using Cloudflare Gateway AI for storage via logs API
 // Storage functions removed - now using Gateway AI logs for conversation persistence
 
-import { saveAssistantResponse } from "./gateway_logs.js";
-
 // Simple model caller using Cloudflare Workers AI
 export async function callModel(env, model, prompt, options = {}, gatewayMetadataFn = null) {
   const message = typeof prompt === "string" ? prompt : JSON.stringify(prompt);
@@ -74,9 +72,20 @@ export async function callModel(env, model, prompt, options = {}, gatewayMetadat
         }
       }
       
-      // Save assistant response to KV
-      if (conversationId) {
-        await saveAssistantResponse(env, conversationId, content);
+      // Save assistant response to Gateway logs with metadata using a lightweight model call
+      if (conversationId && gatewayMetadataFn && typeof gatewayMetadataFn === 'function') {
+        try {
+          const assistantMetadata = await gatewayMetadataFn(env, conversationId, gatewayMetadata?.gateway?.metadata?.conversationName, content, "assistant");
+          // Use a very lightweight model call just to log the assistant response with metadata
+          // This is necessary because AI Gateway only logs actual AI calls
+          await env.AI.run("@cf/meta/llama-3.2-3b-instruct", {
+            messages: [{ role: "assistant", content: "ACK" }]
+          }, assistantMetadata);
+          console.log("Saved assistant response to Gateway logs");
+        } catch (error) {
+          console.error("Failed to save assistant response to Gateway logs (non-critical):", error.message);
+          // Don't fail the main request if this fails
+        }
       }
       
       // Build result object
@@ -87,12 +96,6 @@ export async function callModel(env, model, prompt, options = {}, gatewayMetadat
         raw: response,
         gatewayMetadata: gatewayMetadata?.gateway?.metadata || null,
       };
-      
-      // For image models, mark the response as image
-      if (isImageModel) {
-        result.isImage = true;
-      }
-      
       
       return result;
     } catch (error) {

@@ -4,7 +4,7 @@ import { reasonning } from "./reasonning.js";
 import { search_web } from "./search_web.js";
 import { notes_remarks } from "./notes_remarks.js";
 import { fetchCloudflareLimits } from "./limits.js";
-import { getConversations, getConversationMessages, addDeletedConversation, saveAssistantResponse } from "./gateway_logs.js";
+import { getConversations, getConversationMessages, addDeletedConversation } from "./gateway_logs.js";
 import { getGatewayMetadata } from "./gateway_metadata.js";
 
 const CATEGORIES = {

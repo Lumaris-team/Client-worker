@@ -25,42 +25,6 @@ export async function addDeletedConversation(env, conversationId) {
   }
 }
 
-// Save assistant response to KV
-export async function saveAssistantResponse(env, conversationId, content, timestamp = null) {
-  try {
-    const msgTimestamp = timestamp || new Date().toISOString();
-    const messageKey = `assistant:${conversationId}:${Date.now()}`;
-    const message = {
-      role: "assistant",
-      content,
-      timestamp: msgTimestamp
-    };
-    await env.DELETED_CONVERSATIONS.put(messageKey, JSON.stringify(message));
-    console.log(`Saved assistant response to KV: ${messageKey}`);
-  } catch (error) {
-    console.error("Failed to save assistant response to KV:", error);
-  }
-}
-
-// Get all assistant responses for a conversation from KV
-export async function getAssistantResponsesFromKV(env, conversationId) {
-  try {
-    const list = await env.DELETED_CONVERSATIONS.list({ prefix: `assistant:${conversationId}:` });
-    const messages = [];
-    for (const key of list.keys) {
-      const value = await env.DELETED_CONVERSATIONS.get(key.name);
-      if (value) {
-        messages.push(JSON.parse(value));
-      }
-    }
-    messages.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-    return messages;
-  } catch (error) {
-    console.error("Failed to get assistant responses from KV:", error);
-    return [];
-  }
-}
-
 // Fetch Gateway AI logs from Cloudflare API
 export async function fetchGatewayLogs(env, options = {}) {
   const accountId = env.CLOUDFLARE_ACCOUNT_ID;
@@ -260,8 +224,8 @@ export async function getConversationMessages(env, conversationId, limit = 100, 
     return { messages: [], error: "conversation_deleted", hasMore: false };
   }
   
-  // Get user messages from logs with metadata
-  const { logs } = await fetchGatewayLogs(env, { limit: 1000, offset: 0 });
+  // Get messages from logs with metadata (increase limit to get more logs)
+  const { logs } = await fetchGatewayLogs(env, { limit: 5000, offset: 0 });
   const conversationLogs = logs.filter(log => {
     const metadata = log?.gateway?.metadata || log?.metadata || {};
     return metadata.conversationId === conversationId;
@@ -277,17 +241,16 @@ export async function getConversationMessages(env, conversationId, limit = 100, 
   }
   
   let messages = conversation.messages || [];
-  console.log(`Found ${messages.length} user messages in logs for conversation ${conversationId}`);
+  console.log(`Found ${messages.length} messages in logs for conversation ${conversationId}`);
   
-  // Get assistant responses from KV
-  const assistantResponses = await getAssistantResponsesFromKV(env, conversationId);
-  console.log(`Found ${assistantResponses.length} assistant responses in KV for conversation ${conversationId}`);
+  // Sort messages by timestamp (more robust parsing)
+  messages.sort((a, b) => {
+    const timeA = new Date(a.timestamp).getTime() || 0;
+    const timeB = new Date(b.timestamp).getTime() || 0;
+    return timeA - timeB;
+  });
   
-  // Merge user messages and assistant responses
-  messages = [...messages, ...assistantResponses];
-  
-  // Sort messages by timestamp
-  messages.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+  console.log("Messages after sorting:", messages.map(m => ({ role: m.role, timestamp: m.timestamp })));
   
   // Apply pagination
   const paginatedMessages = messages.slice(offset, offset + limit);
