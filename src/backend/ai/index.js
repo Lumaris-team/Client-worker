@@ -5,6 +5,7 @@ import { search_web } from "./search_web.js";
 import { notes_remarks } from "./notes_remarks.js";
 import { fetchCloudflareLimits } from "./limits.js";
 import { getConversations, getConversationMessages, addDeletedConversation } from "./gateway_logs.js";
+import { getGatewayMetadata } from "./gateway_metadata.js";
 
 const CATEGORIES = {
   basic,
@@ -389,6 +390,19 @@ export async function AIfunction(env, subpath, method, headers, body, request) {
       conversationId,
       conversationName
     });
+    
+    // Save assistant response to Gateway logs with metadata
+    if (resp && resp.result && conversationId) {
+      try {
+        const assistantMetadata = await getGatewayMetadata(env, conversationId, conversationName, resp.result.response, "assistant");
+        await env.AI.run(model, {
+          messages: [{ role: "assistant", content: resp.result.response }]
+        }, assistantMetadata);
+        console.log("Saved assistant response to Gateway logs");
+      } catch (error) {
+        console.error("Failed to save assistant response to Gateway logs:", error);
+      }
+    }
     
     return resp;
   }

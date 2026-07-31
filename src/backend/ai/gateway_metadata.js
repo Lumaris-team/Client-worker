@@ -63,12 +63,14 @@ async function generateConversationTitle(env, prompt) {
 }
 
 // Main function to generate gateway metadata
-export async function getGatewayMetadata(env, conversationId, conversationName, prompt) {
+export async function getGatewayMetadata(env, conversationId, conversationName, prompt, role = "user") {
   try {
     const metadata = {
       conversationId: null,
       conversationName: null,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      messageRole: role,
+      messageContent: prompt
     };
     
     // Check if both conversationId and conversationName are present
@@ -104,7 +106,9 @@ export async function getGatewayMetadata(env, conversationId, conversationName, 
         metadata: {
           conversationId: generateConversationId(),
           conversationName: "New Conversation",
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          messageRole: role,
+          messageContent: prompt
         }
       }
     };

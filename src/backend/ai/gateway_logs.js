@@ -103,7 +103,9 @@ export async function parseConversationsFromLogs(logs, env = null) {
       const metadata = log?.gateway?.metadata || log?.metadata || {};
       const conversationId = metadata.conversationId;
       const conversationName = metadata.conversationName;
-      const timestamp = log.timestamp || new Date().toISOString();
+      const timestamp = log.timestamp || log.created_at || new Date().toISOString();
+      const messageRole = metadata.messageRole;
+      const messageContent = metadata.messageContent;
       
       if (!conversationId) continue;
       
@@ -131,22 +133,11 @@ export async function parseConversationsFromLogs(logs, env = null) {
       
       conversation.messageCount++;
       
-      // Extract message content if available
-      const request = log?.request || {};
-      const response = log?.response || {};
-      
-      if (request?.prompt || request?.messages) {
+      // Extract message from metadata if available
+      if (messageRole && messageContent) {
         conversation.messages.push({
-          role: "user",
-          content: request.prompt || (request.messages?.[0]?.content || ""),
-          timestamp: timestamp
-        });
-      }
-      
-      if (response?.response || response?.output) {
-        conversation.messages.push({
-          role: "assistant",
-          content: response.response || response.output || "",
+          role: messageRole,
+          content: messageContent,
           timestamp: timestamp
         });
       }
@@ -200,55 +191,31 @@ export async function getConversationMessages(env, conversationId, limit = 100, 
     return { messages: [], error: "conversation_deleted", hasMore: false };
   }
   
-  // Fetch all logs (API doesn't support filtering by conversationId)
-  // We'll filter on the server side
-  const { logs, error } = await fetchGatewayLogs(env, { 
-    limit: 1000, // Fetch more logs to find the conversation
-    offset: 0
-  });
-  
-  if (error) {
-    console.error("Error fetching conversation messages:", error);
-    return { messages: [], error, hasMore: false };
-  }
-  
-  console.log(`Fetched ${logs.length} total logs, filtering for conversation ${conversationId}`);
-  
-  // Filter logs for this specific conversation
+  // Get messages from logs with metadata
+  const { logs } = await fetchGatewayLogs(env, { limit: 1000, offset: 0 });
   const conversationLogs = logs.filter(log => {
     const metadata = log?.gateway?.metadata || log?.metadata || {};
     return metadata.conversationId === conversationId;
   });
-  
   console.log(`Found ${conversationLogs.length} logs for conversation ${conversationId}`);
   
-  // Log structure of first few logs to debug
-  if (conversationLogs.length > 0) {
-    console.log("Sample log structure:", JSON.stringify(conversationLogs[0], null, 2));
-  }
-  
-  // Parse only the logs for this conversation
   const conversations = await parseConversationsFromLogs(conversationLogs, env);
-  console.log(`Parsed ${conversations.length} conversations from filtered logs`);
-  
   const conversation = conversations.find(c => c.id === conversationId);
   
   if (!conversation) {
-    console.error(`Conversation ${conversationId} not found in parsed conversations`);
-    console.log("Available conversation IDs:", conversations.map(c => c.id));
+    console.log(`No conversation found with ID ${conversationId}`);
     return { messages: [], error: "conversation_not_found", hasMore: false };
   }
   
-  console.log(`Found conversation with ${conversation.messages.length} messages`);
+  const messages = conversation.messages || [];
+  console.log(`Found ${messages.length} messages in logs for conversation ${conversationId}`);
   
   // Sort messages by timestamp
-  const sortedMessages = conversation.messages.sort((a, b) => {
-    return new Date(a.timestamp) - new Date(b.timestamp);
-  });
+  messages.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
   
   // Apply pagination
-  const paginatedMessages = sortedMessages.slice(offset, offset + limit);
-  const hasMore = sortedMessages.length > offset + limit;
+  const paginatedMessages = messages.slice(offset, offset + limit);
+  const hasMore = messages.length > offset + limit;
   
   console.log(`Returning ${paginatedMessages.length} messages (offset=${offset}, limit=${limit}), hasMore=${hasMore}`);
   

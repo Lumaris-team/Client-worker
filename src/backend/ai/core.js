@@ -16,12 +16,14 @@ export async function callModel(env, model, prompt, options = {}, gatewayMetadat
   // Use Cloudflare Workers AI binding
   if (env.AI) {
     try {
-      // Get gateway metadata if function is provided
+      // Get gateway metadata for user message
       let gatewayMetadata = null;
+      let conversationId = null;
       if (gatewayMetadataFn && typeof gatewayMetadataFn === 'function') {
-        const conversationId = options?.conversationId || null;
+        conversationId = options?.conversationId || null;
         const conversationName = options?.conversationName || null;
-        gatewayMetadata = await gatewayMetadataFn(env, conversationId, conversationName, message);
+        gatewayMetadata = await gatewayMetadataFn(env, conversationId, conversationName, message, "user");
+        conversationId = gatewayMetadata?.gateway?.metadata?.conversationId || conversationId;
       }
 
       // Check if this is an image generation model (text-to-image)
