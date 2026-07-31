@@ -76,8 +76,13 @@ export async function callModel(env, model, prompt, options = {}, gatewayMetadat
       // Make this synchronous with a short timeout to ensure it completes before response
       if (conversationId && gatewayMetadataFn && typeof gatewayMetadataFn === 'function') {
         try {
-          const assistantMetadata = await gatewayMetadataFn(env, conversationId, gatewayMetadata?.gateway?.metadata?.conversationName, content, "assistant");
+          // Use the user message's timestamp + 1ms to ensure assistant response comes after
+          const userTimestamp = gatewayMetadata?.gateway?.metadata?.timestamp;
+          const assistantTimestamp = userTimestamp ? new Date(new Date(userTimestamp).getTime() + 1).toISOString() : new Date().toISOString();
+          
+          const assistantMetadata = await gatewayMetadataFn(env, conversationId, gatewayMetadata?.gateway?.metadata?.conversationName, content, "assistant", null, assistantTimestamp);
           console.log(`Saving assistant response to Gateway logs - conversationId: ${conversationId}, conversationName: ${gatewayMetadata?.gateway?.metadata?.conversationName}`);
+          console.log(`User timestamp: ${userTimestamp}, Assistant timestamp: ${assistantTimestamp}`);
           console.log(`Assistant metadata:`, JSON.stringify(assistantMetadata));
           
           // Use Promise.race to add timeout but still try to complete synchronously

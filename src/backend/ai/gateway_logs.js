@@ -254,7 +254,9 @@ export async function getConversationMessages(env, conversationId, limit = 100, 
   messages.sort((a, b) => {
     const timeA = new Date(a.timestamp).getTime() || 0;
     const timeB = new Date(b.timestamp).getTime() || 0;
-    return timeA - timeB;
+    const diff = timeA - timeB;
+    console.log(`Sorting: ${a.role} (${timeA}) vs ${b.role} (${timeB}) = ${diff}`);
+    return diff;
   });
   
   console.log("Messages after sorting:", messages.map(m => ({ role: m.role, timestamp: m.timestamp })));

@@ -49,12 +49,12 @@ async function generateConversationTitle(env, prompt, model = null) {
 }
 
 // Main function to generate gateway metadata
-export async function getGatewayMetadata(env, conversationId, conversationName, prompt, role = "user", titleModel = null) {
+export async function getGatewayMetadata(env, conversationId, conversationName, prompt, role = "user", titleModel = null, userTimestamp = null) {
   try {
     const metadata = {
       conversationId: null,
       conversationName: null,
-      timestamp: new Date().toISOString(),
+      timestamp: userTimestamp || new Date().toISOString(), // Use provided timestamp or current time
       messageRole: role,
       messageContent: prompt
     };
