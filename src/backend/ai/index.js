@@ -295,8 +295,14 @@ export function estimateConsumption(model) {
 }
 
 export async function AIfunction(env, subpath, method, headers, body, request) {
-  const parts = (subpath || "").split("/").filter(Boolean);
+  // Remove query parameters from subpath for routing
+  const pathOnly = subpath?.split("?")[0] || "";
+  const parts = pathOnly.split("/").filter(Boolean);
   if (parts.length === 0) return { error: "no action" };
+
+  // Log request with clear name
+  const requestName = `AI ${method} ${pathOnly || "root"}`;
+  console.log(`[${requestName}] Processing request`);
 
   if (parts.length === 1 && parts[0] === "categories" && method === "GET") {
     // Fetch models from Cloudflare Workers AI
@@ -409,7 +415,9 @@ export async function AIfunction(env, subpath, method, headers, body, request) {
     const conversationId = parts[1];
     const limit = parseInt(new URL(request.url || "").searchParams.get("limit") || "100");
     const offset = parseInt(new URL(request.url || "").searchParams.get("offset") || "0");
+    console.log(`[${requestName}] Loading conversation ${conversationId} (offset=${offset}, limit=${limit})`);
     const { messages, error, hasMore } = await getConversationMessages(env, conversationId, limit, offset);
+    console.log(`[${requestName}] Returning ${messages.length} messages for conversation ${conversationId}`);
     return { conversationId, messages, hasMore, error };
   }
 

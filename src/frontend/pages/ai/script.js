@@ -338,7 +338,7 @@ async function loadConversations(offset = 0, limit = 100) {
 
 async function loadLimits() {
   try {
-    const data = await aiGet("limits");
+    const data = await aiGet("limits&_request_name=load_limits");
     console.log("Loaded limits:", data);
     return data;
   } catch (error) {
@@ -660,8 +660,12 @@ async function showConversations(offset = 0) {
     `;
   }
 
-  // Load conversations in background
-  const { conversations, hasMore, error } = await loadConversations(offset, 100);
+  // Load conversations in background with custom request name
+  const url = `conversations?offset=${offset}&limit=100&_request_name=list_conversations`;
+  const data = await aiGet(url);
+  const conversations = data.conversations || [];
+  const hasMore = data.hasMore || false;
+  const error = data.error;
 
   // Clear loading message if first load
   if (offset === 0) {
@@ -750,7 +754,7 @@ async function showConversations(offset = 0) {
 
 async function loadConversation(conversationId, offset = 0, limit = 100) {
   try {
-    const url = `conversations/${conversationId}?offset=${offset}&limit=${limit}`;
+    const url = `conversations/${conversationId}?offset=${offset}&limit=${limit}&_request_name=load_conversation`;
     const data = await aiGet(url);
     console.log("Loaded conversation:", data);
 
