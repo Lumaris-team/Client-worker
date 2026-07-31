@@ -28,8 +28,8 @@ const CATEGORY_ALIASES = {
 };
 
 /* ===================== API ===================== */
-async function aiGet(sub) {
-  const requestName = `AI GET ${sub}`;
+async function aiGet(sub, customName = null) {
+  const requestName = customName || `AI GET ${sub}`;
   const res = await authedFetch(`${AI_BASE}/${sub}`, {
     method: "GET",
     headers: {
@@ -57,8 +57,8 @@ async function aiGet(sub) {
   return data;
 }
 
-async function aiPost(sub, body) {
-  const requestName = `AI POST ${sub}`;
+async function aiPost(sub, body, customName = null) {
+  const requestName = customName || `AI POST ${sub}`;
   const res = await authedFetch(`${AI_BASE}/${sub}`, {
     method: "POST",
     headers: {
@@ -338,7 +338,7 @@ async function loadConversations(offset = 0, limit = 100) {
 
 async function loadLimits() {
   try {
-    const data = await aiGet("limits&_request_name=load_limits");
+    const data = await aiGet("limits", "Load Limits");
     console.log("Loaded limits:", data);
     return data;
   } catch (error) {
@@ -661,8 +661,8 @@ async function showConversations(offset = 0) {
   }
 
   // Load conversations in background with custom request name
-  const url = `conversations?offset=${offset}&limit=100&_request_name=list_conversations`;
-  const data = await aiGet(url);
+  const url = `conversations?offset=${offset}&limit=100`;
+  const data = await aiGet(url, "List Conversations");
   const conversations = data.conversations || [];
   const hasMore = data.hasMore || false;
   const error = data.error;
@@ -718,16 +718,22 @@ async function showConversations(offset = 0) {
 
   // Add event listeners to load buttons
   chatContainer.querySelectorAll('[data-load-conv]').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
       const convId = btn.dataset.loadConv;
+      console.log("Load button clicked for conversation:", convId);
       loadConversation(convId);
     });
   });
 
   // Add event listeners to delete buttons
   chatContainer.querySelectorAll('[data-delete-conv]').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
       const convId = btn.dataset.deleteConv;
+      console.log("Delete button clicked for conversation:", convId);
       deleteConversation(convId);
     });
   });
@@ -754,8 +760,8 @@ async function showConversations(offset = 0) {
 
 async function loadConversation(conversationId, offset = 0, limit = 100) {
   try {
-    const url = `conversations/${conversationId}?offset=${offset}&limit=${limit}&_request_name=load_conversation`;
-    const data = await aiGet(url);
+    const url = `conversations/${conversationId}?offset=${offset}&limit=${limit}`;
+    const data = await aiGet(url, "Load Conversation");
     console.log("Loaded conversation:", data);
 
     if (data && data.messages) {
