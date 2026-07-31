@@ -25,7 +25,7 @@ export async function addDeletedConversation(env, conversationId) {
   }
 }
 
-// Fetch Gateway AI logs from Cloudflare API with pagination support
+// Fetch Gateway AI logs from Cloudflare API
 export async function fetchGatewayLogs(env, options = {}) {
   const accountId = env.CLOUDFLARE_ACCOUNT_ID;
   const apiToken = env.CLOUDFLARE_API_TOKEN;
@@ -37,79 +37,55 @@ export async function fetchGatewayLogs(env, options = {}) {
   }
   
   const limit = options.limit || 50;
-  const offset = options.offset || 0;
+  const page = options.page || 1; // Use page instead of offset for Cloudflare API
   const conversationId = options.conversationId || null;
   
   try {
     // Use Cloudflare AI Gateway logs API to fetch Gateway AI logs
     // This endpoint provides access to AI Gateway request logs
-    const allLogs = [];
-    let page = 1;
-    const perPage = 100; // Maximum per page
-    let hasMore = true;
+    let endpoint = `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai-gateway/gateways/${gatewayId}/logs`;
     
-    while (hasMore && allLogs.length < limit) {
-      let endpoint = `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai-gateway/gateways/${gatewayId}/logs`;
-      
-      // Add query parameters
-      const params = new URLSearchParams();
-      params.append('page', page.toString());
-      params.append('per_page', perPage.toString());
-      
-      endpoint += `?${params.toString()}`;
-      
-      console.log(`Fetching Gateway logs page ${page} from: ${endpoint}`);
-      
-      const response = await fetch(endpoint, {
-        method: "GET",
-        headers: {
-          "Authorization": `Bearer ${apiToken}`,
-          "Content-Type": "application/json"
-        }
-      });
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Cloudflare Gateway API error:", response.status, errorText);
-        break;
+    // Add query parameters
+    const params = new URLSearchParams();
+    
+    // Add pagination - API limits per_page to 50
+    const perPage = Math.min(limit, 50);
+    params.append('page', page.toString());
+    params.append('per_page', perPage.toString());
+    
+    endpoint += `?${params.toString()}`;
+    
+    console.log(`Fetching Gateway logs from: ${endpoint}`);
+    
+    const response = await fetch(endpoint, {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${apiToken}`,
+        "Content-Type": "application/json"
       }
-      
-      const data = await response.json();
-      
-      if (!data.success || !data.result) {
-        console.error("Invalid response from Cloudflare Gateway API");
-        break;
-      }
-      
-      // The analytics endpoint returns different structure, adapt it
-      const logs = Array.isArray(data.result) ? data.result : (data.result.data || []);
-      
-      console.log(`Fetched ${logs.length} logs on page ${page}`);
-      
-      if (logs.length === 0) {
-        hasMore = false;
-      } else {
-        allLogs.push(...logs);
-        if (logs.length < perPage) {
-          hasMore = false;
-        }
-      }
-      
-      page++;
-      
-      // Safety limit to prevent infinite loops
-      if (page > 50) {
-        console.log("Reached safety limit of 50 pages");
-        break;
-      }
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Cloudflare Gateway API error:", response.status, errorText);
+      // Return empty logs instead of error to allow UI to function
+      return { logs: [], error: null };
     }
     
-    console.log(`Total logs fetched: ${allLogs.length}`);
+    const data = await response.json();
     
-    // Apply offset and limit to the collected logs
-    const paginatedLogs = allLogs.slice(offset, offset + limit);
+    if (!data.success || !data.result) {
+      console.error("Invalid response from Cloudflare Gateway API");
+      return { logs: [], error: null };
+    }
     
-    return { logs: paginatedLogs, error: null, hasMore: allLogs.length > offset + limit };
+    // The analytics endpoint returns different structure, adapt it
+    const logs = Array.isArray(data.result) ? data.result : (data.result.data || []);
+    
+    // Determine if there are more logs (if we got a full page, there might be more)
+    const hasMore = logs.length >= perPage;
+    
+    return { logs, error: null, hasMore };
     
   } catch (error) {
     console.error("Failed to fetch Gateway logs:", error);
@@ -199,7 +175,10 @@ export async function parseConversationsFromLogs(logs, env = null) {
 export async function getConversations(env, limit = 100, offset = 0) {
   console.log(`Fetching conversations list with limit=${limit}, offset=${offset}`);
   
-  const { logs, error } = await fetchGatewayLogs(env, { limit, offset });
+  // Convert offset to page number (page 1 = offset 0, page 2 = offset 50, etc.)
+  const page = Math.floor(offset / 50) + 1;
+  
+  const { logs, error, hasMore } = await fetchGatewayLogs(env, { limit, page });
   
   if (error) {
     console.error("Error fetching conversations list:", error);
@@ -211,9 +190,6 @@ export async function getConversations(env, limit = 100, offset = 0) {
   const conversations = await parseConversationsFromLogs(logs, env);
   
   console.log(`Parsed ${conversations.length} conversations from logs`);
-  
-  // Determine if there are more conversations
-  const hasMore = conversations.length >= limit;
   
   console.log(`Returning ${conversations.length} conversations, hasMore=${hasMore}`);
   
@@ -231,15 +207,37 @@ export async function getConversationMessages(env, conversationId, limit = 100, 
     return { messages: [], error: "conversation_deleted", hasMore: false };
   }
   
-  // Get messages from logs with metadata (increase limit to get more logs)
-  const { logs } = await fetchGatewayLogs(env, { limit: 5000, offset: 0 });
-  const conversationLogs = logs.filter(log => {
-    const metadata = log?.gateway?.metadata || log?.metadata || {};
-    return metadata.conversationId === conversationId;
-  });
-  console.log(`Found ${conversationLogs.length} logs for conversation ${conversationId}`);
+  // Fetch ALL logs with automatic pagination since we can't filter by conversationId in API
+  const allLogs = [];
+  let page = 1;
+  const perPage = 50;
+  let hasMore = true;
   
-  const conversations = await parseConversationsFromLogs(conversationLogs, env);
+  while (hasMore) {
+    const { logs: pageLogs, hasMore: pageHasMore } = await fetchGatewayLogs(env, { limit: perPage, page });
+    
+    const conversationLogs = pageLogs.filter(log => {
+      const metadata = log?.gateway?.metadata || log?.metadata || {};
+      return metadata.conversationId === conversationId;
+    });
+    
+    console.log(`Found ${conversationLogs.length} logs for conversation ${conversationId} on page ${page}`);
+    allLogs.push(...conversationLogs);
+    
+    hasMore = pageHasMore && conversationLogs.length > 0; // Continue if more pages and we found logs
+    
+    // Safety limit to prevent infinite loops (max 10 pages = 500 logs)
+    if (page >= 10) {
+      console.log("Reached safety limit of 10 pages for conversation messages");
+      break;
+    }
+    
+    page++;
+  }
+  
+  console.log(`Total logs found for conversation ${conversationId}: ${allLogs.length}`);
+  
+  const conversations = await parseConversationsFromLogs(allLogs, env);
   const conversation = conversations.find(c => c.id === conversationId);
   
   if (!conversation) {
@@ -261,9 +259,9 @@ export async function getConversationMessages(env, conversationId, limit = 100, 
   
   // Apply pagination
   const paginatedMessages = messages.slice(offset, offset + limit);
-  const hasMore = messages.length > offset + limit;
+  const hasMoreMessages = messages.length > offset + limit;
   
-  console.log(`Returning ${paginatedMessages.length} messages (offset=${offset}, limit=${limit}), hasMore=${hasMore}`);
+  console.log(`Returning ${paginatedMessages.length} messages (offset=${offset}, limit=${limit}), hasMore=${hasMoreMessages}`);
   
-  return { messages: paginatedMessages, error: null, hasMore };
+  return { messages: paginatedMessages, error: null, hasMore: hasMoreMessages };
 }
