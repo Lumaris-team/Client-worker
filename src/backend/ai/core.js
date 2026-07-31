@@ -76,6 +76,7 @@ export async function callModel(env, model, prompt, options = {}, gatewayMetadat
       if (conversationId && gatewayMetadataFn && typeof gatewayMetadataFn === 'function') {
         try {
           const assistantMetadata = await gatewayMetadataFn(env, conversationId, gatewayMetadata?.gateway?.metadata?.conversationName, content, "assistant");
+          console.log(`Saving assistant response to Gateway logs - conversationId: ${conversationId}, conversationName: ${gatewayMetadata?.gateway?.metadata?.conversationName}`);
           // Use a very lightweight model call just to log the assistant response with metadata
           // This is necessary because AI Gateway only logs actual AI calls
           await env.AI.run("@cf/meta/llama-3.2-3b-instruct", {

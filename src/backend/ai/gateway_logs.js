@@ -100,6 +100,11 @@ export async function parseConversationsFromLogs(logs, env = null) {
   
   for (const log of logs) {
     try {
+      if (!log) {
+        console.log("Skipping null log entry");
+        continue;
+      }
+      
       const metadata = log?.gateway?.metadata || log?.metadata || {};
       const conversationId = metadata.conversationId;
       const conversationName = metadata.conversationName;
@@ -107,10 +112,14 @@ export async function parseConversationsFromLogs(logs, env = null) {
       const messageRole = metadata.messageRole;
       const messageContent = metadata.messageContent;
       
-      if (!conversationId) continue;
+      if (!conversationId) {
+        console.log("Skipping log without conversationId");
+        continue;
+      }
       
       // Skip deleted conversations
       if (deletedConversationIds.includes(conversationId)) {
+        console.log(`Skipping deleted conversation ${conversationId}`);
         continue;
       }
       
@@ -140,43 +149,49 @@ export async function parseConversationsFromLogs(logs, env = null) {
           content: messageContent,
           timestamp: timestamp
         });
-        console.log(`Extracted message from metadata: role=${messageRole}, content=${messageContent.substring(0, 50)}...`);
+        console.log(`Extracted message from metadata: role=${messageRole}, conversationId=${conversationId}, content=${messageContent.substring(0, 50)}...`);
       } else if (env && logId) {
         // Fallback: fetch request/response from Cloudflare API for old logs
-        console.log(`Fetching request/response for log ${logId} (old format)`);
-        const request = await fetchGatewayLogRequest(env, logId);
-        const response = await fetchGatewayLogResponse(env, logId);
-        
-        console.log(`Request data:`, request ? JSON.stringify(request).substring(0, 200) : "null");
-        console.log(`Response data:`, response ? JSON.stringify(response).substring(0, 200) : "null");
-        
-        if (request) {
-          const prompt = request?.prompt || (request?.messages?.[0]?.content || "");
-          if (prompt) {
-            conversation.messages.push({
-              role: "user",
-              content: prompt,
-              timestamp: timestamp
-            });
-            console.log(`Added user message from request: ${prompt.substring(0, 50)}...`);
+        console.log(`Fetching request/response for log ${logId} (old format), conversationId=${conversationId}`);
+        try {
+          const request = await fetchGatewayLogRequest(env, logId);
+          const response = await fetchGatewayLogResponse(env, logId);
+          
+          console.log(`Request data:`, request ? JSON.stringify(request).substring(0, 200) : "null");
+          console.log(`Response data:`, response ? JSON.stringify(response).substring(0, 200) : "null");
+          
+          if (request) {
+            const prompt = request?.prompt || (request?.messages?.[0]?.content || "");
+            if (prompt) {
+              conversation.messages.push({
+                role: "user",
+                content: prompt,
+                timestamp: timestamp
+              });
+              console.log(`Added user message from request: ${prompt.substring(0, 50)}...`);
+            }
           }
-        }
-        
-        if (response) {
-          const content = response?.response || response?.output || "";
-          if (content) {
-            conversation.messages.push({
-              role: "assistant",
-              content: content,
-              timestamp: timestamp
-            });
-            console.log(`Added assistant message from response: ${content.substring(0, 50)}...`);
+          
+          if (response) {
+            const content = response?.response || response?.output || "";
+            if (content) {
+              conversation.messages.push({
+                role: "assistant",
+                content: content,
+                timestamp: timestamp
+              });
+              console.log(`Added assistant message from response: ${content.substring(0, 50)}...`);
+            }
           }
+        } catch (fetchError) {
+          console.error(`Error fetching request/response for log ${logId}:`, fetchError.message);
         }
+      } else {
+        console.log(`Log has no metadata messageRole/messageContent and no env/logId for fallback, conversationId=${conversationId}`);
       }
       
     } catch (error) {
-      console.error("Error parsing log entry:", error);
+      console.error("Error parsing log entry:", error.message, "log:", JSON.stringify(log).substring(0, 200));
     }
   }
   

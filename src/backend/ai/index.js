@@ -376,6 +376,7 @@ export async function AIfunction(env, subpath, method, headers, body, request) {
     const titleGenerationModel = body?.titleGenerationModel || null;
     
     console.log("Chat request - category:", category, "model:", model, "prompt:", prompt);
+    console.log("Conversation context - conversationId:", conversationId, "conversationName:", conversationName);
     if (titleGenerationModel) {
       console.log("Title generation model:", titleGenerationModel);
     }
