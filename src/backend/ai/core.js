@@ -73,21 +73,36 @@ export async function callModel(env, model, prompt, options = {}, gatewayMetadat
       }
       
       // Save assistant response to Gateway logs with metadata using a lightweight model call
+      // Make this synchronous with a short timeout to ensure it completes before response
       if (conversationId && gatewayMetadataFn && typeof gatewayMetadataFn === 'function') {
         try {
           const assistantMetadata = await gatewayMetadataFn(env, conversationId, gatewayMetadata?.gateway?.metadata?.conversationName, content, "assistant");
           console.log(`Saving assistant response to Gateway logs - conversationId: ${conversationId}, conversationName: ${gatewayMetadata?.gateway?.metadata?.conversationName}`);
-          // Use a very lightweight model call just to log the assistant response with metadata
-          // This is necessary because AI Gateway only logs actual AI calls
-          // IMPORTANT: Do this in background without await to avoid blocking the main response
-          env.AI.run("@cf/meta/llama-3.2-3b-instruct", {
+          
+          // Use Promise.race to add timeout but still try to complete synchronously
+          const savePromise = env.AI.run("@cf/meta/llama-3.2-3b-instruct", {
             messages: [{ role: "assistant", content: "ACK" }]
-          }, assistantMetadata).catch(err => {
-            console.error("Background save of assistant response failed (non-critical):", err.message);
+          }, assistantMetadata);
+          
+          // Wait for save with a 2 second timeout
+          await Promise.race([
+            savePromise,
+            new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 2000))
+          ]).catch(err => {
+            if (err.message === "Timeout") {
+              console.log("Assistant response save timed out (continuing in background)");
+              // Continue in background if timeout
+              savePromise.catch(bgErr => {
+                console.error("Background save of assistant response failed:", bgErr.message);
+              });
+            } else {
+              console.error("Assistant response save failed:", err.message);
+            }
           });
-          console.log("Initiated assistant response save to Gateway logs (background)");
+          
+          console.log("Assistant response save completed");
         } catch (error) {
-          console.error("Failed to prepare assistant response save (non-critical):", error.message);
+          console.error("Failed to save assistant response (non-critical):", error.message);
           // Don't fail the main request if this fails
         }
       }

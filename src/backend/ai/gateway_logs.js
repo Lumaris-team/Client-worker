@@ -25,7 +25,7 @@ export async function addDeletedConversation(env, conversationId) {
   }
 }
 
-// Fetch Gateway AI logs from Cloudflare API
+// Fetch Gateway AI logs from Cloudflare API with pagination support
 export async function fetchGatewayLogs(env, options = {}) {
   const accountId = env.CLOUDFLARE_ACCOUNT_ID;
   const apiToken = env.CLOUDFLARE_API_TOKEN;
@@ -43,46 +43,73 @@ export async function fetchGatewayLogs(env, options = {}) {
   try {
     // Use Cloudflare AI Gateway logs API to fetch Gateway AI logs
     // This endpoint provides access to AI Gateway request logs
-    let endpoint = `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai-gateway/gateways/${gatewayId}/logs`;
+    const allLogs = [];
+    let page = 1;
+    const perPage = 100; // Maximum per page
+    let hasMore = true;
     
-    // Add query parameters
-    const params = new URLSearchParams();
-    
-    // Add pagination - API limits per_page to 50
-    const perPage = Math.min(limit, 50);
-    params.append('page', '1');
-    params.append('per_page', perPage.toString());
-    
-    endpoint += `?${params.toString()}`;
-    
-    console.log(`Fetching Gateway logs from: ${endpoint}`);
-    
-    const response = await fetch(endpoint, {
-      method: "GET",
-      headers: {
-        "Authorization": `Bearer ${apiToken}`,
-        "Content-Type": "application/json"
+    while (hasMore && allLogs.length < limit) {
+      let endpoint = `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai-gateway/gateways/${gatewayId}/logs`;
+      
+      // Add query parameters
+      const params = new URLSearchParams();
+      params.append('page', page.toString());
+      params.append('per_page', perPage.toString());
+      
+      endpoint += `?${params.toString()}`;
+      
+      console.log(`Fetching Gateway logs page ${page} from: ${endpoint}`);
+      
+      const response = await fetch(endpoint, {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${apiToken}`,
+          "Content-Type": "application/json"
+        }
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Cloudflare Gateway API error:", response.status, errorText);
+        break;
       }
-    });
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Cloudflare Gateway API error:", response.status, errorText);
-      // Return empty logs instead of error to allow UI to function
-      return { logs: [], error: null };
+      
+      const data = await response.json();
+      
+      if (!data.success || !data.result) {
+        console.error("Invalid response from Cloudflare Gateway API");
+        break;
+      }
+      
+      // The analytics endpoint returns different structure, adapt it
+      const logs = Array.isArray(data.result) ? data.result : (data.result.data || []);
+      
+      console.log(`Fetched ${logs.length} logs on page ${page}`);
+      
+      if (logs.length === 0) {
+        hasMore = false;
+      } else {
+        allLogs.push(...logs);
+        if (logs.length < perPage) {
+          hasMore = false;
+        }
+      }
+      
+      page++;
+      
+      // Safety limit to prevent infinite loops
+      if (page > 50) {
+        console.log("Reached safety limit of 50 pages");
+        break;
+      }
     }
     
-    const data = await response.json();
+    console.log(`Total logs fetched: ${allLogs.length}`);
     
-    if (!data.success || !data.result) {
-      console.error("Invalid response from Cloudflare Gateway API");
-      return { logs: [], error: null };
-    }
+    // Apply offset and limit to the collected logs
+    const paginatedLogs = allLogs.slice(offset, offset + limit);
     
-    // The analytics endpoint returns different structure, adapt it
-    const logs = Array.isArray(data.result) ? data.result : (data.result.data || []);
-    
-    return { logs, error: null };
+    return { logs: paginatedLogs, error: null, hasMore: allLogs.length > offset + limit };
     
   } catch (error) {
     console.error("Failed to fetch Gateway logs:", error);
