@@ -780,6 +780,8 @@ async function loadConversation(conversationId, offset = 0, limit = 100) {
     const url = `conversations/${conversationId}?offset=${offset}&limit=${limit}`;
     const data = await aiGet(url, "Load Conversation");
     console.log("Loaded conversation:", data);
+    console.log("Messages in response:", data?.messages);
+    console.log("Number of messages:", data?.messages?.length);
 
     if (data && data.messages) {
       state.conversationId = conversationId;
@@ -797,7 +799,9 @@ async function loadConversation(conversationId, offset = 0, limit = 100) {
 
       // Display messages (insert at beginning if offset > 0 for pagination)
       const messages = data.messages || [];
-      messages.forEach(msg => {
+      console.log("Displaying messages:", messages);
+      messages.forEach((msg, index) => {
+        console.log(`Message ${index}: role=${msg.role}, content=${msg.content?.substring(0, 50)}...`);
         if (msg.role === "user") {
           const userHtml = `
             <div class="chat-message user">

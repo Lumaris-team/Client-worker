@@ -116,6 +116,8 @@ export async function parseConversationsFromLogs(logs, env = null) {
       const messageRole = metadata.messageRole;
       const messageContent = metadata.messageContent;
       
+      console.log(`Processing log: id=${logId}, conversationId=${conversationId}, role=${messageRole}, hasContent=${!!messageContent}`);
+      
       if (!conversationId) {
         console.log("Skipping log without conversationId");
         continue;
