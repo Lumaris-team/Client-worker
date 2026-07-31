@@ -1,7 +1,7 @@
 // Functions to fetch and parse Cloudflare Gateway AI logs
 
 // Get list of deleted conversation IDs from KV
-async function getDeletedConversations(env) {
+export async function getDeletedConversations(env) {
   try {
     const deleted = await env.DELETED_CONVERSATIONS.get("deleted_list");
     return deleted ? JSON.parse(deleted) : [];
@@ -12,7 +12,7 @@ async function getDeletedConversations(env) {
 }
 
 // Add conversation ID to deleted list in KV
-async function addDeletedConversation(env, conversationId) {
+export async function addDeletedConversation(env, conversationId) {
   try {
     const deleted = await getDeletedConversations(env);
     if (!deleted.includes(conversationId)) {
