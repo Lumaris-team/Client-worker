@@ -393,25 +393,8 @@ export async function AIfunction(env, subpath, method, headers, body, request) {
     return resp;
   }
 
-  if (parts[0] === "conversations" && method === "GET") {
-    // Get conversations from Gateway logs with pagination
-    const limit = parseInt(new URL(request.url || "").searchParams.get("limit") || "100");
-    const offset = parseInt(new URL(request.url || "").searchParams.get("offset") || "0");
-    
-    const { conversations, error, hasMore } = await getConversations(env, limit, offset);
-    
-    // Return max 30 conversations for initial request, but support pagination
-    const limitedConversations = conversations.slice(0, 30);
-    
-    return { 
-      conversations: limitedConversations,
-      hasMore,
-      error
-    };
-  }
-
   if (parts[0] === "conversations" && parts[1] && method === "GET") {
-    // Get specific conversation messages with pagination
+    // Get specific conversation messages with pagination (must come before list)
     const conversationId = parts[1];
     const limit = parseInt(new URL(request.url || "").searchParams.get("limit") || "100");
     const offset = parseInt(new URL(request.url || "").searchParams.get("offset") || "0");
@@ -419,6 +402,17 @@ export async function AIfunction(env, subpath, method, headers, body, request) {
     const { messages, error, hasMore } = await getConversationMessages(env, conversationId, limit, offset);
     console.log(`[${requestName}] Returning ${messages.length} messages for conversation ${conversationId}`);
     return { conversationId, messages, hasMore, error };
+  }
+
+  if (parts[0] === "conversations" && method === "GET") {
+    const limit = parseInt(new URL(request.url || "").searchParams.get("limit") || "100");
+    const offset = parseInt(new URL(request.url || "").searchParams.get("offset") || "0");
+    const { conversations, error, hasMore } = await getConversations(env, limit, offset);
+    return {
+      conversations,
+      hasMore,
+      error
+    };
   }
 
   if (parts[0] === "conversations" && parts[1] && method === "DELETE") {
