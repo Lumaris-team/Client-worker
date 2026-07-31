@@ -8,14 +8,19 @@ function generateConversationId() {
 
 // Generate conversation title using AI
 async function generateConversationTitle(env, prompt) {
+  // Fallback to simple heuristic if AI not available or fails
+  const fallbackTitle = () => {
+    const words = prompt.split(/\s+/).slice(0, 3);
+    if (words.length === 0) return "New Conversation";
+    const joined = words.join(" ");
+    return joined.charAt(0).toUpperCase() + joined.slice(1);
+  };
+  
+  if (!env.AI) {
+    return fallbackTitle();
+  }
+  
   try {
-    if (!env.AI) {
-      // Fallback to simple heuristic if AI not available
-      const words = prompt.split(/\s+/).slice(0, 3);
-      const title = words.join(" ");
-      return title.charAt(0).toUpperCase() + title.slice(1);
-    }
-    
     // Use Llama 3.1 8B for title generation
     const response = await env.AI.run("@cf/meta/llama-3.1-8b-instruct", {
       messages: [
@@ -33,20 +38,10 @@ async function generateConversationTitle(env, prompt) {
     
     const title = response?.response || response?.output || "";
     const cleanedTitle = title.trim().replace(/^["']|["']$/g, '').replace(/[.,!?;:]$/g, '').substring(0, 50);
-    return cleanedTitle || "New Conversation";
+    return cleanedTitle || fallbackTitle();
   } catch (error) {
-    console.error("Error generating conversation title:", error);
-    // Fallback to simple heuristic - max 3 words
-    const words = prompt.split(/\s+/).slice(0, 3);
-    
-    if (words.length === 0) {
-      return "New Conversation";
-    }
-    
-    const joined = words.join(" ");
-    const title = joined.charAt(0).toUpperCase() + joined.slice(1);
-    
-    return title || "New Conversation";
+    console.error("Error generating conversation title, using fallback:", error.message);
+    return fallbackTitle();
   }
 }
 
