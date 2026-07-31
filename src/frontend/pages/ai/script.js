@@ -459,7 +459,8 @@ async function sendMessage(message) {
       }
     } else {
       console.error("Invalid response structure:", response);
-      showError("Failed to get response from AI");
+      const errorMsg = response?.error || "This model is not capable of handling this request";
+      showError(errorMsg);
     }
   } catch (error) {
     console.error("Failed to send message:", error);
@@ -470,7 +471,17 @@ async function sendMessage(message) {
       loadingMessage.remove();
     }
     
-    showError("Failed to send message");
+    // Determine error type and show appropriate message
+    let errorMsg = "Network problem - please try again";
+    if (error.message && error.message.includes("fetch")) {
+      errorMsg = "Network problem - please check your connection";
+    } else if (error.message && error.message.includes("timeout")) {
+      errorMsg = "Request timed out - please try again";
+    } else if (error.message) {
+      errorMsg = error.message;
+    }
+    
+    showError(errorMsg);
   }
 }
 
