@@ -31,6 +31,11 @@ binding = "AI"
 binding = "AI_STORAGE"
 id = "6a1cbdb6fa934d679e5a9ac06b761ac7"
 
+# Deleted conversations (KV namespace)
+[[kv_namespaces]]
+binding = "DELETED_CONVERSATIONS"
+id = "6a1cbdb6fa934d679e5a9ac06b761ac7"
+
 # Workflows
 [[workflows]]
 name = "check_grades"

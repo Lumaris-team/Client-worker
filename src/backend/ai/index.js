@@ -4,7 +4,7 @@ import { reasonning } from "./reasonning.js";
 import { search_web } from "./search_web.js";
 import { notes_remarks } from "./notes_remarks.js";
 import { fetchCloudflareLimits } from "./limits.js";
-import { getConversations, getConversationMessages } from "./gateway_logs.js";
+import { getConversations, getConversationMessages, addDeletedConversation } from "./gateway_logs.js";
 
 const CATEGORIES = {
   basic,
@@ -414,11 +414,11 @@ export async function AIfunction(env, subpath, method, headers, body, request) {
   }
 
   if (parts[0] === "conversations" && parts[1] && method === "DELETE") {
-    // Delete conversation - AI Gateway doesn't support deletion, so we return success
-    // The conversation will just not appear in future logs
+    // Delete conversation by adding to KV deleted list
     const conversationId = parts[1];
-    console.log(`Delete request for conversation ${conversationId} - AI Gateway doesn't support deletion, returning success`);
-    return { success: true, message: "Conversation deleted (will not appear in future logs)" };
+    console.log(`Delete request for conversation ${conversationId}`);
+    await addDeletedConversation(env, conversationId);
+    return { success: true, message: "Conversation deleted" };
   }
 
   if (parts[0] === "limits" && method === "GET") {

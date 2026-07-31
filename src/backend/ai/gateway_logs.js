@@ -1,5 +1,30 @@
 // Functions to fetch and parse Cloudflare Gateway AI logs
 
+// Get list of deleted conversation IDs from KV
+async function getDeletedConversations(env) {
+  try {
+    const deleted = await env.DELETED_CONVERSATIONS.get("deleted_list");
+    return deleted ? JSON.parse(deleted) : [];
+  } catch (error) {
+    console.error("Failed to get deleted conversations:", error);
+    return [];
+  }
+}
+
+// Add conversation ID to deleted list in KV
+async function addDeletedConversation(env, conversationId) {
+  try {
+    const deleted = await getDeletedConversations(env);
+    if (!deleted.includes(conversationId)) {
+      deleted.push(conversationId);
+      await env.DELETED_CONVERSATIONS.put("deleted_list", JSON.stringify(deleted));
+      console.log(`Added conversation ${conversationId} to deleted list`);
+    }
+  } catch (error) {
+    console.error("Failed to add deleted conversation:", error);
+  }
+}
+
 // Fetch Gateway AI logs from Cloudflare API
 export async function fetchGatewayLogs(env, options = {}) {
   const accountId = env.CLOUDFLARE_ACCOUNT_ID;
@@ -67,8 +92,11 @@ export async function fetchGatewayLogs(env, options = {}) {
 }
 
 // Parse Gateway logs to extract conversations
-export async function parseConversationsFromLogs(logs) {
+export async function parseConversationsFromLogs(logs, env = null) {
   const conversations = new Map();
+  
+  // Get list of deleted conversations to filter them out
+  const deletedConversationIds = env ? await getDeletedConversations(env) : [];
   
   for (const log of logs) {
     try {
@@ -78,6 +106,11 @@ export async function parseConversationsFromLogs(logs) {
       const timestamp = log.timestamp || new Date().toISOString();
       
       if (!conversationId) continue;
+      
+      // Skip deleted conversations
+      if (deletedConversationIds.includes(conversationId)) {
+        continue;
+      }
       
       if (!conversations.has(conversationId)) {
         conversations.set(conversationId, {
@@ -144,7 +177,7 @@ export async function getConversations(env, limit = 100, offset = 0) {
   
   console.log(`Fetched ${logs.length} logs for conversations list`);
   
-  const conversations = await parseConversationsFromLogs(logs);
+  const conversations = await parseConversationsFromLogs(logs, env);
   
   console.log(`Parsed ${conversations.length} conversations from logs`);
   
@@ -159,6 +192,13 @@ export async function getConversations(env, limit = 100, offset = 0) {
 // Get specific conversation with messages
 export async function getConversationMessages(env, conversationId, limit = 100, offset = 0) {
   console.log(`Loading conversation messages for conversation ID: ${conversationId}`);
+  
+  // Check if conversation is deleted
+  const deletedConversationIds = await getDeletedConversations(env);
+  if (deletedConversationIds.includes(conversationId)) {
+    console.log(`Conversation ${conversationId} is deleted`);
+    return { messages: [], error: "conversation_deleted", hasMore: false };
+  }
   
   // Fetch all logs (API doesn't support filtering by conversationId)
   // We'll filter on the server side
@@ -183,7 +223,7 @@ export async function getConversationMessages(env, conversationId, limit = 100, 
   console.log(`Found ${conversationLogs.length} logs for conversation ${conversationId}`);
   
   // Parse only the logs for this conversation
-  const conversations = await parseConversationsFromLogs(conversationLogs);
+  const conversations = await parseConversationsFromLogs(conversationLogs, env);
   console.log(`Parsed ${conversations.length} conversations from filtered logs`);
   
   const conversation = conversations.find(c => c.id === conversationId);
