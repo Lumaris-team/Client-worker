@@ -147,6 +147,7 @@ async function fetchFromGatewayLogs(accountId, apiToken, gatewayId) {
     const perPage = 50;
     
     while (true) {
+      console.log(`Fetching page ${page} of AI Gateway logs...`);
       const response = await fetch(
         `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai-gateway/gateways/${gatewayId}/logs?page=${page}&per_page=${perPage}`,
         {
@@ -165,8 +166,10 @@ async function fetchFromGatewayLogs(accountId, apiToken, gatewayId) {
       }
       
       const data = await response.json();
+      console.log(`Page ${page} response:`, JSON.stringify(data).substring(0, 500));
       
       if (!data.success || !data.result || data.result.length === 0) {
+        console.log(`Page ${page}: no more logs or invalid response`);
         break;
       }
       
@@ -187,10 +190,27 @@ async function fetchFromGatewayLogs(accountId, apiToken, gatewayId) {
       }
     }
     
-    console.log(`Fetched ${allLogs.length} log entries`);
+    console.log(`Fetched ${allLogs.length} log entries total`);
+    
+    if (allLogs.length === 0) {
+      console.log("No logs found, returning zero usage");
+      return {
+        daily: {
+          used: 0,
+          limit: 10000,
+          percentage: 0,
+          unit: "neurons"
+        },
+        models: []
+      };
+    }
+    
+    // Log first log entry structure for debugging
+    console.log("First log entry structure:", JSON.stringify(allLogs[0]).substring(0, 500));
     
     const now = new Date();
     const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    console.log(`Filtering logs from ${startOfDay.toISOString()} to ${now.toISOString()}`);
     
     const modelMap = new Map();
     let totalTokens = 0;
@@ -219,6 +239,7 @@ async function fetchFromGatewayLogs(accountId, apiToken, gatewayId) {
     }
     
     console.log(`Filtered ${filteredCount} logs from today out of ${allLogs.length} total`);
+    console.log(`Total tokens: ${totalTokens}`);
     
     let modelUsage = Array.from(modelMap.entries()).map(([name, consumption]) => ({
       id: name,
@@ -240,7 +261,7 @@ async function fetchFromGatewayLogs(accountId, apiToken, gatewayId) {
     const dailyLimit = 10000;
     const percentage = dailyLimit > 0 ? Math.round((totalTokens / dailyLimit) * 100) : 0;
     
-    console.log(`Daily token usage: ${totalTokens}/${dailyLimit} tokens`);
+    console.log(`Daily token usage: ${totalTokens}/${dailyLimit} tokens (${percentage}%)`);
     console.log(`Model usage:`, JSON.stringify(modelUsage));
     
     return {
