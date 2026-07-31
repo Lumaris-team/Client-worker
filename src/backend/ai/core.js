@@ -1,6 +1,8 @@
 // Using Cloudflare Gateway AI for storage via logs API
 // Storage functions removed - now using Gateway AI logs for conversation persistence
 
+import { saveAssistantResponse } from "./gateway_logs.js";
+
 // Simple model caller using Cloudflare Workers AI
 export async function callModel(env, model, prompt, options = {}, gatewayMetadataFn = null) {
   const message = typeof prompt === "string" ? prompt : JSON.stringify(prompt);
@@ -22,7 +24,8 @@ export async function callModel(env, model, prompt, options = {}, gatewayMetadat
       if (gatewayMetadataFn && typeof gatewayMetadataFn === 'function') {
         conversationId = options?.conversationId || null;
         const conversationName = options?.conversationName || null;
-        gatewayMetadata = await gatewayMetadataFn(env, conversationId, conversationName, message, "user");
+        const titleModel = options?.titleGenerationModel || null;
+        gatewayMetadata = await gatewayMetadataFn(env, conversationId, conversationName, message, "user", titleModel);
         conversationId = gatewayMetadata?.gateway?.metadata?.conversationId || conversationId;
       }
 
@@ -69,6 +72,11 @@ export async function callModel(env, model, prompt, options = {}, gatewayMetadat
         } catch (e) {
           // Not JSON, use as-is
         }
+      }
+      
+      // Save assistant response to KV
+      if (conversationId) {
+        await saveAssistantResponse(env, conversationId, content);
       }
       
       // Build result object

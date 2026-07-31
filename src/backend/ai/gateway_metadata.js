@@ -7,7 +7,7 @@ function generateConversationId() {
 }
 
 // Generate conversation title using AI
-async function generateConversationTitle(env, prompt) {
+async function generateConversationTitle(env, prompt, model = null) {
   // Fallback to simple heuristic if AI not available or fails
   const fallbackTitle = () => {
     const words = prompt.split(/\s+/).slice(0, 3);
@@ -21,8 +21,11 @@ async function generateConversationTitle(env, prompt) {
   }
   
   try {
-    // Use Llama 3.1 8B for title generation
-    const response = await env.AI.run("@cf/meta/llama-3.1-8b-instruct", {
+    // Use provided model or fallback to Llama 3.1 8B
+    const titleModel = model || "@cf/meta/llama-3.1-8b-instruct";
+    console.log(`Generating title using model: ${titleModel}`);
+    
+    const response = await env.AI.run(titleModel, {
       messages: [
         {
           role: "system",
@@ -46,7 +49,7 @@ async function generateConversationTitle(env, prompt) {
 }
 
 // Main function to generate gateway metadata
-export async function getGatewayMetadata(env, conversationId, conversationName, prompt, role = "user") {
+export async function getGatewayMetadata(env, conversationId, conversationName, prompt, role = "user", titleModel = null) {
   try {
     const metadata = {
       conversationId: null,
@@ -56,10 +59,13 @@ export async function getGatewayMetadata(env, conversationId, conversationName, 
       messageContent: prompt
     };
     
-    // Check if both conversationId and conversationName are present
-    if (conversationId && conversationName) {
+    // Use existing conversationId if provided
+    if (conversationId) {
       metadata.conversationId = conversationId;
-      metadata.conversationName = conversationName;
+      // Use existing name if provided, otherwise keep current name
+      if (conversationName) {
+        metadata.conversationName = conversationName;
+      }
     } else {
       // Generate new conversation ID
       metadata.conversationId = generateConversationId();
@@ -68,7 +74,7 @@ export async function getGatewayMetadata(env, conversationId, conversationName, 
       if (conversationName) {
         metadata.conversationName = conversationName;
       } else if (prompt) {
-        metadata.conversationName = await generateConversationTitle(env, prompt);
+        metadata.conversationName = await generateConversationTitle(env, prompt, titleModel);
       } else {
         metadata.conversationName = "New Conversation";
       }
@@ -87,8 +93,8 @@ export async function getGatewayMetadata(env, conversationId, conversationName, 
       gateway: {
         id: env.GATEWAY_ID || "default",
         metadata: {
-          conversationId: generateConversationId(),
-          conversationName: "New Conversation",
+          conversationId: conversationId || generateConversationId(),
+          conversationName: conversationName || "New Conversation",
           timestamp: new Date().toISOString(),
           messageRole: role,
           messageContent: prompt

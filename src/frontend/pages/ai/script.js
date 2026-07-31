@@ -413,12 +413,19 @@ async function sendMessage(message) {
     const selectedModelData = categoryModels.find(m => m.name === state.selectedModel);
     const modelId = selectedModelData?.id || state.selectedModel;
     
+    // Find the lowest consumption model for title generation
+    const allModels = state.categorizedModels[state.selectedCategory] || [];
+    const lowestConsumptionModel = allModels.reduce((min, m) => 
+      (m.consumptionPercentage < min.consumptionPercentage ? m : min), allModels[0]);
+    const titleGenerationModel = lowestConsumptionModel?.id || modelId;
+
     const response = await aiPost("chat", {
       prompt: message,
       model: modelId,
       category,
       conversationId: state.conversationId,
       conversationName: state.conversationName,
+      titleGenerationModel: !state.conversationId ? titleGenerationModel : null,
     });
 
     // Remove loading message

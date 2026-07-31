@@ -25,6 +25,42 @@ export async function addDeletedConversation(env, conversationId) {
   }
 }
 
+// Save assistant response to KV
+export async function saveAssistantResponse(env, conversationId, content, timestamp = null) {
+  try {
+    const msgTimestamp = timestamp || new Date().toISOString();
+    const messageKey = `assistant:${conversationId}:${Date.now()}`;
+    const message = {
+      role: "assistant",
+      content,
+      timestamp: msgTimestamp
+    };
+    await env.DELETED_CONVERSATIONS.put(messageKey, JSON.stringify(message));
+    console.log(`Saved assistant response to KV: ${messageKey}`);
+  } catch (error) {
+    console.error("Failed to save assistant response to KV:", error);
+  }
+}
+
+// Get all assistant responses for a conversation from KV
+export async function getAssistantResponsesFromKV(env, conversationId) {
+  try {
+    const list = await env.DELETED_CONVERSATIONS.list({ prefix: `assistant:${conversationId}:` });
+    const messages = [];
+    for (const key of list.keys) {
+      const value = await env.DELETED_CONVERSATIONS.get(key.name);
+      if (value) {
+        messages.push(JSON.parse(value));
+      }
+    }
+    messages.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+    return messages;
+  } catch (error) {
+    console.error("Failed to get assistant responses from KV:", error);
+    return [];
+  }
+}
+
 // Fetch Gateway AI logs from Cloudflare API
 export async function fetchGatewayLogs(env, options = {}) {
   const accountId = env.CLOUDFLARE_ACCOUNT_ID;
@@ -224,7 +260,7 @@ export async function getConversationMessages(env, conversationId, limit = 100, 
     return { messages: [], error: "conversation_deleted", hasMore: false };
   }
   
-  // Get messages from logs with metadata
+  // Get user messages from logs with metadata
   const { logs } = await fetchGatewayLogs(env, { limit: 1000, offset: 0 });
   const conversationLogs = logs.filter(log => {
     const metadata = log?.gateway?.metadata || log?.metadata || {};
@@ -240,8 +276,15 @@ export async function getConversationMessages(env, conversationId, limit = 100, 
     return { messages: [], error: "conversation_not_found", hasMore: false };
   }
   
-  const messages = conversation.messages || [];
-  console.log(`Found ${messages.length} messages in logs for conversation ${conversationId}`);
+  let messages = conversation.messages || [];
+  console.log(`Found ${messages.length} user messages in logs for conversation ${conversationId}`);
+  
+  // Get assistant responses from KV
+  const assistantResponses = await getAssistantResponsesFromKV(env, conversationId);
+  console.log(`Found ${assistantResponses.length} assistant responses in KV for conversation ${conversationId}`);
+  
+  // Merge user messages and assistant responses
+  messages = [...messages, ...assistantResponses];
   
   // Sort messages by timestamp
   messages.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));

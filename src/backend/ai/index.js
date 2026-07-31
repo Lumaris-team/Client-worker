@@ -4,7 +4,7 @@ import { reasonning } from "./reasonning.js";
 import { search_web } from "./search_web.js";
 import { notes_remarks } from "./notes_remarks.js";
 import { fetchCloudflareLimits } from "./limits.js";
-import { getConversations, getConversationMessages, addDeletedConversation } from "./gateway_logs.js";
+import { getConversations, getConversationMessages, addDeletedConversation, saveAssistantResponse } from "./gateway_logs.js";
 import { getGatewayMetadata } from "./gateway_metadata.js";
 
 const CATEGORIES = {
@@ -332,6 +332,7 @@ export async function AIfunction(env, subpath, method, headers, body, request) {
         description: model.description,
         type: model.type,
         consumption: consumption,
+        consumptionPercentage: Math.round((consumption / 20) * 100),
         pricing: model.pricing
       };
       
@@ -372,8 +373,12 @@ export async function AIfunction(env, subpath, method, headers, body, request) {
     const prompt = body?.prompt || "";
     const conversationId = body?.conversationId || null;
     const conversationName = body?.conversationName || null;
+    const titleGenerationModel = body?.titleGenerationModel || null;
     
     console.log("Chat request - category:", category, "model:", model, "prompt:", prompt);
+    if (titleGenerationModel) {
+      console.log("Title generation model:", titleGenerationModel);
+    }
     
     // Map frontend category names to backend category names
     const mappedCategory = CATEGORY_ALIASES[category] || category;
@@ -388,7 +393,8 @@ export async function AIfunction(env, subpath, method, headers, body, request) {
       text: prompt, 
       category: mappedCategory,
       conversationId,
-      conversationName
+      conversationName,
+      titleGenerationModel
     });
     
     return resp;
