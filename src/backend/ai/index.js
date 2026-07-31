@@ -398,6 +398,20 @@ export async function AIfunction(env, subpath, method, headers, body, request) {
       titleGenerationModel
     });
     
+    // Ensure conversationId and conversationName are in the response
+    const responseConversationId = resp?.conversationId || conversationId;
+    const responseConversationName = resp?.conversationName || conversationName;
+    
+    console.log("Response conversationId:", responseConversationId, "conversationName:", responseConversationName);
+    
+    // Add conversation info to response if not already present
+    if (!resp.conversationId && responseConversationId) {
+      resp.conversationId = responseConversationId;
+    }
+    if (!resp.conversationName && responseConversationName) {
+      resp.conversationName = responseConversationName;
+    }
+    
     return resp;
   }
 
