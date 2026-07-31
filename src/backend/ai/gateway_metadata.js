@@ -9,44 +9,35 @@ function generateConversationId() {
 // Generate conversation title using AI
 async function generateConversationTitle(env, prompt) {
   try {
-    // Handle null/undefined
-    if (prompt === null || prompt === undefined) {
-      return "New Conversation";
+    if (!env.AI) {
+      // Fallback to simple heuristic if AI not available
+      const words = prompt.split(/\s+/).slice(0, 3);
+      const title = words.join(" ");
+      return title.charAt(0).toUpperCase() + title.slice(1);
     }
     
-    // Convert to string if needed
-    const strPrompt = String(prompt);
-    
-    // Check if empty after conversion
-    if (!strPrompt || strPrompt.trim() === "") {
-      return "New Conversation";
-    }
-
-    // Use a simple model to generate a short title
-    if (env.AI) {
-      try {
-        const titlePrompt = `Generate a very short (3-5 words) title for this conversation. User said: "${strPrompt.substring(0, 200)}". Return ONLY the title, nothing else.`;
-        
-        const response = await env.AI.run("@cf/meta/llama-3.1-8b-instruct", {
-          messages: [{ role: "user", content: titlePrompt }],
-          max_tokens: 20,
-        }, null); // No gateway metadata to avoid recursion
-        
-        const title = response?.response || response?.output || "";
-        const cleanedTitle = title.trim().replace(/^["']|["']$/g, '').substring(0, 50);
-        
-        if (cleanedTitle && cleanedTitle.length > 2) {
-          // Capitalize first letter
-          return cleanedTitle.charAt(0).toUpperCase() + cleanedTitle.slice(1);
+    // Use Llama 3.1 8B for title generation
+    const response = await env.AI.run("@cf/meta/llama-3.1-8b-instruct", {
+      messages: [
+        {
+          role: "system",
+          content: "You are a helpful assistant that creates concise, descriptive conversation titles. Generate a title of exactly 3 words maximum that captures the essence of the conversation. Return only the title, nothing else. No punctuation."
+        },
+        {
+          role: "user",
+          content: `Create a conversation title of max 3 words for this first prompt: "${prompt.substring(0, 200)}"`
         }
-      } catch (aiError) {
-        console.error("AI title generation failed, falling back to heuristic:", aiError);
-      }
-    }
+      ],
+      max_tokens: 30
+    });
     
-    // Fallback to heuristic if AI fails
-    const trimmed = strPrompt.trim();
-    const words = trimmed.split(/\s+/).filter(w => w.length > 0).slice(0, 3);
+    const title = response?.response || response?.output || "";
+    const cleanedTitle = title.trim().replace(/^["']|["']$/g, '').replace(/[.,!?;:]$/g, '').substring(0, 50);
+    return cleanedTitle || "New Conversation";
+  } catch (error) {
+    console.error("Error generating conversation title:", error);
+    // Fallback to simple heuristic - max 3 words
+    const words = prompt.split(/\s+/).slice(0, 3);
     
     if (words.length === 0) {
       return "New Conversation";
@@ -56,9 +47,6 @@ async function generateConversationTitle(env, prompt) {
     const title = joined.charAt(0).toUpperCase() + joined.slice(1);
     
     return title || "New Conversation";
-  } catch (error) {
-    console.error("Error generating conversation title:", error);
-    return "New Conversation";
   }
 }
 

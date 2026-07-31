@@ -133,13 +133,46 @@ export async function parseConversationsFromLogs(logs, env = null) {
       
       conversation.messageCount++;
       
-      // Extract message from metadata if available
+      // Extract message from metadata if available (new format)
       if (messageRole && messageContent) {
         conversation.messages.push({
           role: messageRole,
           content: messageContent,
           timestamp: timestamp
         });
+        console.log(`Extracted message from metadata: role=${messageRole}, content=${messageContent.substring(0, 50)}...`);
+      } else if (env && logId) {
+        // Fallback: fetch request/response from Cloudflare API for old logs
+        console.log(`Fetching request/response for log ${logId} (old format)`);
+        const request = await fetchGatewayLogRequest(env, logId);
+        const response = await fetchGatewayLogResponse(env, logId);
+        
+        console.log(`Request data:`, request ? JSON.stringify(request).substring(0, 200) : "null");
+        console.log(`Response data:`, response ? JSON.stringify(response).substring(0, 200) : "null");
+        
+        if (request) {
+          const prompt = request?.prompt || (request?.messages?.[0]?.content || "");
+          if (prompt) {
+            conversation.messages.push({
+              role: "user",
+              content: prompt,
+              timestamp: timestamp
+            });
+            console.log(`Added user message from request: ${prompt.substring(0, 50)}...`);
+          }
+        }
+        
+        if (response) {
+          const content = response?.response || response?.output || "";
+          if (content) {
+            conversation.messages.push({
+              role: "assistant",
+              content: content,
+              timestamp: timestamp
+            });
+            console.log(`Added assistant message from response: ${content.substring(0, 50)}...`);
+          }
+        }
       }
       
     } catch (error) {
