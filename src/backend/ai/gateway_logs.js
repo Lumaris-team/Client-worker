@@ -222,6 +222,11 @@ export async function getConversationMessages(env, conversationId, limit = 100, 
   
   console.log(`Found ${conversationLogs.length} logs for conversation ${conversationId}`);
   
+  // Log structure of first few logs to debug
+  if (conversationLogs.length > 0) {
+    console.log("Sample log structure:", JSON.stringify(conversationLogs[0], null, 2));
+  }
+  
   // Parse only the logs for this conversation
   const conversations = await parseConversationsFromLogs(conversationLogs, env);
   console.log(`Parsed ${conversations.length} conversations from filtered logs`);
