@@ -26,15 +26,10 @@ binding = "ASSETS"
 name = "AI"
 binding = "AI"
 
-# AI Storage (KV namespace)
-[[kv_namespaces]]
-binding = "AI_STORAGE"
-id = "6a1cbdb6fa934d679e5a9ac06b761ac7"
-
 # Deleted conversations (KV namespace)
 [[kv_namespaces]]
 binding = "DELETED_CONVERSATIONS"
-id = "6a1cbdb6fa934d679e5a9ac06b761ac7"
+id = "ece9f46bc7ca471eac5be9d214de322e"
 
 # Workflows
 [[workflows]]
