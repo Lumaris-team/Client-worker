@@ -11,17 +11,41 @@ export async function getDeletedConversations(env) {
   }
 }
 
-// Add conversation ID to deleted list in KV
+// Add a conversation to the deleted list
 export async function addDeletedConversation(env, conversationId) {
   try {
     const deleted = await getDeletedConversations(env);
     if (!deleted.includes(conversationId)) {
       deleted.push(conversationId);
       await env.DELETED_CONVERSATIONS.put("deleted_list", JSON.stringify(deleted));
-      console.log(`Added conversation ${conversationId} to deleted list`);
     }
   } catch (error) {
     console.error("Failed to add deleted conversation:", error);
+  }
+}
+
+// Mark a specific message as deleted (for error handling)
+export async function markMessageAsDeleted(env, conversationId, messageContent, role) {
+  try {
+    const deletedMessages = await getDeletedMessages(env);
+    const messageKey = `${conversationId}:${role}:${messageContent.substring(0, 100)}`;
+    
+    if (!deletedMessages.includes(messageKey)) {
+      deletedMessages.push(messageKey);
+      await env.DELETED_MESSAGES.put("deleted_list", JSON.stringify(deletedMessages));
+    }
+  } catch (error) {
+    console.error("Failed to mark message as deleted:", error);
+  }
+}
+
+// Get list of deleted messages
+export async function getDeletedMessages(env) {
+  try {
+    const deleted = await env.DELETED_MESSAGES.get("deleted_list");
+    return deleted ? JSON.parse(deleted) : [];
+  } catch (error) {
+    return [];
   }
 }
 
@@ -81,6 +105,9 @@ export async function parseConversationsFromLogs(logs, env = null) {
   // Get list of deleted conversations to filter them out
   const deletedConversationIds = env ? await getDeletedConversations(env) : [];
   
+  // Get list of deleted messages to filter them out
+  const deletedMessageKeys = env ? await getDeletedMessages(env) : [];
+  
   for (const log of logs) {
     try {
       if (!log) {
@@ -100,6 +127,12 @@ export async function parseConversationsFromLogs(logs, env = null) {
       
       // Skip deleted conversations
       if (deletedConversationIds.includes(conversationId)) {
+        continue;
+      }
+      
+      // Skip deleted messages
+      const messageKey = `${conversationId}:${messageRole}:${messageContent?.substring(0, 100) || ''}`;
+      if (deletedMessageKeys.includes(messageKey)) {
         continue;
       }
       
@@ -177,6 +210,7 @@ export async function getConversationMessages(env, conversationId, limit = 100, 
   let page = 1;
   const perPage = 50;
   let hasMore = true;
+  let emptyPageCount = 0;
   
   while (hasMore) {
     const { logs: pageLogs, hasMore: pageHasMore } = await fetchGatewayLogs(env, { limit: perPage, page });
@@ -189,11 +223,23 @@ export async function getConversationMessages(env, conversationId, limit = 100, 
     
     allLogs.push(...conversationLogs);
     
-    // Continue as long as there are more pages available (not just if we found logs)
+    // Track empty pages to detect when we've reached the end
+    if (pageLogs.length === 0) {
+      emptyPageCount++;
+    } else {
+      emptyPageCount = 0;
+    }
+    
+    // Stop if we've had 3 consecutive empty pages (end of logs)
+    if (emptyPageCount >= 3) {
+      break;
+    }
+    
+    // Continue as long as there are more pages available
     hasMore = pageHasMore;
     
-    // Increase safety limit to 20 pages (1000 logs) to ensure we get all messages
-    if (page >= 20) {
+    // Increase safety limit to 30 pages (1500 logs) to ensure we get all messages
+    if (page >= 30) {
       break;
     }
     
@@ -210,16 +256,29 @@ export async function getConversationMessages(env, conversationId, limit = 100, 
   let messages = conversation.messages || [];
   
   // Sort messages by timestamp with stable sort to maintain order for same timestamps
+  // Use a more robust sorting approach to handle edge cases
   messages.sort((a, b) => {
     const timeA = new Date(a.timestamp).getTime() || 0;
     const timeB = new Date(b.timestamp).getTime() || 0;
-    if (timeA !== timeB) {
-      return timeA - timeB;
+    const diff = timeA - timeB;
+    
+    // If timestamps are different, use the difference
+    if (diff !== 0) {
+      return diff;
     }
-    // If timestamps are equal, user messages come before assistant messages
-    if (a.role === "user" && b.role === "assistant") return -1;
-    if (a.role === "assistant" && b.role === "user") return 1;
-    return 0;
+    
+    // If timestamps are equal, use a secondary sort key
+    // User messages should come before assistant messages for the same timestamp
+    const roleOrder = { user: 0, assistant: 1 };
+    const roleA = roleOrder[a.role] ?? 2;
+    const roleB = roleOrder[b.role] ?? 2;
+    
+    if (roleA !== roleB) {
+      return roleA - roleB;
+    }
+    
+    // If roles are also equal, use content as a tiebreaker (deterministic)
+    return (a.content || '').localeCompare(b.content || '');
   });
   
   const paginatedMessages = messages.slice(offset, offset + limit);

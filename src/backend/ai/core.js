@@ -52,22 +52,24 @@ export async function callModel(env, model, prompt, options = {}, gatewayMetadat
       const response = await aiModel;
       
       // Extract content from response
-      let content = response?.response || response?.output || response?.image || JSON.stringify(response);
-      
-      // If content is a JSON string, try to parse it and extract the actual message content
-      if (typeof content === 'string') {
-        try {
-          const parsed = JSON.parse(content);
-          // Handle OpenAI-compatible format with choices array
-          if (parsed.choices && parsed.choices.length > 0 && parsed.choices[0].message) {
-            content = parsed.choices[0].message.content;
+      let content;
+      if (isImageModel) {
+        content = response?.image || response?.data?.[0]?.url || JSON.stringify(response);
+      } else {
+        if (typeof response === 'string') {
+          content = response;
+        } else if (response?.response) {
+          content = response.response;
+        } else if (response?.result) {
+          content = response.result;
+        } else if (response?.generated_text) {
+          content = response.generated_text;
+        } else {
+          try {
+            content = JSON.stringify(response);
+          } catch (e) {
+            content = String(response);
           }
-          // Handle direct content field
-          else if (parsed.content) {
-            content = parsed.content;
-          }
-        } catch (e) {
-          // Not JSON, use as-is
         }
       }
       
@@ -118,6 +120,16 @@ export async function callModel(env, model, prompt, options = {}, gatewayMetadat
       return result;
     } catch (error) {
       console.error("Cloudflare AI error:", error);
+      
+      // Mark user message as deleted when error occurs
+      if (conversationId && gatewayMetadataFn && typeof gatewayMetadataFn === 'function') {
+        try {
+          await markMessageAsDeleted(env, conversationId, message, "user");
+        } catch (markError) {
+          console.error("Failed to mark message as deleted:", markError);
+        }
+      }
+      
       const errorResult = { ok: false, error: error.message || "Failed to call AI model" };
       return errorResult;
     }
