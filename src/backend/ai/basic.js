@@ -10,8 +10,7 @@ export async function basic(env, model, body = {}) {
 		...body?.options,
 		conversationId: body?.conversationId || null,
 		conversationName: body?.conversationName || null,
-		titleGenerationModel: body?.titleGenerationModel || null,
-		assistantResponse: body?.assistantResponse || null
+		titleGenerationModel: body?.titleGenerationModel || null
 	};
 	
 	const result = await callModel(env, model, prompt, options, getGatewayMetadata);

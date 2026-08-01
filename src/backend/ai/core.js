@@ -1,5 +1,5 @@
 // Using Cloudflare Gateway AI for storage via logs API
-// Storage functions removed - now using Gateway AI logs for conversation persistence
+import { markMessageAsDeleted } from "./gateway_logs.js";
 
 // Simple model caller using Cloudflare Workers AI
 export async function callModel(env, model, prompt, options = {}, gatewayMetadataFn = null) {
@@ -22,8 +22,8 @@ export async function callModel(env, model, prompt, options = {}, gatewayMetadat
       if (gatewayMetadataFn && typeof gatewayMetadataFn === 'function') {
         const conversationName = options?.conversationName || null;
         const titleModel = options?.titleGenerationModel || null;
-        const assistantResponse = options?.assistantResponse || null;
-        gatewayMetadata = await gatewayMetadataFn(env, conversationId, conversationName, message, "user", titleModel, null, assistantResponse);
+        const userTimestamp = new Date().toISOString();
+        gatewayMetadata = await gatewayMetadataFn(env, conversationId, conversationName, message, "user", titleModel, userTimestamp);
         // Don't overwrite conversationId - trust what was passed in
       }
 
@@ -78,6 +78,29 @@ export async function callModel(env, model, prompt, options = {}, gatewayMetadat
         } else {
           // Last resort: return empty string instead of JSON
           content = "";
+        }
+      }
+      
+      // Save assistant response to Gateway logs using a lightweight model call
+      // This is necessary because Cloudflare Gateway doesn't have a direct API to create logs
+      if (conversationId && gatewayMetadataFn && typeof gatewayMetadataFn === 'function') {
+        try {
+          // Use the user message's timestamp + 1000ms to ensure assistant response comes after
+          const userTimestamp = gatewayMetadata?.gateway?.metadata?.timestamp;
+          const assistantTimestamp = userTimestamp ? new Date(new Date(userTimestamp).getTime() + 1000).toISOString() : new Date().toISOString();
+          
+          // Use the same conversationName from the user message metadata
+          const conversationName = gatewayMetadata?.gateway?.metadata?.conversationName || null;
+          
+          // Save the ACTUAL assistant response content in metadata
+          const assistantMetadata = await gatewayMetadataFn(env, conversationId, conversationName, content, "assistant", null, assistantTimestamp);
+          
+          // Use a lightweight model to create the log entry (content is in metadata)
+          await env.AI.run("@cf/meta/llama-3.2-3b-instruct", {
+            messages: [{ role: "assistant", content: "ACK" }]
+          }, assistantMetadata);
+        } catch (error) {
+          // Don't fail the main request if this fails
         }
       }
       
