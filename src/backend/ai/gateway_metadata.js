@@ -48,22 +48,15 @@ async function generateConversationTitle(env, prompt, model = null) {
 export async function getGatewayMetadata(env, conversationId, conversationName, prompt, role = "user", titleModel = null, userTimestamp = null, assistantResponse = null) {
   try {
     const metadata = {
-      conversationId: null,
-      conversationName: null,
+      conversationId: conversationId || null,
+      conversationName: conversationName || null,
       timestamp: userTimestamp || new Date().toISOString(),
       messageRole: role,
       messageContent: prompt
     };
     
-    // If conversationId is provided, ALWAYS use it (never generate new ID)
-    if (conversationId) {
-      metadata.conversationId = conversationId;
-      // Use provided conversationName or keep existing one
-      if (conversationName) {
-        metadata.conversationName = conversationName;
-      }
-    } else {
-      // Only generate new conversation ID when none is provided
+    // Only generate new conversation ID when none is provided
+    if (!metadata.conversationId) {
       metadata.conversationId = generateConversationId();
       
       // Generate conversation name if not provided

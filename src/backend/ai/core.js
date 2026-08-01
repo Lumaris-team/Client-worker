@@ -109,6 +109,11 @@ export async function callModel(env, model, prompt, options = {}, gatewayMetadat
         assistantResponse: content
       };
       
+      // Ensure conversationId is always set from gatewayMetadata if available
+      if (gatewayMetadata?.gateway?.metadata?.conversationId) {
+        result.conversationId = gatewayMetadata.gateway.metadata.conversationId;
+      }
+      
       return result;
     } catch (error) {
       console.error("Cloudflare AI error:", error);

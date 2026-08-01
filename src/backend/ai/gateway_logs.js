@@ -228,50 +228,29 @@ export async function getConversationMessages(env, conversationId, limit = 100, 
     return { messages: [], error: "conversation_deleted", hasMore: false };
   }
   
+  // Fetch all logs without pagination limit to get everything
   const allLogs = [];
   let page = 1;
-  const perPage = 50;
+  const perPage = 100;
   let hasMore = true;
-  let emptyPageCount = 0;
   
   while (hasMore) {
     const { logs: pageLogs, hasMore: pageHasMore } = await fetchGatewayLogs(env, { limit: perPage, page });
+    allLogs.push(...pageLogs);
     
-    const conversationLogs = pageLogs.filter(log => {
-      let metadata = {};
-      try {
-        // Cloudflare API returns metadata as a JSON string in log.metadata
-        const metadataString = log?.metadata || "{}";
-        if (typeof metadataString === 'string') {
-          metadata = JSON.parse(metadataString);
-        } else {
-          metadata = metadataString;
-        }
-      } catch (e) {
-        metadata = {};
-      }
-      return metadata.conversationId === conversationId;
-    });
-    
-    allLogs.push(...conversationLogs);
-    
-    if (pageLogs.length === 0) {
-      emptyPageCount++;
-    } else {
-      emptyPageCount = 0;
+    if (!pageHasMore || pageLogs.length === 0) {
+      break;
     }
     
-    if (emptyPageCount >= 3) break;
-    
-    hasMore = pageHasMore;
-    if (page >= 100) break;
+    if (page >= 500) break; // Safety limit
     page++;
   }
   
+  // Filter and parse all logs
   const messages = allLogs.map(log => {
     let metadata = {};
     try {
-      const metadataString = log?.metadata || "{}";
+      const metadataString = log?.metadata || log?.gateway?.metadata || "{}";
       if (typeof metadataString === 'string') {
         metadata = JSON.parse(metadataString);
       } else {
@@ -281,13 +260,23 @@ export async function getConversationMessages(env, conversationId, limit = 100, 
       metadata = {};
     }
     
+    // Only include logs matching the conversationId with valid role/content
+    if (metadata.conversationId !== conversationId) {
+      return null;
+    }
+    
+    if (!metadata.messageRole || !metadata.messageContent) {
+      return null;
+    }
+    
     return {
       role: metadata.messageRole,
       content: metadata.messageContent,
       timestamp: metadata.timestamp || log.created_at || log.timestamp
     };
-  });
+  }).filter(m => m !== null);
   
+  // Sort chronologically
   messages.sort((a, b) => {
     const timeA = new Date(a.timestamp).getTime() || 0;
     const timeB = new Date(b.timestamp).getTime() || 0;
