@@ -206,6 +206,8 @@ export async function getConversations(env, limit = 100, offset = 0) {
 
 // Get specific conversation with messages
 export async function getConversationMessages(env, conversationId, limit = 100, offset = 0) {
+  console.log(`[AI Gateway] Fetching messages for conversation ${conversationId}`);
+  
   if (!conversationId) {
     return { messages: [], error: "invalid_conversation_id", hasMore: false };
   }
@@ -213,6 +215,7 @@ export async function getConversationMessages(env, conversationId, limit = 100, 
   // Check if conversation is deleted
   const deletedConversationIds = await getDeletedConversations(env);
   if (deletedConversationIds.includes(conversationId)) {
+    console.log(`[AI Gateway] Conversation ${conversationId} is deleted`);
     return { messages: [], error: "conversation_deleted", hasMore: false };
   }
   
@@ -225,6 +228,7 @@ export async function getConversationMessages(env, conversationId, limit = 100, 
   let emptyPageCount = 0;
   
   while (hasMore) {
+    console.log(`[AI Gateway] Fetching page ${page} of logs`);
     const { logs: pageLogs, hasMore: pageHasMore } = await fetchGatewayLogs(env, { limit: perPage, page });
     
     // Filter logs by conversationId from metadata
@@ -232,6 +236,8 @@ export async function getConversationMessages(env, conversationId, limit = 100, 
       const metadata = log?.gateway?.metadata || log?.metadata || {};
       return metadata.conversationId === conversationId;
     });
+    
+    console.log(`[AI Gateway] Page ${page}: ${conversationLogs.length} logs for conversation ${conversationId}`);
     
     // Add logs to array (they're already in chronological order from fetchGatewayLogs)
     allLogs.push(...conversationLogs);
@@ -259,19 +265,41 @@ export async function getConversationMessages(env, conversationId, limit = 100, 
     page++;
   }
   
-  // Return raw logs without complex sorting - let frontend handle display order
-  const messages = allLogs.map(log => {
-    const metadata = log?.gateway?.metadata || log?.metadata || {};
-    return {
-      role: metadata.messageRole,
-      content: metadata.messageContent,
-      timestamp: metadata.timestamp || log.timestamp || log.created_at,
-      rawLog: log // Include raw log for debugging
-    };
+  console.log(`[AI Gateway] Total logs fetched for conversation ${conversationId}: ${allLogs.length}`);
+  
+  // Sort all logs chronologically to ensure correct order across pages
+  // Use metadata.timestamp (when message was sent) for accurate ordering
+  allLogs.sort((a, b) => {
+    const metadataA = a?.gateway?.metadata || a?.metadata || {};
+    const metadataB = b?.gateway?.metadata || b?.metadata || {};
+    const timeA = new Date(metadataA.timestamp || a.created_at || a.timestamp).getTime() || 0;
+    const timeB = new Date(metadataB.timestamp || b.created_at || b.timestamp).getTime() || 0;
+    return timeA - timeB;
+  });
+  
+  const conversations = await parseConversationsFromLogs(allLogs, env);
+  const conversation = conversations.find(c => c.id === conversationId);
+  
+  if (!conversation) {
+    console.log(`[AI Gateway] Conversation ${conversationId} not found after parsing`);
+    return { messages: [], error: "conversation_not_found", hasMore: false };
+  }
+  
+  console.log(`[AI Gateway] Conversation found with ${conversation.messages.length} messages`);
+  
+  let messages = conversation.messages || [];
+  
+  // Sort messages chronologically by timestamp
+  messages.sort((a, b) => {
+    const timeA = new Date(a.timestamp).getTime() || 0;
+    const timeB = new Date(b.timestamp).getTime() || 0;
+    return timeA - timeB;
   });
   
   const paginatedMessages = messages.slice(offset, offset + limit);
   const hasMoreMessages = messages.length > offset + limit;
+  
+  console.log(`[AI Gateway] Returning ${paginatedMessages.length} messages (offset=${offset}, limit=${limit})`);
   
   return { messages: paginatedMessages, error: null, hasMore: hasMoreMessages };
 }

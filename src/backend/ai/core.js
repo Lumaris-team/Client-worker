@@ -85,6 +85,8 @@ export async function callModel(env, model, prompt, options = {}, gatewayMetadat
       // This is necessary because Cloudflare Gateway doesn't have a direct API to create logs
       if (conversationId && gatewayMetadataFn && typeof gatewayMetadataFn === 'function') {
         try {
+          console.log(`[AI Gateway] Saving assistant response for conversation ${conversationId}`);
+          
           // Use the user message's timestamp + 1000ms to ensure assistant response comes after
           const userTimestamp = gatewayMetadata?.gateway?.metadata?.timestamp;
           const assistantTimestamp = userTimestamp ? new Date(new Date(userTimestamp).getTime() + 1000).toISOString() : new Date().toISOString();
@@ -94,12 +96,15 @@ export async function callModel(env, model, prompt, options = {}, gatewayMetadat
           
           // Save the ACTUAL assistant response content in metadata
           const assistantMetadata = await gatewayMetadataFn(env, conversationId, conversationName, content, "assistant", null, assistantTimestamp);
+          console.log(`[AI Gateway] Assistant metadata created:`, JSON.stringify(assistantMetadata));
           
           // Use a lightweight model to create the log entry (content is in metadata)
           await env.AI.run("@cf/meta/llama-3.2-3b-instruct", {
             messages: [{ role: "assistant", content: "ACK" }]
           }, assistantMetadata);
+          console.log(`[AI Gateway] Assistant log entry created successfully`);
         } catch (error) {
+          console.error(`[AI Gateway] Failed to save assistant response:`, error);
           // Don't fail the main request if this fails
         }
       }
