@@ -27,37 +27,27 @@ export async function addDeletedConversation(env, conversationId) {
 
 // Fetch Gateway AI logs from Cloudflare API
 export async function fetchGatewayLogs(env, options = {}) {
+  const { limit = 50, page = 1, metadataFilters = [] } = options;
   const accountId = env.CLOUDFLARE_ACCOUNT_ID;
   const apiToken = env.CLOUDFLARE_API_TOKEN;
   const gatewayId = env.GATEWAY_ID;
   
   if (!accountId || !apiToken || !gatewayId) {
-    console.log("Cloudflare credentials or Gateway ID not configured");
-    return { logs: [], error: "missing_credentials" };
+    return { logs: [], error: "missing_credentials", hasMore: false };
   }
   
-  const limit = options.limit || 50;
-  const page = options.page || 1; // Use page instead of offset for Cloudflare API
-  const conversationId = options.conversationId || null;
-  
   try {
-    // Use Cloudflare AI Gateway logs API to fetch Gateway AI logs
-    // This endpoint provides access to AI Gateway request logs
-    let endpoint = `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai-gateway/gateways/${gatewayId}/logs`;
-    
-    // Add query parameters
-    const params = new URLSearchParams();
-    
-    // Add pagination - API limits per_page to 50
     const perPage = Math.min(limit, 50);
-    params.append('page', page.toString());
-    params.append('per_page', perPage.toString());
+    const url = new URL(`https://api.cloudflare.com/client/v4/accounts/${accountId}/ai-gateway/gateways/${gatewayId}/logs`);
+    url.searchParams.append('page', page.toString());
+    url.searchParams.append('per_page', perPage.toString());
     
-    endpoint += `?${params.toString()}`;
+    // Add metadata filters if provided (according to Cloudflare API docs)
+    if (metadataFilters.length > 0) {
+      url.searchParams.append('filters', JSON.stringify(metadataFilters));
+    }
     
-    console.log(`Fetching Gateway logs from: ${endpoint}`);
-    
-    const response = await fetch(endpoint, {
+    const response = await fetch(url.toString(), {
       method: "GET",
       headers: {
         "Authorization": `Bearer ${apiToken}`,
@@ -67,30 +57,20 @@ export async function fetchGatewayLogs(env, options = {}) {
     
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("Cloudflare Gateway API error:", response.status, errorText);
-      // Return empty logs instead of error to allow UI to function
-      return { logs: [], error: null };
+      return { logs: [], error: errorText, hasMore: false };
     }
     
     const data = await response.json();
     
     if (!data.success || !data.result) {
-      console.error("Invalid response from Cloudflare Gateway API");
-      return { logs: [], error: null };
+      return { logs: [], error: "Invalid response", hasMore: false };
     }
     
-    // The analytics endpoint returns different structure, adapt it
-    const logs = Array.isArray(data.result) ? data.result : (data.result.data || []);
+    const hasMore = data.result.length >= perPage;
     
-    // Determine if there are more logs (if we got a full page, there might be more)
-    const hasMore = logs.length >= perPage;
-    
-    return { logs, error: null, hasMore };
-    
+    return { logs: data.result, error: null, hasMore };
   } catch (error) {
-    console.error("Failed to fetch Gateway logs:", error);
-    // Return empty logs instead of error to allow UI to function
-    return { logs: [], error: null };
+    return { logs: [], error: error.message, hasMore: false };
   }
 }
 
@@ -104,11 +84,9 @@ export async function parseConversationsFromLogs(logs, env = null) {
   for (const log of logs) {
     try {
       if (!log) {
-        console.log("Skipping null log entry");
         continue;
       }
       
-      const logId = log.id || log.event_id || null;
       const metadata = log?.gateway?.metadata || log?.metadata || {};
       const conversationId = metadata.conversationId;
       const conversationName = metadata.conversationName;
@@ -116,16 +94,12 @@ export async function parseConversationsFromLogs(logs, env = null) {
       const messageRole = metadata.messageRole;
       const messageContent = metadata.messageContent;
       
-      console.log(`Processing log: id=${logId}, conversationId=${conversationId}, role=${messageRole}, hasContent=${!!messageContent}`);
-      
       if (!conversationId) {
-        console.log("Skipping log without conversationId");
         continue;
       }
       
       // Skip deleted conversations
       if (deletedConversationIds.includes(conversationId)) {
-        console.log(`Skipping deleted conversation ${conversationId}`);
         continue;
       }
       
@@ -155,13 +129,10 @@ export async function parseConversationsFromLogs(logs, env = null) {
           content: messageContent,
           timestamp: timestamp
         });
-        console.log(`Extracted message from metadata: role=${messageRole}, conversationId=${conversationId}, content=${messageContent.substring(0, 50)}...`);
-      } else {
-        console.log(`Log has no metadata messageRole/messageContent, conversationId=${conversationId}, skipping (old format not supported)`);
       }
       
     } catch (error) {
-      console.error("Error parsing log entry:", error.message, "log:", JSON.stringify(log).substring(0, 200));
+      // Skip malformed logs silently
     }
   }
   
@@ -175,41 +146,33 @@ export async function parseConversationsFromLogs(logs, env = null) {
 
 // Get conversations list with pagination
 export async function getConversations(env, limit = 100, offset = 0) {
-  console.log(`Fetching conversations list with limit=${limit}, offset=${offset}`);
-  
-  // Convert offset to page number (page 1 = offset 0, page 2 = offset 50, etc.)
   const page = Math.floor(offset / 50) + 1;
   
   const { logs, error, hasMore } = await fetchGatewayLogs(env, { limit, page });
   
   if (error) {
-    console.error("Error fetching conversations list:", error);
     return { conversations: [], error, hasMore: false };
   }
   
-  console.log(`Fetched ${logs.length} logs for conversations list`);
-  
   const conversations = await parseConversationsFromLogs(logs, env);
-  
-  console.log(`Parsed ${conversations.length} conversations from logs`);
-  
-  console.log(`Returning ${conversations.length} conversations, hasMore=${hasMore}`);
   
   return { conversations, error: null, hasMore };
 }
 
 // Get specific conversation with messages
 export async function getConversationMessages(env, conversationId, limit = 100, offset = 0) {
-  console.log(`Loading conversation messages for conversation ID: ${conversationId}`);
+  if (!conversationId) {
+    return { messages: [], error: "invalid_conversation_id", hasMore: false };
+  }
   
   // Check if conversation is deleted
   const deletedConversationIds = await getDeletedConversations(env);
   if (deletedConversationIds.includes(conversationId)) {
-    console.log(`Conversation ${conversationId} is deleted`);
     return { messages: [], error: "conversation_deleted", hasMore: false };
   }
   
-  // Fetch ALL logs with automatic pagination since we can't filter by conversationId in API
+  // Fetch ALL logs with automatic pagination
+  // Cloudflare API doesn't support filtering by nested metadata fields, so we fetch all and filter server-side
   const allLogs = [];
   let page = 1;
   const perPage = 50;
@@ -218,54 +181,40 @@ export async function getConversationMessages(env, conversationId, limit = 100, 
   while (hasMore) {
     const { logs: pageLogs, hasMore: pageHasMore } = await fetchGatewayLogs(env, { limit: perPage, page });
     
+    // Filter logs by conversationId from metadata
     const conversationLogs = pageLogs.filter(log => {
       const metadata = log?.gateway?.metadata || log?.metadata || {};
       return metadata.conversationId === conversationId;
     });
     
-    console.log(`Found ${conversationLogs.length} logs for conversation ${conversationId} on page ${page}`);
     allLogs.push(...conversationLogs);
     
-    hasMore = pageHasMore && conversationLogs.length > 0; // Continue if more pages and we found logs
+    hasMore = pageHasMore && conversationLogs.length > 0;
     
-    // Safety limit to prevent infinite loops (max 10 pages = 500 logs)
     if (page >= 10) {
-      console.log("Reached safety limit of 10 pages for conversation messages");
       break;
     }
     
     page++;
   }
   
-  console.log(`Total logs found for conversation ${conversationId}: ${allLogs.length}`);
-  
   const conversations = await parseConversationsFromLogs(allLogs, env);
   const conversation = conversations.find(c => c.id === conversationId);
   
   if (!conversation) {
-    console.log(`No conversation found with ID ${conversationId}`);
     return { messages: [], error: "conversation_not_found", hasMore: false };
   }
   
   let messages = conversation.messages || [];
-  console.log(`Found ${messages.length} messages in logs for conversation ${conversationId}`);
   
-  // Sort messages by timestamp (more robust parsing)
   messages.sort((a, b) => {
     const timeA = new Date(a.timestamp).getTime() || 0;
     const timeB = new Date(b.timestamp).getTime() || 0;
-    const diff = timeA - timeB;
-    console.log(`Sorting: ${a.role} (${timeA}) vs ${b.role} (${timeB}) = ${diff}`);
-    return diff;
+    return timeA - timeB;
   });
   
-  console.log("Messages after sorting:", messages.map(m => ({ role: m.role, timestamp: m.timestamp })));
-  
-  // Apply pagination
   const paginatedMessages = messages.slice(offset, offset + limit);
   const hasMoreMessages = messages.length > offset + limit;
-  
-  console.log(`Returning ${paginatedMessages.length} messages (offset=${offset}, limit=${limit}), hasMore=${hasMoreMessages}`);
   
   return { messages: paginatedMessages, error: null, hasMore: hasMoreMessages };
 }

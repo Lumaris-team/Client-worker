@@ -426,6 +426,7 @@ async function sendMessage(message) {
       conversationName: state.conversationName,
       titleGenerationModel: !state.conversationId ? titleGenerationModel : null,
     });
+    console.log("Sent to backend: conversationId =", state.conversationId, "conversationName =", state.conversationName);
 
     // Remove loading message
     const loadingMessage = chatContainer.querySelector(".chat-message.loading");
@@ -442,12 +443,16 @@ async function sendMessage(message) {
     const conversationId = response?.conversationId || result?.conversationId;
     const conversationName = response?.conversationName || result?.conversationName;
     
+    console.log("Received from backend: conversationId =", conversationId, "conversationName =", conversationName);
+    
     if (conversationId) {
       state.conversationId = conversationId;
     }
     if (conversationName) {
       state.conversationName = conversationName;
     }
+    
+    console.log("State after update: conversationId =", state.conversationId, "conversationName =", state.conversationName);
 
     if (result && result.response) {
       displayAIMessage(result.response);

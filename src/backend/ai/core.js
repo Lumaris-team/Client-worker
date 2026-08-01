@@ -80,10 +80,10 @@ export async function callModel(env, model, prompt, options = {}, gatewayMetadat
           const userTimestamp = gatewayMetadata?.gateway?.metadata?.timestamp;
           const assistantTimestamp = userTimestamp ? new Date(new Date(userTimestamp).getTime() + 1).toISOString() : new Date().toISOString();
           
-          const assistantMetadata = await gatewayMetadataFn(env, conversationId, gatewayMetadata?.gateway?.metadata?.conversationName, content, "assistant", null, assistantTimestamp);
-          console.log(`Saving assistant response to Gateway logs - conversationId: ${conversationId}, conversationName: ${gatewayMetadata?.gateway?.metadata?.conversationName}`);
-          console.log(`User timestamp: ${userTimestamp}, Assistant timestamp: ${assistantTimestamp}`);
-          console.log(`Assistant metadata:`, JSON.stringify(assistantMetadata));
+          // Use the same conversationName from the user message metadata
+          const conversationName = gatewayMetadata?.gateway?.metadata?.conversationName || null;
+          
+          const assistantMetadata = await gatewayMetadataFn(env, conversationId, conversationName, content, "assistant", null, assistantTimestamp);
           
           // Use Promise.race to add timeout but still try to complete synchronously
           const savePromise = env.AI.run("@cf/meta/llama-3.2-3b-instruct", {
@@ -96,21 +96,13 @@ export async function callModel(env, model, prompt, options = {}, gatewayMetadat
             new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 2000))
           ]).catch(err => {
             if (err.message === "Timeout") {
-              console.log("Assistant response save timed out (continuing in background)");
               // Continue in background if timeout
-              savePromise.then(() => {
-                console.log("Background assistant response save completed");
-              }).catch(bgErr => {
-                console.error("Background save of assistant response failed:", bgErr.message);
+              savePromise.catch(bgErr => {
+                // Silent background error
               });
-            } else {
-              console.error("Assistant response save failed:", err.message);
             }
           });
-          
-          console.log("Assistant response save completed");
         } catch (error) {
-          console.error("Failed to save assistant response (non-critical):", error.message);
           // Don't fail the main request if this fails
         }
       }

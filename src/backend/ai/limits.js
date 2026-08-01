@@ -40,20 +40,24 @@ export async function fetchCloudflareLimits(env) {
     const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
     const endOfDay = now.toISOString();
     
-    // Try GraphQL query for Workers AI usage
+    // Use correct GraphQL dataset for Workers AI: aiInferenceAdaptiveGroups
     const query = `{
       viewer {
         accounts(filter: { accountTag: "${accountId}" }) {
-          workersAiInvocationsAdaptive(
-            filter: { datetimeMinute_geq: "${startOfDay}", datetimeMinute_leq: "${endOfDay}" }
+          aiInferenceAdaptiveGroups(
+            filter: { datetime_geq: "${startOfDay}", datetime_leq: "${endOfDay}" }
             limit: 10000
+            orderBy: [datetimeHour_DESC]
           ) {
             count
             sum {
-              requests
+              totalInputTokens
+              totalOutputTokens
+              totalRequestBytesIn
             }
             dimensions {
-              model
+              modelId
+              datetimeHour
             }
           }
         }
@@ -84,19 +88,21 @@ export async function fetchCloudflareLimits(env) {
     
     if (data.data && data.data.viewer && data.data.viewer.accounts && data.data.viewer.accounts[0]) {
       const account = data.data.viewer.accounts[0];
-      if (account.workersAiInvocationsAdaptive && Array.isArray(account.workersAiInvocationsAdaptive)) {
+      if (account.aiInferenceAdaptiveGroups && Array.isArray(account.aiInferenceAdaptiveGroups)) {
         const modelMap = new Map();
         
-        for (const invocation of account.workersAiInvocationsAdaptive) {
-          const modelName = invocation.dimensions.model || "unknown";
-          const count = invocation.count || 0;
+        for (const inference of account.aiInferenceAdaptiveGroups) {
+          const modelName = inference.dimensions.modelId || "unknown";
+          const inputTokens = inference.sum?.totalInputTokens || 0;
+          const outputTokens = inference.sum?.totalOutputTokens || 0;
+          const totalTokensForModel = inputTokens + outputTokens;
           
-          totalTokens += count;
+          totalTokens += totalTokensForModel;
           
           if (modelMap.has(modelName)) {
-            modelMap.set(modelName, modelMap.get(modelName) + count);
+            modelMap.set(modelName, modelMap.get(modelName) + totalTokensForModel);
           } else {
-            modelMap.set(modelName, count);
+            modelMap.set(modelName, totalTokensForModel);
           }
         }
         
@@ -108,6 +114,12 @@ export async function fetchCloudflareLimits(env) {
           percentage: 0
         }));
       }
+    }
+    
+    // If GraphQL returned no data, fallback to Gateway logs
+    if (totalTokens === 0) {
+      console.log("GraphQL returned no usage data, falling back to Gateway logs");
+      return await fetchFromGatewayLogs(accountId, apiToken, gatewayId);
     }
     
     // Calculate percentages

@@ -51,12 +51,10 @@ async function generateConversationTitle(env, prompt, model = null) {
 // Main function to generate gateway metadata
 export async function getGatewayMetadata(env, conversationId, conversationName, prompt, role = "user", titleModel = null, userTimestamp = null) {
   try {
-    console.log(`getGatewayMetadata called with conversationId=${conversationId}, conversationName=${conversationName}, role=${role}`);
-    
     const metadata = {
       conversationId: null,
       conversationName: null,
-      timestamp: userTimestamp || new Date().toISOString(), // Use provided timestamp or current time
+      timestamp: userTimestamp || new Date().toISOString(),
       messageRole: role,
       messageContent: prompt
     };
@@ -64,31 +62,23 @@ export async function getGatewayMetadata(env, conversationId, conversationName, 
     // Use existing conversationId if provided
     if (conversationId) {
       metadata.conversationId = conversationId;
-      console.log(`Using existing conversationId: ${conversationId}`);
       // Use existing name if provided, otherwise keep current name
       if (conversationName) {
         metadata.conversationName = conversationName;
-        console.log(`Using existing conversationName: ${conversationName}`);
       }
     } else {
       // Generate new conversation ID
       metadata.conversationId = generateConversationId();
-      console.log(`Generated new conversationId: ${metadata.conversationId}`);
       
       // Generate conversation name if not provided
       if (conversationName) {
         metadata.conversationName = conversationName;
-        console.log(`Using provided conversationName: ${conversationName}`);
       } else if (prompt) {
         metadata.conversationName = await generateConversationTitle(env, prompt, titleModel);
-        console.log(`Generated conversationName: ${metadata.conversationName}`);
       } else {
         metadata.conversationName = "New Conversation";
-        console.log(`Using default conversationName: New Conversation`);
       }
     }
-    
-    console.log(`Final metadata: conversationId=${metadata.conversationId}, conversationName=${metadata.conversationName}`);
     
     return {
       gateway: {
@@ -97,7 +87,6 @@ export async function getGatewayMetadata(env, conversationId, conversationName, 
       }
     };
   } catch (error) {
-    console.error("Error in getGatewayMetadata:", error);
     // Return a safe fallback
     return {
       gateway: {
