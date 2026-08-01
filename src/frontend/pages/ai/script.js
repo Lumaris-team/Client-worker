@@ -958,7 +958,7 @@ async function showLimits() {
   }
 
   // Display limits
-  const unit = limits.daily?.unit || "neurons";
+  const unit = limits.daily?.unit || "Neurons";
   const limitsHtml = `
     <div class="bento-grid">
       <article class="bento-block limit-item" style="grid-column: span 4;">

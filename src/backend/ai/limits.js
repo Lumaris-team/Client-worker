@@ -51,7 +51,9 @@ export async function fetchCloudflareLimits(env) {
           ) {
             count
             sum {
-              totalNeurons
+              totalInputTokens
+              totalOutputTokens
+              totalRequestBytesIn
             }
             dimensions {
               modelId
@@ -91,14 +93,16 @@ export async function fetchCloudflareLimits(env) {
         
         for (const inference of account.aiInferenceAdaptiveGroups) {
           const modelName = inference.dimensions.modelId || "unknown";
-          const neurons = inference.sum?.totalNeurons || 0;
+          const inputTokens = inference.sum?.totalInputTokens || 0;
+          const outputTokens = inference.sum?.totalOutputTokens || 0;
+          const totalTokensForModel = inputTokens + outputTokens;
           
-          totalTokens += neurons;
+          totalTokens += totalTokensForModel;
           
           if (modelMap.has(modelName)) {
-            modelMap.set(modelName, modelMap.get(modelName) + neurons);
+            modelMap.set(modelName, modelMap.get(modelName) + totalTokensForModel);
           } else {
-            modelMap.set(modelName, neurons);
+            modelMap.set(modelName, totalTokensForModel);
           }
         }
         
@@ -106,7 +110,7 @@ export async function fetchCloudflareLimits(env) {
           id: name,
           name: name,
           brand: extractBrandFromModelId(name),
-          consumption: consumption,
+          consumption: parseFloat(consumption.toFixed(1)),
           percentage: 0
         }));
       }
@@ -253,7 +257,7 @@ async function fetchFromGatewayLogs(accountId, apiToken, gatewayId) {
       id: name,
       name: name,
       brand: extractBrandFromModelId(name),
-      consumption: consumption,
+      consumption: parseFloat(consumption.toFixed(1)),
       percentage: 0
     }));
     

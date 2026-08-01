@@ -28,12 +28,8 @@ async function generateConversationTitle(env, prompt, model = null) {
     const response = await env.AI.run(titleModel, {
       messages: [
         {
-          role: "system",
-          content: "You are a helpful assistant that creates concise, descriptive conversation titles. Generate a title of exactly 3 words maximum that captures the essence of the conversation. Return only the title, nothing else. No punctuation."
-        },
-        {
           role: "user",
-          content: `Create a conversation title of max 3 words for this first prompt: "${prompt.substring(0, 200)}"`
+          content: "You are a helpful assistant that creates concise, descriptive conversation titles. Generate a title of exactly 3 words maximum that captures the essence of the conversation. Return only the title, nothing else. No punctuation.\n\nCreate a conversation title of max 3 words for this first prompt: \"" + prompt.substring(0, 200) + "\""
         }
       ],
       max_tokens: 30
