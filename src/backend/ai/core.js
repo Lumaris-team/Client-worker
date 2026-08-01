@@ -18,13 +18,12 @@ export async function callModel(env, model, prompt, options = {}, gatewayMetadat
     try {
       // Get gateway metadata for user message
       let gatewayMetadata = null;
-      let conversationId = null;
+      let conversationId = options?.conversationId || null;
       if (gatewayMetadataFn && typeof gatewayMetadataFn === 'function') {
-        conversationId = options?.conversationId || null;
         const conversationName = options?.conversationName || null;
         const titleModel = options?.titleGenerationModel || null;
         gatewayMetadata = await gatewayMetadataFn(env, conversationId, conversationName, message, "user", titleModel);
-        conversationId = gatewayMetadata?.gateway?.metadata?.conversationId || conversationId;
+        // Don't overwrite conversationId - trust what was passed in
       }
 
       // Check if this is an image generation model (text-to-image)

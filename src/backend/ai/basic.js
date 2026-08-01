@@ -5,16 +5,24 @@ export async function basic(env, model, body = {}) {
 	const category = "basic";
 	const prompt = body?.prompt || (`Basic AI request: ${body?.query || body?.text || ""}`);
 	
-	const result = await callModel(env, model, prompt, body?.options || {}, getGatewayMetadata);
+	// Merge conversation options with existing options
+	const options = {
+		...body?.options,
+		conversationId: body?.conversationId || null,
+		conversationName: body?.conversationName || null,
+		titleGenerationModel: body?.titleGenerationModel || null
+	};
+	
+	const result = await callModel(env, model, prompt, options, getGatewayMetadata);
 	
 	// Return conversation info from gateway metadata
 	const gatewayMeta = result?.gatewayMetadata || {};
-	const conversationId = gatewayMeta.conversationId || body?.conversationId;
-	const conversationName = gatewayMeta.conversationName || body?.conversationName;
+	const finalConversationId = gatewayMeta.conversationId || options.conversationId;
+	const finalConversationName = gatewayMeta.conversationName || options.conversationName;
 	
 	// Include conversation metadata directly in the result object for frontend
-	result.conversationId = conversationId;
-	result.conversationName = conversationName;
+	result.conversationId = finalConversationId;
+	result.conversationName = finalConversationName;
 	
 	return result;
 }

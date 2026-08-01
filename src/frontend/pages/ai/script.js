@@ -323,14 +323,12 @@ async function loadConversations(offset = 0, limit = 100) {
   try {
     const url = `conversations?offset=${offset}&limit=${limit}`;
     const data = await aiGet(url);
-    console.log("Loaded conversations:", data);
     return {
       conversations: data.conversations || [],
       hasMore: data.hasMore || false,
       error: data.error
     };
   } catch (error) {
-    console.error("Failed to load conversations:", error);
     return { conversations: [], hasMore: false, error: error.message };
   }
 }
@@ -338,10 +336,8 @@ async function loadConversations(offset = 0, limit = 100) {
 async function loadLimits() {
   try {
     const data = await aiGet("limits", "Load Limits");
-    console.log("Loaded limits:", data);
     return data;
   } catch (error) {
-    console.error("Failed to load limits:", error);
     return null;
   }
 }
@@ -422,11 +418,10 @@ async function sendMessage(message) {
       prompt: message,
       model: modelId,
       category,
-      conversationId: state.conversationId,
-      conversationName: state.conversationName,
-      titleGenerationModel: !state.conversationId ? titleGenerationModel : null,
+      conversationId: state.conversationId || null,
+      conversationName: state.conversationName || null,
+      titleGenerationModel: (!state.conversationId) ? titleGenerationModel : null,
     });
-    console.log("Sent to backend: conversationId =", state.conversationId, "conversationName =", state.conversationName);
 
     // Remove loading message
     const loadingMessage = chatContainer.querySelector(".chat-message.loading");
@@ -443,16 +438,12 @@ async function sendMessage(message) {
     const conversationId = response?.conversationId || result?.conversationId;
     const conversationName = response?.conversationName || result?.conversationName;
     
-    console.log("Received from backend: conversationId =", conversationId, "conversationName =", conversationName);
-    
     if (conversationId) {
       state.conversationId = conversationId;
     }
     if (conversationName) {
       state.conversationName = conversationName;
     }
-    
-    console.log("State after update: conversationId =", state.conversationId, "conversationName =", state.conversationName);
 
     if (result && result.response) {
       displayAIMessage(result.response);
@@ -784,9 +775,6 @@ async function loadConversation(conversationId, offset = 0, limit = 100) {
   try {
     const url = `conversations/${conversationId}?offset=${offset}&limit=${limit}`;
     const data = await aiGet(url, "Load Conversation");
-    console.log("Loaded conversation:", data);
-    console.log("Messages in response:", data?.messages);
-    console.log("Number of messages:", data?.messages?.length);
 
     if (data && data.messages) {
       state.conversationId = conversationId;
@@ -797,16 +785,12 @@ async function loadConversation(conversationId, offset = 0, limit = 100) {
       const chatContainer = document.getElementById("chat-container");
       if (!chatContainer) return;
 
-      // If this is the first load, clear the container
       if (offset === 0) {
         chatContainer.innerHTML = "";
       }
 
-      // Display messages (insert at beginning if offset > 0 for pagination)
       const messages = data.messages || [];
-      console.log("Displaying messages:", messages);
       messages.forEach((msg, index) => {
-        console.log(`Message ${index}: role=${msg.role}, content=${msg.content?.substring(0, 50)}...`);
         if (msg.role === "user") {
           const userHtml = `
             <div class="chat-message user">

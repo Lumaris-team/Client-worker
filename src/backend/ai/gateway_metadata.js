@@ -59,15 +59,15 @@ export async function getGatewayMetadata(env, conversationId, conversationName, 
       messageContent: prompt
     };
     
-    // Use existing conversationId if provided
+    // If conversationId is provided, ALWAYS use it (never generate new ID)
     if (conversationId) {
       metadata.conversationId = conversationId;
-      // Use existing name if provided, otherwise keep current name
+      // Use provided conversationName or keep existing one
       if (conversationName) {
         metadata.conversationName = conversationName;
       }
     } else {
-      // Generate new conversation ID
+      // Only generate new conversation ID when none is provided
       metadata.conversationId = generateConversationId();
       
       // Generate conversation name if not provided
@@ -87,7 +87,7 @@ export async function getGatewayMetadata(env, conversationId, conversationName, 
       }
     };
   } catch (error) {
-    // Return a safe fallback
+    // Return a safe fallback - use provided conversationId if available
     return {
       gateway: {
         id: env.GATEWAY_ID || "default",
