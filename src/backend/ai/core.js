@@ -56,7 +56,10 @@ export async function callModel(env, model, prompt, options = {}, gatewayMetadat
       if (isImageModel) {
         content = response?.image || response?.data?.[0]?.url || JSON.stringify(response);
       } else {
-        if (typeof response === 'string') {
+        // Handle OpenAI-style response format with choices array
+        if (response?.choices?.[0]?.message?.content) {
+          content = response.choices[0].message.content;
+        } else if (typeof response === 'string') {
           content = response;
         } else if (response?.response) {
           content = response.response;

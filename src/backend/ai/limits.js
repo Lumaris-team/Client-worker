@@ -234,18 +234,16 @@ async function fetchFromGatewayLogs(accountId, apiToken, gatewayId) {
       if (logDate >= startOfDay) {
         filteredCount++;
         const modelName = log.model || "unknown";
-        const tokensIn = log.tokens_in || 0;
-        const tokensOut = log.tokens_out || 0;
-        const totalTokensForRequest = tokensIn + tokensOut;
+        const neurons = log.neurons || 0;
         
-        console.log(`Log: model=${modelName}, tokens_in=${tokensIn}, tokens_out=${tokensOut}, total=${totalTokensForRequest}`);
+        console.log(`Log: model=${modelName}, neurons=${neurons}`);
         
-        totalTokens += totalTokensForRequest;
+        totalTokens += neurons;
         
         if (modelMap.has(modelName)) {
-          modelMap.set(modelName, modelMap.get(modelName) + totalTokensForRequest);
+          modelMap.set(modelName, modelMap.get(modelName) + neurons);
         } else {
-          modelMap.set(modelName, totalTokensForRequest);
+          modelMap.set(modelName, neurons);
         }
       }
     }
