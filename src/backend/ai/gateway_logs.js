@@ -118,10 +118,23 @@ export async function parseConversationsFromLogs(logs, env = null) {
         continue;
       }
       
-      const metadata = log?.gateway?.metadata || log?.metadata || {};
+      // IMPORTANT: Cloudflare API returns metadata as a STRING, not an object
+      // We need to parse it as JSON
+      let metadata = {};
+      try {
+        const metadataString = log?.gateway?.metadata || log?.metadata || "{}";
+        if (typeof metadataString === 'string') {
+          metadata = JSON.parse(metadataString);
+        } else {
+          metadata = metadataString;
+        }
+      } catch (parseError) {
+        // If parsing fails, use empty object
+        metadata = {};
+      }
+      
       const conversationId = metadata.conversationId;
       const conversationName = metadata.conversationName;
-      // Use metadata timestamp first (when message was sent), then log creation time
       const timestamp = metadata.timestamp || log.timestamp || log.created_at || new Date().toISOString();
       const messageRole = metadata.messageRole;
       const messageContent = metadata.messageContent;
@@ -206,21 +219,15 @@ export async function getConversations(env, limit = 100, offset = 0) {
 
 // Get specific conversation with messages
 export async function getConversationMessages(env, conversationId, limit = 100, offset = 0) {
-  console.log(`[AI Gateway] Fetching messages for conversation ${conversationId}`);
-  
   if (!conversationId) {
     return { messages: [], error: "invalid_conversation_id", hasMore: false };
   }
   
-  // Check if conversation is deleted
   const deletedConversationIds = await getDeletedConversations(env);
   if (deletedConversationIds.includes(conversationId)) {
-    console.log(`[AI Gateway] Conversation ${conversationId} is deleted`);
     return { messages: [], error: "conversation_deleted", hasMore: false };
   }
   
-  // Fetch ALL logs with automatic pagination
-  // Cloudflare API doesn't support filtering by nested metadata fields, so we fetch all and filter server-side
   const allLogs = [];
   let page = 1;
   const perPage = 50;
@@ -228,50 +235,53 @@ export async function getConversationMessages(env, conversationId, limit = 100, 
   let emptyPageCount = 0;
   
   while (hasMore) {
-    console.log(`[AI Gateway] Fetching page ${page} of logs`);
     const { logs: pageLogs, hasMore: pageHasMore } = await fetchGatewayLogs(env, { limit: perPage, page });
     
-    // Filter logs by conversationId from metadata
     const conversationLogs = pageLogs.filter(log => {
       const metadata = log?.gateway?.metadata || log?.metadata || {};
       return metadata.conversationId === conversationId;
     });
     
-    console.log(`[AI Gateway] Page ${page}: ${conversationLogs.length} logs for conversation ${conversationId}`);
-    
-    // Add logs to array (they're already in chronological order from fetchGatewayLogs)
     allLogs.push(...conversationLogs);
     
-    // Track empty pages to detect when we've reached the end
     if (pageLogs.length === 0) {
       emptyPageCount++;
     } else {
       emptyPageCount = 0;
     }
     
-    // Stop if we've had 3 consecutive empty pages (end of logs)
-    if (emptyPageCount >= 3) {
-      break;
-    }
+    if (emptyPageCount >= 3) break;
     
-    // Continue as long as there are more pages available
     hasMore = pageHasMore;
-    
-    // Increase safety limit to 100 pages (5000 logs) to ensure we get all messages
-    if (page >= 100) {
-      break;
-    }
-    
+    if (page >= 100) break;
     page++;
   }
   
-  console.log(`[AI Gateway] Total logs fetched for conversation ${conversationId}: ${allLogs.length}`);
-  
-  // Sort all logs chronologically to ensure correct order across pages
-  // Use metadata.timestamp (when message was sent) for accurate ordering
   allLogs.sort((a, b) => {
-    const metadataA = a?.gateway?.metadata || a?.metadata || {};
-    const metadataB = b?.gateway?.metadata || b?.metadata || {};
+    // IMPORTANT: Cloudflare API returns metadata as a STRING, not an object
+    let metadataA = {};
+    let metadataB = {};
+    try {
+      const metadataStringA = a?.gateway?.metadata || a?.metadata || "{}";
+      if (typeof metadataStringA === 'string') {
+        metadataA = JSON.parse(metadataStringA);
+      } else {
+        metadataA = metadataStringA;
+      }
+    } catch (e) {
+      metadataA = {};
+    }
+    try {
+      const metadataStringB = b?.gateway?.metadata || b?.metadata || "{}";
+      if (typeof metadataStringB === 'string') {
+        metadataB = JSON.parse(metadataStringB);
+      } else {
+        metadataB = metadataStringB;
+      }
+    } catch (e) {
+      metadataB = {};
+    }
+    
     const timeA = new Date(metadataA.timestamp || a.created_at || a.timestamp).getTime() || 0;
     const timeB = new Date(metadataB.timestamp || b.created_at || b.timestamp).getTime() || 0;
     return timeA - timeB;
@@ -281,15 +291,10 @@ export async function getConversationMessages(env, conversationId, limit = 100, 
   const conversation = conversations.find(c => c.id === conversationId);
   
   if (!conversation) {
-    console.log(`[AI Gateway] Conversation ${conversationId} not found after parsing`);
     return { messages: [], error: "conversation_not_found", hasMore: false };
   }
   
-  console.log(`[AI Gateway] Conversation found with ${conversation.messages.length} messages`);
-  
   let messages = conversation.messages || [];
-  
-  // Sort messages chronologically by timestamp
   messages.sort((a, b) => {
     const timeA = new Date(a.timestamp).getTime() || 0;
     const timeB = new Date(b.timestamp).getTime() || 0;
@@ -298,8 +303,6 @@ export async function getConversationMessages(env, conversationId, limit = 100, 
   
   const paginatedMessages = messages.slice(offset, offset + limit);
   const hasMoreMessages = messages.length > offset + limit;
-  
-  console.log(`[AI Gateway] Returning ${paginatedMessages.length} messages (offset=${offset}, limit=${limit})`);
   
   return { messages: paginatedMessages, error: null, hasMore: hasMoreMessages };
 }
