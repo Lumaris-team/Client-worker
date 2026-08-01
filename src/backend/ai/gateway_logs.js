@@ -278,12 +278,55 @@ export async function getConversationMessages(env, conversationId, limit = 100, 
   
   let messages = conversation.messages || [];
   
-  // Simple chronological sort by timestamp only
+  // Sort messages by timestamp with stable sort to maintain order for same timestamps
+  // Use a more robust sorting approach to handle edge cases
   messages.sort((a, b) => {
     const timeA = new Date(a.timestamp).getTime() || 0;
     const timeB = new Date(b.timestamp).getTime() || 0;
     return timeA - timeB;
   });
+  
+  // Re-sort to ensure user messages always come before assistant responses
+  // Group messages by approximate time windows and ensure correct pairing
+  const sortedMessages = [];
+  const processed = new Set();
+  
+  for (let i = 0; i < messages.length; i++) {
+    if (processed.has(i)) continue;
+    
+    const currentMsg = messages[i];
+    sortedMessages.push(currentMsg);
+    processed.add(i);
+    
+    // If this is a user message, find the next assistant message with similar timestamp
+    if (currentMsg.role === 'user') {
+      const currentTime = new Date(currentMsg.timestamp).getTime();
+      
+      for (let j = 0; j < messages.length; j++) {
+        if (processed.has(j)) continue;
+        
+        const nextMsg = messages[j];
+        if (nextMsg.role === 'assistant') {
+          const nextTime = new Date(nextMsg.timestamp).getTime();
+          // If assistant message is within 5 seconds of user message, pair them
+          if (nextTime >= currentTime && nextTime - currentTime < 5000) {
+            sortedMessages.push(nextMsg);
+            processed.add(j);
+            break;
+          }
+        }
+      }
+    }
+  }
+  
+  // Add any remaining messages that weren't processed
+  for (let i = 0; i < messages.length; i++) {
+    if (!processed.has(i)) {
+      sortedMessages.push(messages[i]);
+    }
+  }
+  
+  messages = sortedMessages;
   
   const paginatedMessages = messages.slice(offset, offset + limit);
   const hasMoreMessages = messages.length > offset + limit;
