@@ -189,9 +189,11 @@ export async function getConversationMessages(env, conversationId, limit = 100, 
     
     allLogs.push(...conversationLogs);
     
-    hasMore = pageHasMore && conversationLogs.length > 0;
+    // Continue as long as there are more pages available (not just if we found logs)
+    hasMore = pageHasMore;
     
-    if (page >= 10) {
+    // Increase safety limit to 20 pages (1000 logs) to ensure we get all messages
+    if (page >= 20) {
       break;
     }
     
@@ -207,10 +209,17 @@ export async function getConversationMessages(env, conversationId, limit = 100, 
   
   let messages = conversation.messages || [];
   
+  // Sort messages by timestamp with stable sort to maintain order for same timestamps
   messages.sort((a, b) => {
     const timeA = new Date(a.timestamp).getTime() || 0;
     const timeB = new Date(b.timestamp).getTime() || 0;
-    return timeA - timeB;
+    if (timeA !== timeB) {
+      return timeA - timeB;
+    }
+    // If timestamps are equal, user messages come before assistant messages
+    if (a.role === "user" && b.role === "assistant") return -1;
+    if (a.role === "assistant" && b.role === "user") return 1;
+    return 0;
   });
   
   const paginatedMessages = messages.slice(offset, offset + limit);

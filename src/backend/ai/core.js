@@ -75,9 +75,9 @@ export async function callModel(env, model, prompt, options = {}, gatewayMetadat
       // Make this synchronous with a short timeout to ensure it completes before response
       if (conversationId && gatewayMetadataFn && typeof gatewayMetadataFn === 'function') {
         try {
-          // Use the user message's timestamp + 1ms to ensure assistant response comes after
+          // Use the user message's timestamp + 100ms to ensure assistant response comes after
           const userTimestamp = gatewayMetadata?.gateway?.metadata?.timestamp;
-          const assistantTimestamp = userTimestamp ? new Date(new Date(userTimestamp).getTime() + 1).toISOString() : new Date().toISOString();
+          const assistantTimestamp = userTimestamp ? new Date(new Date(userTimestamp).getTime() + 100).toISOString() : new Date().toISOString();
           
           // Use the same conversationName from the user message metadata
           const conversationName = gatewayMetadata?.gateway?.metadata?.conversationName || null;
@@ -89,10 +89,10 @@ export async function callModel(env, model, prompt, options = {}, gatewayMetadat
             messages: [{ role: "assistant", content: "ACK" }]
           }, assistantMetadata);
           
-          // Wait for save with a 10 second timeout (increased to ensure completion)
+          // Wait for save with a 15 second timeout (increased to ensure completion)
           await Promise.race([
             savePromise,
-            new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 10000))
+            new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 15000))
           ]).catch(err => {
             if (err.message === "Timeout") {
               // Continue in background if timeout
