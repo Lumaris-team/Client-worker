@@ -23,21 +23,31 @@ async function generateConversationTitle(env, prompt, model = null) {
   try {
     // Use provided model or fallback to Llama 3.2 3B (lighter and currently supported)
     const titleModel = model || "@cf/meta/llama-3.2-3b-instruct";
-    console.log(`Generating title using model: ${titleModel}`);
     
     const response = await env.AI.run(titleModel, {
       messages: [
         {
+          role: "system",
+          content: "You are a title generator. Create short, descriptive titles (2-4 words) for conversations. Be creative and specific. Never use 'safe', 'ok', or generic words."
+        },
+        {
           role: "user",
-          content: "You are a helpful assistant that creates concise, descriptive conversation titles. Generate a title of exactly 3 words maximum that captures the essence of the conversation. Return only the title, nothing else. No punctuation.\n\nCreate a conversation title of max 3 words for this first prompt: \"" + prompt.substring(0, 200) + "\""
+          content: `Create a 2-4 word title for this conversation: "${prompt.substring(0, 150)}"`
         }
       ],
-      max_tokens: 30
+      max_tokens: 25
     });
     
     const title = response?.response || response?.output || "";
     const cleanedTitle = title.trim().replace(/^["']|["']$/g, '').replace(/[.,!?;:]$/g, '').substring(0, 50);
-    return cleanedTitle || fallbackTitle();
+    
+    // If the AI returns generic/invalid responses, use fallback
+    const invalidResponses = ["safe", "ok", "yes", "no", "title", "conversation", "summary"];
+    if (!cleanedTitle || cleanedTitle.length < 2 || invalidResponses.includes(cleanedTitle.toLowerCase())) {
+      return fallbackTitle();
+    }
+    
+    return cleanedTitle;
   } catch (error) {
     console.error("Error generating conversation title, using fallback:", error.message);
     return fallbackTitle();
