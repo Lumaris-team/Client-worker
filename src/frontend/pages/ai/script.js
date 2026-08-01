@@ -421,6 +421,7 @@ async function sendMessage(message) {
       conversationId: state.conversationId || null,
       conversationName: state.conversationName || null,
       titleGenerationModel: (!state.conversationId) ? titleGenerationModel : null,
+      assistantResponse: state.lastAssistantResponse || null,
     });
 
     // Remove loading message
@@ -447,6 +448,9 @@ async function sendMessage(message) {
 
     if (result && result.response) {
       displayAIMessage(result.response);
+      
+      // Store the assistant response to be saved with the next user message
+      state.lastAssistantResponse = result.response;
       
       // If this was a new conversation, hide selector after first message
       if (result.isNewConversation) {

@@ -121,9 +121,12 @@ export async function parseConversationsFromLogs(logs, env = null) {
       const metadata = log?.gateway?.metadata || log?.metadata || {};
       const conversationId = metadata.conversationId;
       const conversationName = metadata.conversationName;
-      const timestamp = log.timestamp || log.created_at || new Date().toISOString();
+      // Use metadata timestamp first (when message was sent), then log creation time
+      const timestamp = metadata.timestamp || log.timestamp || log.created_at || new Date().toISOString();
       const messageRole = metadata.messageRole;
       const messageContent = metadata.messageContent;
+      const previousAssistantResponse = metadata.previousAssistantResponse;
+      const previousAssistantTimestamp = metadata.previousAssistantTimestamp;
       
       if (!conversationId) {
         continue;
@@ -152,11 +155,6 @@ export async function parseConversationsFromLogs(logs, env = null) {
       
       const conversation = conversations.get(conversationId);
       
-      // Update last prompt date if this log is more recent
-      if (new Date(timestamp) > new Date(conversation.lastPromptDate)) {
-        conversation.lastPromptDate = timestamp;
-      }
-      
       conversation.messageCount++;
       
       // Extract message from metadata if available (new format)
@@ -165,6 +163,16 @@ export async function parseConversationsFromLogs(logs, env = null) {
           role: messageRole,
           content: messageContent,
           timestamp: timestamp
+        });
+      }
+      
+      // Extract previous assistant response from metadata if available
+      // This is how we save assistant responses without making extra AI calls
+      if (previousAssistantResponse && previousAssistantTimestamp) {
+        conversation.messages.push({
+          role: "assistant",
+          content: previousAssistantResponse,
+          timestamp: previousAssistantTimestamp
         });
       }
       
@@ -252,9 +260,12 @@ export async function getConversationMessages(env, conversationId, limit = 100, 
   }
   
   // Sort all logs chronologically to ensure correct order across pages
+  // Use metadata.timestamp (when message was sent) for accurate ordering
   allLogs.sort((a, b) => {
-    const timeA = new Date(a.created_at || a.timestamp).getTime() || 0;
-    const timeB = new Date(b.created_at || b.timestamp).getTime() || 0;
+    const metadataA = a?.gateway?.metadata || a?.metadata || {};
+    const metadataB = b?.gateway?.metadata || b?.metadata || {};
+    const timeA = new Date(metadataA.timestamp || a.created_at || a.timestamp).getTime() || 0;
+    const timeB = new Date(metadataB.timestamp || b.created_at || b.timestamp).getTime() || 0;
     return timeA - timeB;
   });
   

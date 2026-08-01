@@ -22,7 +22,8 @@ export async function callModel(env, model, prompt, options = {}, gatewayMetadat
       if (gatewayMetadataFn && typeof gatewayMetadataFn === 'function') {
         const conversationName = options?.conversationName || null;
         const titleModel = options?.titleGenerationModel || null;
-        gatewayMetadata = await gatewayMetadataFn(env, conversationId, conversationName, message, "user", titleModel);
+        const assistantResponse = options?.assistantResponse || null;
+        gatewayMetadata = await gatewayMetadataFn(env, conversationId, conversationName, message, "user", titleModel, null, assistantResponse);
         // Don't overwrite conversationId - trust what was passed in
       }
 
@@ -80,40 +81,17 @@ export async function callModel(env, model, prompt, options = {}, gatewayMetadat
         }
       }
       
-      // Save assistant response to Gateway logs with metadata using a lightweight model call
-      // Make this synchronous with a short timeout to ensure it completes before response
-      if (conversationId && gatewayMetadataFn && typeof gatewayMetadataFn === 'function') {
-        try {
-          // Use the user message's timestamp + 1000ms to ensure assistant response comes after
-          const userTimestamp = gatewayMetadata?.gateway?.metadata?.timestamp;
-          const assistantTimestamp = userTimestamp ? new Date(new Date(userTimestamp).getTime() + 1000).toISOString() : new Date().toISOString();
-          
-          // Use the same conversationName from the user message metadata
-          const conversationName = gatewayMetadata?.gateway?.metadata?.conversationName || null;
-          
-          const assistantMetadata = await gatewayMetadataFn(env, conversationId, conversationName, content, "assistant", null, assistantTimestamp);
-          
-          // Use Promise.race to add timeout but still try to complete synchronously
-          const savePromise = env.AI.run("@cf/meta/llama-3.2-3b-instruct", {
-            messages: [{ role: "assistant", content: "ACK" }]
-          }, assistantMetadata);
-          
-          // Wait for save to complete (no timeout to ensure it's saved)
-          await savePromise.catch(bgErr => {
-            // Silent background error
-          });
-        } catch (error) {
-          // Don't fail the main request if this fails
-        }
-      }
-      
       // Build result object
       const result = {
         ok: true,
         model: actualModel,
         response: content,
         raw: response,
-        gatewayMetadata: gatewayMetadata?.gateway?.metadata || null,
+        gatewayMetadata: gatewayMetadata,
+        conversationId: conversationId,
+        conversationName: gatewayMetadata?.gateway?.metadata?.conversationName || null,
+        // Include assistant response so it can be saved with next user message
+        assistantResponse: content
       };
       
       return result;

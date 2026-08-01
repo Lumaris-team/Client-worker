@@ -45,7 +45,7 @@ async function generateConversationTitle(env, prompt, model = null) {
 }
 
 // Main function to generate gateway metadata
-export async function getGatewayMetadata(env, conversationId, conversationName, prompt, role = "user", titleModel = null, userTimestamp = null) {
+export async function getGatewayMetadata(env, conversationId, conversationName, prompt, role = "user", titleModel = null, userTimestamp = null, assistantResponse = null) {
   try {
     const metadata = {
       conversationId: null,
@@ -54,6 +54,12 @@ export async function getGatewayMetadata(env, conversationId, conversationName, 
       messageRole: role,
       messageContent: prompt
     };
+    
+    // If there's a previous assistant response, save it in metadata
+    if (assistantResponse) {
+      metadata.previousAssistantResponse = assistantResponse;
+      metadata.previousAssistantTimestamp = new Date(new Date(userTimestamp || new Date().toISOString()).getTime() - 1000).toISOString();
+    }
     
     // If conversationId is provided, ALWAYS use it (never generate new ID)
     if (conversationId) {
@@ -92,7 +98,8 @@ export async function getGatewayMetadata(env, conversationId, conversationName, 
           conversationName: conversationName || "New Conversation",
           timestamp: new Date().toISOString(),
           messageRole: role,
-          messageContent: prompt
+          messageContent: prompt,
+          previousAssistantResponse: assistantResponse || null
         }
       }
     };
