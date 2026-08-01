@@ -89,10 +89,10 @@ export async function callModel(env, model, prompt, options = {}, gatewayMetadat
             messages: [{ role: "assistant", content: "ACK" }]
           }, assistantMetadata);
           
-          // Wait for save with a 2 second timeout
+          // Wait for save with a 10 second timeout (increased to ensure completion)
           await Promise.race([
             savePromise,
-            new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 2000))
+            new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 10000))
           ]).catch(err => {
             if (err.message === "Timeout") {
               // Continue in background if timeout
