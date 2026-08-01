@@ -27,12 +27,8 @@ async function generateConversationTitle(env, prompt, model = null) {
     const response = await env.AI.run(titleModel, {
       messages: [
         {
-          role: "system",
-          content: "You are a title generator. Create short, descriptive titles (2-4 words) for conversations. Be creative and specific. Never use 'safe', 'ok', or generic words."
-        },
-        {
           role: "user",
-          content: `Create a 2-4 word title for this conversation: "${prompt.substring(0, 150)}"`
+          content: `You are a title generator. Create short, descriptive titles (2-4 words) for conversations. Be creative and specific. Never use 'safe', 'ok', or generic words.\n\nCreate a 2-4 word title for this conversation: "${prompt.substring(0, 150)}"`
         }
       ],
       max_tokens: 25
