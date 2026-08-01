@@ -51,9 +51,7 @@ export async function fetchCloudflareLimits(env) {
           ) {
             count
             sum {
-              totalInputTokens
-              totalOutputTokens
-              totalRequestBytesIn
+              totalNeurons
             }
             dimensions {
               modelId
@@ -93,16 +91,14 @@ export async function fetchCloudflareLimits(env) {
         
         for (const inference of account.aiInferenceAdaptiveGroups) {
           const modelName = inference.dimensions.modelId || "unknown";
-          const inputTokens = inference.sum?.totalInputTokens || 0;
-          const outputTokens = inference.sum?.totalOutputTokens || 0;
-          const totalTokensForModel = inputTokens + outputTokens;
+          const neurons = inference.sum?.totalNeurons || 0;
           
-          totalTokens += totalTokensForModel;
+          totalTokens += neurons;
           
           if (modelMap.has(modelName)) {
-            modelMap.set(modelName, modelMap.get(modelName) + totalTokensForModel);
+            modelMap.set(modelName, modelMap.get(modelName) + neurons);
           } else {
-            modelMap.set(modelName, totalTokensForModel);
+            modelMap.set(modelName, neurons);
           }
         }
         
@@ -234,16 +230,18 @@ async function fetchFromGatewayLogs(accountId, apiToken, gatewayId) {
       if (logDate >= startOfDay) {
         filteredCount++;
         const modelName = log.model || "unknown";
-        const neurons = log.neurons || 0;
+        const tokensIn = log.tokens_in || 0;
+        const tokensOut = log.tokens_out || 0;
+        const totalTokensForRequest = tokensIn + tokensOut;
         
-        console.log(`Log: model=${modelName}, neurons=${neurons}`);
+        console.log(`Log: model=${modelName}, tokens_in=${tokensIn}, tokens_out=${tokensOut}, total=${totalTokensForRequest}`);
         
-        totalTokens += neurons;
+        totalTokens += totalTokensForRequest;
         
         if (modelMap.has(modelName)) {
-          modelMap.set(modelName, modelMap.get(modelName) + neurons);
+          modelMap.set(modelName, modelMap.get(modelName) + totalTokensForRequest);
         } else {
-          modelMap.set(modelName, neurons);
+          modelMap.set(modelName, totalTokensForRequest);
         }
       }
     }
