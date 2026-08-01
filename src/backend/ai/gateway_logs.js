@@ -90,9 +90,13 @@ export async function fetchGatewayLogs(env, options = {}) {
       return { logs: [], error: "Invalid response", hasMore: false };
     }
     
+    // Cloudflare API returns logs in reverse chronological order (newest first)
+    // Reverse them to get chronological order (oldest first)
+    const chronologicalLogs = data.result.reverse();
+    
     const hasMore = data.result.length >= perPage;
     
-    return { logs: data.result, error: null, hasMore };
+    return { logs: chronologicalLogs, error: null, hasMore };
   } catch (error) {
     return { logs: [], error: error.message, hasMore: false };
   }
@@ -221,6 +225,7 @@ export async function getConversationMessages(env, conversationId, limit = 100, 
       return metadata.conversationId === conversationId;
     });
     
+    // Add logs to array (they're already in chronological order from fetchGatewayLogs)
     allLogs.push(...conversationLogs);
     
     // Track empty pages to detect when we've reached the end
@@ -245,6 +250,13 @@ export async function getConversationMessages(env, conversationId, limit = 100, 
     
     page++;
   }
+  
+  // Sort all logs chronologically to ensure correct order across pages
+  allLogs.sort((a, b) => {
+    const timeA = new Date(a.created_at || a.timestamp).getTime() || 0;
+    const timeB = new Date(b.created_at || b.timestamp).getTime() || 0;
+    return timeA - timeB;
+  });
   
   const conversations = await parseConversationsFromLogs(allLogs, env);
   const conversation = conversations.find(c => c.id === conversationId);
