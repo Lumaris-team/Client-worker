@@ -238,7 +238,18 @@ export async function getConversationMessages(env, conversationId, limit = 100, 
     const { logs: pageLogs, hasMore: pageHasMore } = await fetchGatewayLogs(env, { limit: perPage, page });
     
     const conversationLogs = pageLogs.filter(log => {
-      const metadata = log?.gateway?.metadata || log?.metadata || {};
+      let metadata = {};
+      try {
+        // Cloudflare API returns metadata as a JSON string in log.metadata
+        const metadataString = log?.metadata || "{}";
+        if (typeof metadataString === 'string') {
+          metadata = JSON.parse(metadataString);
+        } else {
+          metadata = metadataString;
+        }
+      } catch (e) {
+        metadata = {};
+      }
       return metadata.conversationId === conversationId;
     });
     
@@ -257,44 +268,26 @@ export async function getConversationMessages(env, conversationId, limit = 100, 
     page++;
   }
   
-  allLogs.sort((a, b) => {
-    // IMPORTANT: Cloudflare API returns metadata as a STRING, not an object
-    let metadataA = {};
-    let metadataB = {};
+  const messages = allLogs.map(log => {
+    let metadata = {};
     try {
-      const metadataStringA = a?.gateway?.metadata || a?.metadata || "{}";
-      if (typeof metadataStringA === 'string') {
-        metadataA = JSON.parse(metadataStringA);
+      const metadataString = log?.metadata || "{}";
+      if (typeof metadataString === 'string') {
+        metadata = JSON.parse(metadataString);
       } else {
-        metadataA = metadataStringA;
+        metadata = metadataString;
       }
     } catch (e) {
-      metadataA = {};
-    }
-    try {
-      const metadataStringB = b?.gateway?.metadata || b?.metadata || "{}";
-      if (typeof metadataStringB === 'string') {
-        metadataB = JSON.parse(metadataStringB);
-      } else {
-        metadataB = metadataStringB;
-      }
-    } catch (e) {
-      metadataB = {};
+      metadata = {};
     }
     
-    const timeA = new Date(metadataA.timestamp || a.created_at || a.timestamp).getTime() || 0;
-    const timeB = new Date(metadataB.timestamp || b.created_at || b.timestamp).getTime() || 0;
-    return timeA - timeB;
+    return {
+      role: metadata.messageRole,
+      content: metadata.messageContent,
+      timestamp: metadata.timestamp || log.created_at || log.timestamp
+    };
   });
   
-  const conversations = await parseConversationsFromLogs(allLogs, env);
-  const conversation = conversations.find(c => c.id === conversationId);
-  
-  if (!conversation) {
-    return { messages: [], error: "conversation_not_found", hasMore: false };
-  }
-  
-  let messages = conversation.messages || [];
   messages.sort((a, b) => {
     const timeA = new Date(a.timestamp).getTime() || 0;
     const timeB = new Date(b.timestamp).getTime() || 0;

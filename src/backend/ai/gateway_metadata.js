@@ -55,12 +55,6 @@ export async function getGatewayMetadata(env, conversationId, conversationName, 
       messageContent: prompt
     };
     
-    // If there's a previous assistant response, save it in metadata
-    if (assistantResponse) {
-      metadata.previousAssistantResponse = assistantResponse;
-      metadata.previousAssistantTimestamp = new Date(new Date(userTimestamp || new Date().toISOString()).getTime() - 1000).toISOString();
-    }
-    
     // If conversationId is provided, ALWAYS use it (never generate new ID)
     if (conversationId) {
       metadata.conversationId = conversationId;
@@ -82,6 +76,7 @@ export async function getGatewayMetadata(env, conversationId, conversationName, 
       }
     }
     
+    // Return gateway options in correct format for env.AI.run
     return {
       gateway: {
         id: env.GATEWAY_ID || "default",
@@ -98,8 +93,7 @@ export async function getGatewayMetadata(env, conversationId, conversationName, 
           conversationName: conversationName || "New Conversation",
           timestamp: new Date().toISOString(),
           messageRole: role,
-          messageContent: prompt,
-          previousAssistantResponse: assistantResponse || null
+          messageContent: prompt
         }
       }
     };

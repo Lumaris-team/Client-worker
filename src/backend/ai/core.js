@@ -24,7 +24,7 @@ export async function callModel(env, model, prompt, options = {}, gatewayMetadat
         const titleModel = options?.titleGenerationModel || null;
         const userTimestamp = new Date().toISOString();
         gatewayMetadata = await gatewayMetadataFn(env, conversationId, conversationName, message, "user", titleModel, userTimestamp);
-        // Don't overwrite conversationId - trust what was passed in
+        conversationId = gatewayMetadata?.gateway?.metadata?.conversationId || conversationId;
       }
 
       // Check if this is an image generation model (text-to-image)
