@@ -28,18 +28,21 @@ async function generateConversationTitle(env, prompt, model = null) {
       messages: [
         {
           role: "user",
-          content: `You are a title generator. Create short, descriptive titles (2-4 words) for conversations. Be creative and specific. Never use 'safe', 'ok', or generic words.\n\nCreate a 2-4 word title for this conversation: "${prompt.substring(0, 150)}"`
+          content: `Create a 2-3 word title. Be concise. Text: "${prompt.substring(0, 80)}"`
         }
       ],
-      max_tokens: 25
+      max_tokens: 12
     });
     
     const title = response?.response || response?.output || "";
-    const cleanedTitle = title.trim().replace(/^["']|["']$/g, '').replace(/[.,!?;:]$/g, '').substring(0, 50);
+    let cleanedTitle = title.trim().replace(/^["']|["']$/g, '').replace(/[.,!?;:]$/g, '').substring(0, 50);
     
-    // If the AI returns generic/invalid responses, use fallback
-    const invalidResponses = ["safe", "ok", "yes", "no", "title", "conversation", "summary"];
-    if (!cleanedTitle || cleanedTitle.length < 2 || invalidResponses.includes(cleanedTitle.toLowerCase())) {
+    // Remove common prefixes and filler words
+    cleanedTitle = cleanedTitle.replace(/^(title:|title|summary:|summary|here is|the title is|a title for this is)\s*/i, '');
+    cleanedTitle = cleanedTitle.trim();
+    
+    // Only use fallback if title is empty or too short
+    if (!cleanedTitle || cleanedTitle.length < 2) {
       return fallbackTitle();
     }
     
