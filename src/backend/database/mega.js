@@ -225,7 +225,7 @@ async function ensureParentFolder(storage, path) {
 }
 
 export async function megaRead(env, path, storage = null, forceRefresh = false) {
-  const fullPath = `dashboard/${normalizePath(path)}`;
+  const fullPath = `lumaris/${normalizePath(path)}`;
 
   return await retryOperation(async () => {
     await withDelay(); // Rate limiting
@@ -307,7 +307,7 @@ export async function megaRead(env, path, storage = null, forceRefresh = false) 
 }
 
 export async function megaWrite(env, path, body, storage = null) {
-  const fullPath = `dashboard/${normalizePath(path)}`;
+  const fullPath = `lumaris/${normalizePath(path)}`;
   const content = Buffer.from(toText(body), "utf8");
 
   return await retryOperation(async () => {
@@ -402,7 +402,7 @@ export async function megaWrite(env, path, body, storage = null) {
 }
 
 export async function megaDelete(env, path) {
-  const fullPath = `dashboard/${normalizePath(path)}`;
+  const fullPath = `lumaris/${normalizePath(path)}`;
 
   return await retryOperation(async () => {
     await withDelay(); // Rate limiting
