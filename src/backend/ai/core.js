@@ -57,7 +57,10 @@ export async function callModel(env, model, prompt, options = {}, gatewayMetadat
       // Extract content from response
       let content;
       if (isImageModel) {
-        content = response?.image || response?.data?.[0]?.url || JSON.stringify(response);
+        // Image models return a ReadableStream - use official Cloudflare approach
+        const bytes = await new Response(response).bytes();
+        const base64 = btoa(String.fromCharCode(...new Uint8Array(bytes)));
+        content = `data:image/png;base64,${base64}`;
       } else {
         // OpenAI-style format (REST API)
         if (response?.choices?.[0]?.message?.content) {
