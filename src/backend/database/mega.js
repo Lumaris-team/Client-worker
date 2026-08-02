@@ -4,7 +4,7 @@ import { Storage } from "megajs";
 const connectionCache = new Map();
 const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 heures pour éviter les blocages MEGA (credential stuffing)
 const MAX_CACHE_SIZE = 1; // Maximum 1 connexion simultanée
-const MIN_OPERATION_DELAY = 100; // Délai minimum entre opérations (ms) - réduit selon docs Mega.js
+const MIN_OPERATION_DELAY = 2000; // Délai minimum entre opérations (ms) - augmenté pour éviter le throttling MEGA
 let lastOperationTime = 0; // Timestamp de la dernière opération
 
 // Liste de user agents de navigateurs réels pour éviter la détection
@@ -107,16 +107,24 @@ export async function getClient(env, forceRefresh = false) {
     console.log('Cleared MEGA connection cache');
   }
 
-  // Créer une nouvelle connexion avec optimisations selon docs Mega.js
+  // Créer une nouvelle connexion avec optimisations pour éviter le blocage MEGA
   const storage = new Storage({ 
     email, 
     password,
-    autoload: true, // Chargement automatique de la structure
-    autologin: true, // Login automatique
-    keepalive: true, // Maintenir la connexion active
+    userAgent: getRandomUserAgent(), // UserAgent aléatoire de navigateur réel pour éviter suspicion
+    keepalive: true, // Activé pour éviter les reconnexions fréquentes
+    autoload: true, // Activé pour s'assurer que root est disponible
+    autologin: true, // Garder le login automatique
+    autofetch: true, // Activer le fetch automatique
+    protocol: "https", // Utiliser HTTPS sécurisé
+    host: "g.api.mega.co.nz", // Serveur MEGA standard
+    port: 443, // Port HTTPS standard
   });
   
-  await withTimeout(storage.ready, 10000, "Mega login timed out");
+  await withTimeout(storage.ready, 15000, "Mega login timed out");
+  
+  // Attendre un peu plus que root soit chargé si autoload est activé
+  await new Promise(resolve => setTimeout(resolve, 500));
   
   // Vérifier que root est disponible
   if (!storage.root) {
@@ -144,17 +152,27 @@ export async function getOrCreateFolder(storage, folderPath) {
   }
 
   for (const segment of segments) {
-    try {
-      const folder = await current.find(segment);
-      if (folder && folder.directory) {
-        current = folder;
-        continue;
-      }
-    } catch (e) {
-      // Folder doesn't exist, create it
+    await withDelay();
+    const children = await withTimeout(
+      current.children, 
+      2000, 
+      `Children loading timeout for ${segment}` 
+    );
+    
+    let folder = children.find(child => child.name === segment && child.directory);
+    if (!folder) {
+      await withDelay();
+      folder = await withTimeout(
+        current.mkdir(segment), 
+        2000, 
+        `Mkdir timeout for ${segment}` 
+      );
     }
-
-    current = await current.mkdir(segment);
+    current = folder;
+    
+    if (!current) {
+      throw new Error(`Failed to navigate to folder: ${segment}`);
+    }
   }
 
   return current;
@@ -172,14 +190,18 @@ export async function getFolderIfExists(storage, folderPath) {
   }
 
   for (const segment of segments) {
-    try {
-      const folder = await current.find(segment);
-      if (folder && folder.directory) {
-        current = folder;
-      } else {
-        return null;
-      }
-    } catch (e) {
+    await withDelay();
+    const children = await withTimeout(
+      current.children, 
+      2000, 
+      `Children loading timeout for ${segment}` 
+    );
+    
+    const folder = children.find(child => child.name === segment && child.directory);
+    if (!folder) return null;
+    current = folder;
+    
+    if (!current) {
       return null;
     }
   }
@@ -199,23 +221,22 @@ export async function megaRead(env, path, storage = null, forceRefresh = false) 
   const fullPath = `lumaris/${normalizePath(path)}`;
 
   return await retryOperation(async () => {
-    await withDelay(); // Rate limiting
+    await withDelay();
     const storageInstance = storage || await getClient(env, forceRefresh);
 
     try {
       const file = storageInstance.root.navigate(fullPath);
       if (file && !file.directory) {
         console.log(`Reading file via navigate: ${fullPath}`);
-        // Optimisations selon docs Mega.js: chunk sizes par défaut
         const buffer = await withTimeout(
           file.downloadBuffer({
-            maxConnections: 4, // Par défaut selon docs Mega.js
-            initialChunkSize: 131072, // 128KB par défaut
-            chunkSizeIncrement: 131072, // 128KB par défaut
-            maxChunkSize: 1048576, // 1MB max par défaut
+            maxConnections: 1,
+            initialChunkSize: 65536,
+            chunkSizeIncrement: 65536,
+            maxChunkSize: 524288,
           }), 
-          30000, 
-          `Mega download timed out for ${fullPath}`
+          10000, 
+          `Mega download timed out for ${fullPath}` 
         );
         const text = Buffer.from(buffer).toString("utf8");
         try {
@@ -225,7 +246,6 @@ export async function megaRead(env, path, storage = null, forceRefresh = false) 
         }
       }
     } catch (e) {
-      // Fallback à la méthode manuelle
       console.log(`Navigate failed, using manual method for: ${fullPath}`);
     }
 
@@ -241,36 +261,41 @@ export async function megaRead(env, path, storage = null, forceRefresh = false) 
       return "";
     }
 
-    try {
-      const file = await folder.find(fileName);
-      if (file && !file.directory) {
-        console.log(`Reading file node: ${file.name}`);
-
-        const buffer = await withTimeout(
-          file.downloadBuffer({
-            maxConnections: 4,
-            initialChunkSize: 131072,
-            chunkSizeIncrement: 131072,
-            maxChunkSize: 1048576,
-          }), 
-          30000, 
-          `Mega download timed out for ${fullPath}`
-        );
-        const text = Buffer.from(buffer).toString("utf8");
-        try {
-          return JSON.parse(text);
-        } catch {
-          return text;
-        }
-      }
-    } catch (e) {
-      // File not found
+    const children = await withTimeout(
+      folder.children, 
+      2000, 
+      `Children loading timeout for ${fullPath}` 
+    );
+    
+    const fileNodes = children.filter(child => child.name === fileName && !child.directory);
+    console.log(`Found ${fileNodes.length} files with name: ${fileName}`);
+    
+    if (fileNodes.length === 0) {
+      console.log(`File not found for ${fullPath}, creating with empty content`);
+      await megaWrite(env, path, "", folder);
+      return "";
     }
+    
+    const fileNode = fileNodes[0];
+    console.log(`Reading file node: ${fileNode.name}`);
 
-    console.log(`File not found for ${fullPath}, creating with empty content`);
-    await megaWrite(env, path, "", folder);
-    return "";
-  }, 3, 30000, 500);
+    const buffer = await withTimeout(
+      fileNode.downloadBuffer({
+        maxConnections: 1,
+        initialChunkSize: 65536,
+        chunkSizeIncrement: 65536,
+        maxChunkSize: 524288,
+      }), 
+      10000, 
+      `Mega download timed out for ${fullPath}` 
+    );
+    const text = Buffer.from(buffer).toString("utf8");
+    try {
+      return JSON.parse(text);
+    } catch {
+      return text;
+    }
+  }, 1, 5000, 100);
 }
 
 export async function megaWrite(env, path, body, storage = null) {
@@ -278,7 +303,7 @@ export async function megaWrite(env, path, body, storage = null) {
   const content = Buffer.from(toText(body), "utf8");
 
   return await retryOperation(async () => {
-    await withDelay(); // Rate limiting
+    await withDelay();
     const storageInstance = storage || await getClient(env);
 
     const segments = fullPath.split("/").filter(Boolean);
@@ -289,25 +314,33 @@ export async function megaWrite(env, path, body, storage = null) {
 
     const folder = folderPath ? await getOrCreateFolder(storageInstance, folderPath) : storageInstance.root;
     
-    try {
-      const existingFile = await folder.find(fileName);
-      if (existingFile && !existingFile.directory) {
-        console.log(`Deleting existing file: ${existingFile.name}`);
-        await existingFile.delete();
+    const children = await withTimeout(
+      folder.children, 
+      2000, 
+      `Children loading timeout for ${fullPath}` 
+    );
+    
+    const existingFiles = children.filter(child => child.name === fileName && !child.directory);
+    console.log(`Found ${existingFiles.length} existing files with name: ${fileName}`);
+    
+    for (const existing of existingFiles) {
+      try {
+        console.log(`Deleting existing file: ${existing.name}`);
+        await existing.delete();
+        await new Promise(resolve => setTimeout(resolve, 200));
+      } catch (deleteError) {
+        console.error(`Error deleting file ${existing.name}:`, deleteError);
       }
-    } catch (e) {
-      // File doesn't exist
     }
 
     const uploadPromise = new Promise((resolve, reject) => {
-      // Optimisations selon docs Mega.js
       folder.upload({ 
         name: fileName, 
         size: content.length,
-        maxConnections: 4, // Par défaut selon docs Mega.js
-        initialChunkSize: 131072, // 128KB par défaut
-        chunkSizeIncrement: 131072, // 128KB par défaut
-        maxChunkSize: 1048576, // 1MB max par défaut
+        maxConnections: 1,
+        initialChunkSize: 65536,
+        chunkSizeIncrement: 65536,
+        maxChunkSize: 524288,
         handleRetries: (tries, error, cb) => {
           console.log(`MEGA upload retry ${tries}/8, error:`, error.message);
           if (tries > 8) {
@@ -329,7 +362,7 @@ export async function megaWrite(env, path, body, storage = null) {
       });
     });
 
-    const file = await withTimeout(uploadPromise, 120000, `Mega upload timed out for ${fullPath}`);
+    const file = await withTimeout(uploadPromise, 60000, `Mega upload timed out for ${fullPath}`);
     console.log(`Successfully uploaded file: ${file.name}`);
     return {
       name: file.name,
@@ -337,14 +370,14 @@ export async function megaWrite(env, path, body, storage = null) {
       nodeId: file.nodeId,
       downloadId: file.downloadId
     };
-  }, 5, 60000, 1000);
+  }, 5, 120000, 2000);
 }
 
 export async function megaDelete(env, path) {
   const fullPath = `lumaris/${normalizePath(path)}`;
 
   return await retryOperation(async () => {
-    await withDelay(); // Rate limiting
+    await withDelay();
     const storage = await getClient(env);
 
     const segments = fullPath.split("/").filter(Boolean);
@@ -356,15 +389,15 @@ export async function megaDelete(env, path) {
       return { deleted: false };
     }
 
-    try {
-      const existing = await folder.find(fileName);
-      if (existing && !existing.directory) {
-        await existing.delete();
-        return { deleted: true };
-      }
-    } catch (e) {
-      // File doesn't exist
-    }
-    return { deleted: false };
-  }, 3, 10000, 500);
+    const children = await withTimeout(
+      folder.children, 
+      2000, 
+      `Children loading timeout for ${fullPath}` 
+    );
+    
+    const existing = children.find(child => child.name === fileName && !child.directory);
+    if (!existing) return { deleted: false };
+    await existing.delete();
+    return { deleted: true };
+  }, 1, 5000, 100);
 }
