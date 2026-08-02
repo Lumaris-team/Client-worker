@@ -15,10 +15,12 @@ export async function callModel(env, model, prompt, options = {}, gatewayMetadat
   
   // Use Cloudflare Workers AI binding
   if (env.AI) {
+    // Declare conversationId outside try block so it's available in catch
+    let conversationId = options?.conversationId || null;
+    let gatewayMetadata = null;
+    
     try {
       // Get gateway metadata for user message
-      let gatewayMetadata = null;
-      let conversationId = options?.conversationId || null;
       if (gatewayMetadataFn && typeof gatewayMetadataFn === 'function') {
         const conversationName = options?.conversationName || null;
         const titleModel = options?.titleGenerationModel || null;
@@ -33,7 +35,7 @@ export async function callModel(env, model, prompt, options = {}, gatewayMetadat
       const isImageModel = modelId.includes("stable-diffusion") || 
                           modelId.includes("flux") || 
                           modelId.includes("text-to-image") ||
-                          modelId.includes("llava") ||
+                          modelId.includes("image") ||
                           options.isImageModel === true;
       
       let aiModel;
