@@ -31,15 +31,13 @@ async function generateConversationTitle(env, prompt, model = null) {
     
     const response = await env.AI.run(titleModel, {
       messages: [
-        {
-          role: "user",
-          content: `Text: "How do I fix my car?"\nTitle: Car Repair
-
-Text: "What is quantum physics?"\nTitle: Quantum Physics
-
-Text: "Best restaurants in Paris"\nTitle: Paris Restaurants
-
-Text: "${prompt.substring(0, 80)}"\nTitle:`
+        { 
+          role: "system", 
+          content: "You are a title generator. Create short, 2-3 word titles for conversations. Be creative and specific. Never use generic words like 'safe', 'ok', 'yes', 'no'." 
+        },
+        { 
+          role: "user", 
+          content: `Create a 2-3 word title for: "${prompt.substring(0, 80)}"` 
         }
       ],
       max_tokens: 15
