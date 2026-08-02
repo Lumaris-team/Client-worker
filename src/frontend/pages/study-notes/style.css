@@ -63,62 +63,6 @@ a {
   align-items: start;
 }
 
-/* ===================== SIDEBAR ===================== */
-.study-notes-sidebar {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  position: sticky;
-  top: calc(var(--navbar-height) + 22px);
-}
-
-.study-notes-nav {
-  width: 100%;
-  aspect-ratio: 1;
-  display: grid;
-  place-items: center;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.03);
-  color: var(--muted);
-  cursor: pointer;
-  transition:
-    color 180ms ease,
-    background 180ms ease,
-    border-color 180ms ease,
-    transform 180ms ease;
-}
-
-.study-notes-nav:hover {
-  color: var(--text);
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.15);
-  transform: translateY(-2px);
-}
-
-.study-notes-nav:active {
-  transform: translateY(0);
-}
-
-.study-notes-nav[data-active="true"] {
-  background: var(--accent-soft);
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
-.study-notes-icon {
-  width: 24px;
-  height: 24px;
-  display: grid;
-  place-items: center;
-}
-
-.study-notes-icon svg {
-  width: 20px;
-  height: 20px;
-  fill: currentColor;
-}
-
 /* ===================== MAIN ===================== */
 .study-notes-main {
   min-width: 0;
