@@ -28,7 +28,7 @@ binding = "AI"
 
 # Deleted conversations (KV namespace)
 [[kv_namespaces]]
-binding = "DELETED_CONVERSATIONS"
+binding = "deleted_chats"
 id = "ece9f46bc7ca471eac5be9d214de322e"
 
 # Workflows
