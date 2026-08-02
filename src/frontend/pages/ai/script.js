@@ -408,10 +408,16 @@ async function sendMessage(message) {
     const selectedModelData = categoryModels.find(m => m.name === state.selectedModel);
     const modelId = selectedModelData?.id || state.selectedModel;
     
-    // Find the lowest consumption model for title generation
+    // Find the lowest consumption text generation model for title generation
+    // Exclude security/guard models and only use text generation models
     const allModels = state.categorizedModels[state.selectedCategory] || [];
-    const lowestConsumptionModel = allModels.reduce((min, m) => 
-      (m.consumptionPercentage < min.consumptionPercentage ? m : min), allModels[0]);
+    const textGenModels = allModels.filter(m => 
+      !m.id.includes('guard') && 
+      !m.id.includes('security') &&
+      !m.id.includes('shield')
+    );
+    const lowestConsumptionModel = textGenModels.reduce((min, m) => 
+      (m.consumptionPercentage < min.consumptionPercentage ? m : min), textGenModels[0] || allModels[0]);
     const titleGenerationModel = lowestConsumptionModel?.id || modelId;
 
     const response = await aiPost("chat", {
