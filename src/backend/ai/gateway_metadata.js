@@ -34,7 +34,7 @@ async function generateConversationTitle(env, prompt, model = null) {
       messages: [
         { 
           role: "user", 
-          content: `You are a title generator. Create short, 2-3 word titles for conversations. Be creative and specific.\n\nGenerate a 2-3 word title for: "${prompt.substring(0, 80)}"` 
+          content: `You are a title generator. Create short, 2-3 word titles for conversations. Be creative and specific. Do not use bold, italics, markdown, or any formatting. Reply with ONLY the title, nothing else.\n\nGenerate a 2-3 word title for: "${prompt.substring(0, 80)}"` 
         }
       ],
       max_tokens: 50
