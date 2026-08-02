@@ -246,22 +246,23 @@ export async function megaRead(env, path, storage = null, forceRefresh = false) 
       if (file && !file.directory) {
         console.log(`Reading file node: ${file.name}`);
 
-    const buffer = await withTimeout(
-      file.downloadBuffer({
-        maxConnections: 4,
-        initialChunkSize: 131072,
-        chunkSizeIncrement: 131072,
-        maxChunkSize: 1048576,
-      }), 
-      30000, 
-      `Mega download timed out for ${fullPath}`
-    );
-    const text = Buffer.from(buffer).toString("utf8");
-    try {
-      return JSON.parse(text);
-    } catch {
-      return text;
-    }
+        const buffer = await withTimeout(
+          file.downloadBuffer({
+            maxConnections: 4,
+            initialChunkSize: 131072,
+            chunkSizeIncrement: 131072,
+            maxChunkSize: 1048576,
+          }), 
+          30000, 
+          `Mega download timed out for ${fullPath}`
+        );
+        const text = Buffer.from(buffer).toString("utf8");
+        try {
+          return JSON.parse(text);
+        } catch {
+          return text;
+        }
+      }
     } catch (e) {
       // File not found
     }
