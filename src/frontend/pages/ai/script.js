@@ -495,9 +495,17 @@ function displayAIMessage(content) {
   const chatContainer = document.getElementById("chat-container");
   if (!chatContainer) return;
 
+  // Check if content is a base64 image
+  let messageContent;
+  if (content && content.startsWith('data:image/')) {
+    messageContent = `<img src="${content}" alt="Generated image" style="max-width: 100%; border-radius: 8px;">`;
+  } else {
+    messageContent = formatMessage(content);
+  }
+
   const aiMessageHtml = `
     <div class="chat-message ai">
-      <div class="chat-bubble">${formatMessage(content)}</div>
+      <div class="chat-bubble">${messageContent}</div>
     </div>
   `;
   chatContainer.insertAdjacentHTML("beforeend", aiMessageHtml);
