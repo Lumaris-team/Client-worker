@@ -4,7 +4,7 @@ import { Storage } from "megajs";
 const connectionCache = new Map();
 const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 heures pour éviter les blocages MEGA (credential stuffing)
 const MAX_CACHE_SIZE = 1; // Maximum 1 connexion simultanée
-const MIN_OPERATION_DELAY = 2000; // Délai minimum entre opérations (ms) - augmenté pour éviter le throttling MEGA
+const MIN_OPERATION_DELAY = 100; // Délai minimum entre opérations (ms) - réduit selon docs Mega.js
 let lastOperationTime = 0; // Timestamp de la dernière opération
 
 // Liste de user agents de navigateurs réels pour éviter la détection
@@ -107,25 +107,16 @@ export async function getClient(env, forceRefresh = false) {
     console.log('Cleared MEGA connection cache');
   }
 
-  // Créer une nouvelle connexion avec optimisations pour éviter le blocage MEGA
+  // Créer une nouvelle connexion avec optimisations selon docs Mega.js
   const storage = new Storage({ 
     email, 
     password,
-    userAgent: getRandomUserAgent(), // UserAgent aléatoire de navigateur réel pour éviter suspicion
-    keepalive: true, // Activé pour éviter les reconnexions fréquentes
-    autoload: true, // Activé pour s'assurer que root est disponible
-    autologin: true, // Garder le login automatique
-    // Options supplémentaires pour éviter la détection de credential stuffing
-    autofetch: true, // Activer le fetch automatique
-    protocol: "https", // Utiliser HTTPS sécurisé
-    host: "g.api.mega.co.nz", // Serveur MEGA standard
-    port: 443, // Port HTTPS standard
+    autoload: true, // Chargement automatique de la structure
+    autologin: true, // Login automatique
+    keepalive: true, // Maintenir la connexion active
   });
   
-  await withTimeout(storage.ready, 15000, "Mega login timed out"); // Timeout augmenté pour éviter les échecs de connexion
-  
-  // Attendre un peu plus que root soit chargé si autoload est activé
-  await new Promise(resolve => setTimeout(resolve, 500));
+  await withTimeout(storage.ready, 10000, "Mega login timed out");
   
   // Vérifier que root est disponible
   if (!storage.root) {
@@ -154,22 +145,11 @@ export async function getOrCreateFolder(storage, folderPath) {
   }
 
   for (const segment of segments) {
-    await withDelay(); // Rate limiting pour chaque opération de dossier
-    // Timeout pour éviter les blocages sur children
-    const children = await withTimeout(
-      current.children, 
-      2000, 
-      `Children loading timeout for ${segment}`
-    );
+    const children = await current.children;
     
     let folder = children.find(child => child.name === segment && child.directory);
     if (!folder) {
-      await withDelay(); // Rate limiting avant création
-      folder = await withTimeout(
-        current.mkdir(segment), 
-        2000, 
-        `Mkdir timeout for ${segment}`
-      );
+      folder = await current.mkdir(segment);
     }
     current = folder;
     
@@ -195,13 +175,7 @@ export async function getFolderIfExists(storage, folderPath) {
   }
 
   for (const segment of segments) {
-    await withDelay(); // Rate limiting pour chaque opération de dossier
-    // Timeout pour éviter les blocages sur children
-    const children = await withTimeout(
-      current.children, 
-      2000, 
-      `Children loading timeout for ${segment}`
-    );
+    const children = await current.children;
     
     const folder = children.find(child => child.name === segment && child.directory);
     if (!folder) return null;
@@ -235,15 +209,15 @@ export async function megaRead(env, path, storage = null, forceRefresh = false) 
       const file = storageInstance.root.navigate(fullPath);
       if (file && !file.directory) {
         console.log(`Reading file via navigate: ${fullPath}`);
-        // Optimisations de download pour éviter les blocages
+        // Optimisations selon docs Mega.js: chunk sizes par défaut
         const buffer = await withTimeout(
           file.downloadBuffer({
-            maxConnections: 1, // 1 connexion unique pour minimiser la charge
-            initialChunkSize: 65536, // 64KB pour réduire le nombre de requêtes
-            chunkSizeIncrement: 65536, // 64KB incréments
-            maxChunkSize: 524288, // 512KB max
+            maxConnections: 4, // Par défaut selon docs Mega.js
+            initialChunkSize: 131072, // 128KB par défaut
+            chunkSizeIncrement: 131072, // 128KB par défaut
+            maxChunkSize: 1048576, // 1MB max par défaut
           }), 
-          10000, 
+          30000, 
           `Mega download timed out for ${fullPath}`
         );
         const text = Buffer.from(buffer).toString("utf8");
@@ -272,12 +246,7 @@ export async function megaRead(env, path, storage = null, forceRefresh = false) 
       return "";
     }
 
-    // Timeout pour éviter les blocages sur children
-    const children = await withTimeout(
-      folder.children, 
-      2000, 
-      `Children loading timeout for ${fullPath}`
-    );
+    const children = await folder.children;
     
     // Find ALL files with the same name
     const fileNodes = children.filter(child => child.name === fileName && !child.directory);
@@ -297,12 +266,12 @@ export async function megaRead(env, path, storage = null, forceRefresh = false) 
 
     const buffer = await withTimeout(
       fileNode.downloadBuffer({
-        maxConnections: 1,
-        initialChunkSize: 65536,
-        chunkSizeIncrement: 65536,
-        maxChunkSize: 524288,
+        maxConnections: 4, // Par défaut selon docs Mega.js
+        initialChunkSize: 131072, // 128KB par défaut
+        chunkSizeIncrement: 131072, // 128KB par défaut
+        maxChunkSize: 1048576, // 1MB max par défaut
       }), 
-      10000, 
+      30000, 
       `Mega download timed out for ${fullPath}`
     );
     const text = Buffer.from(buffer).toString("utf8");
@@ -311,7 +280,7 @@ export async function megaRead(env, path, storage = null, forceRefresh = false) 
     } catch {
       return text;
     }
-  }, 1, 5000, 100);
+  }, 3, 30000, 500);
 }
 
 export async function megaWrite(env, path, body, storage = null) {
@@ -330,12 +299,7 @@ export async function megaWrite(env, path, body, storage = null) {
 
     const folder = folderPath ? await getOrCreateFolder(storageInstance, folderPath) : storageInstance.root;
     
-    // Timeout pour éviter les blocages sur children
-    const children = await withTimeout(
-      folder.children, 
-      2000, 
-      `Children loading timeout for ${fullPath}`
-    );
+    const children = await folder.children;
     
     // Find and delete ALL existing files with the same name (not just the first one)
     const existingFiles = children.filter(child => child.name === fileName && !child.directory);
@@ -345,19 +309,13 @@ export async function megaWrite(env, path, body, storage = null) {
       try {
         console.log(`Deleting existing file: ${existing.name}`);
         await existing.delete();
-        // Wait a bit to ensure deletion is processed
-        await new Promise(resolve => setTimeout(resolve, 200));
       } catch (deleteError) {
         console.error(`Error deleting file ${existing.name}:`, deleteError);
       }
     }
 
     // Refresh children after deletion to ensure clean state
-    const refreshedChildren = await withTimeout(
-      folder.children, 
-      2000, 
-      `Children refresh timeout for ${fullPath}`
-    );
+    const refreshedChildren = await folder.children;
     
     const stillExisting = refreshedChildren.find(child => child.name === fileName && !child.directory);
     if (stillExisting) {
@@ -365,23 +323,19 @@ export async function megaWrite(env, path, body, storage = null) {
     }
 
     const uploadPromise = new Promise((resolve, reject) => {
-      // Optimisations d'upload pour éviter les blocages
-      // Utiliser le système de retry intégré de megajs
+      // Optimisations selon docs Mega.js
       folder.upload({ 
         name: fileName, 
         size: content.length,
-        maxConnections: 1, // 1 connexion unique
-        initialChunkSize: 65536, // 64KB pour réduire le nombre de requêtes
-        chunkSizeIncrement: 65536, // 64KB incréments
-        maxChunkSize: 524288, // 512KB max
-        // Utiliser le système de retry intégré de megajs avec backoff exponentiel
+        maxConnections: 4, // Par défaut selon docs Mega.js
+        initialChunkSize: 131072, // 128KB par défaut
+        chunkSizeIncrement: 131072, // 128KB par défaut
+        maxChunkSize: 1048576, // 1MB max par défaut
         handleRetries: (tries, error, cb) => {
           console.log(`MEGA upload retry ${tries}/8, error:`, error.message);
           if (tries > 8) {
-            // Abandonner après 8 tentatives
             cb(error);
           } else {
-            // Attendre avec backoff exponentiel
             const delay = 1000 * Math.pow(2, tries);
             console.log(`Retrying upload in ${delay}ms...`);
             setTimeout(cb, delay);
@@ -398,7 +352,7 @@ export async function megaWrite(env, path, body, storage = null) {
       });
     });
 
-    const file = await withTimeout(uploadPromise, 60000, `Mega upload timed out for ${fullPath}`);
+    const file = await withTimeout(uploadPromise, 120000, `Mega upload timed out for ${fullPath}`);
     console.log(`Successfully uploaded file: ${file.name}`);
     return {
       name: file.name,
@@ -406,7 +360,7 @@ export async function megaWrite(env, path, body, storage = null) {
       nodeId: file.nodeId,
       downloadId: file.downloadId
     };
-  }, 5, 120000, 2000);
+  }, 5, 60000, 1000);
 }
 
 export async function megaDelete(env, path) {
@@ -426,16 +380,11 @@ export async function megaDelete(env, path) {
       return { deleted: false };
     }
 
-    // Timeout pour éviter les blocages sur children
-    const children = await withTimeout(
-      folder.children, 
-      2000, 
-      `Children loading timeout for ${fullPath}`
-    );
+    const children = await folder.children;
     
     const existing = children.find(child => child.name === fileName && !child.directory);
     if (!existing) return { deleted: false };
     await existing.delete();
     return { deleted: true };
-  }, 1, 5000, 100);
+  }, 3, 10000, 500);
 }
