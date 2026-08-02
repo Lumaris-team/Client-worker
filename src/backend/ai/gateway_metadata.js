@@ -33,31 +33,22 @@ async function generateConversationTitle(env, prompt, model = null) {
       messages: [
         { 
           role: "system", 
-          content: "You are a title generator. Create short, 2-3 word titles for conversations. Be creative and specific. Never use generic words like 'safe', 'ok', 'yes', 'no'." 
+          content: "You are a title generator. Create short, 2-3 word titles for conversations. Be creative and specific." 
         },
         { 
           role: "user", 
-          content: `Create a 2-3 word title for: "${prompt.substring(0, 80)}"` 
+          content: `Generate a 2-3 word title for: "${prompt.substring(0, 80)}"` 
         }
       ],
-      max_tokens: 15
+      max_tokens: 50
     });
     
     const title = response?.response || response?.output || "";
-    let cleanedTitle = title.trim().replace(/^["']|["']$/g, '').replace(/[.,!?;:]$/g, '').substring(0, 50);
+    const cleanedTitle = title.trim().replace(/^["']|["']$/g, '').replace(/[.,!?;:]$/g, '').substring(0, 50);
     
-    // Remove common prefixes and filler words
-    cleanedTitle = cleanedTitle.replace(/^(title:|title|summary:|summary|here is|the title is|a title for this is)\s*/i, '');
-    cleanedTitle = cleanedTitle.trim();
-    
-    // Strict filter for generic/invalid responses
-    const invalidResponses = ["safe", "ok", "yes", "no", "title", "conversation", "summary", "text", "create", "generate", "a", "an", "the"];
-    const lowerTitle = cleanedTitle.toLowerCase();
-    
-    // Check if title is too short, contains invalid words, or is just the input text repeated
-    if (!cleanedTitle || cleanedTitle.length < 2 || 
-        invalidResponses.some(word => lowerTitle.includes(word)) ||
-        lowerTitle.includes(prompt.substring(0, 20).toLowerCase())) {
+    // If the AI returns generic/invalid responses, use fallback
+    const invalidResponses = ["safe", "ok", "yes", "no", "title", "conversation", "summary"];
+    if (!cleanedTitle || cleanedTitle.length < 2 || invalidResponses.includes(cleanedTitle.toLowerCase())) {
       return fallbackTitle();
     }
     
