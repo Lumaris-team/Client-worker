@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="fr" data-auth-pending>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#08100f">
+    <title>Study Notes - Daniel Ersen Dashboard</title>
+    <meta name="description" content="Study Notes - Manage your revision cards and study materials.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://dashboard.danielersen.fr.eu.org/study-notes">
+    <link rel="icon" href="/assets/logo/square.png">
+    <link rel="manifest" href="/seo/manifest.json">
+    <meta name="msapplication-config" content="/seo/browserconfig.xml">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://dashboard.danielersen.fr.eu.org/study-notes">
+    <meta property="og:title" content="Study Notes - Daniel Ersen Dashboard">
+    <meta property="og:description" content="Study Notes - Manage your revision cards and study materials.">
+    <meta property="og:image" content="https://dashboard.danielersen.fr.eu.org/assets/logo/main.png">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://dashboard.danielersen.fr.eu.org/study-notes">
+    <meta property="twitter:title" content="Study Notes - Daniel Ersen Dashboard">
+    <meta property="twitter:description" content="Study Notes - Manage your revision cards and study materials.">
+    <meta property="twitter:image" content="https://dashboard.danielersen.fr.eu.org/assets/logo/main.png">
+    
+    <!-- Schema.org structured data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      "name": "Study Notes",
+      "url": "https://dashboard.danielersen.fr.eu.org/study-notes",
+      "description": "Study Notes - Manage your revision cards and study materials.",
+      "isPartOf": {
+        "@type": "WebSite",
+        "name": "Daniel Ersen Dashboard",
+        "url": "https://dashboard.danielersen.fr.eu.org/"
+      },
+      "breadcrumb": {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Home",
+            "item": "https://dashboard.danielersen.fr.eu.org/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Study Notes",
+            "item": "https://dashboard.danielersen.fr.eu.org/study-notes"
+          }
+        ]
+      }
+    }
+    </script>
+    
+    <style>html[data-auth-pending] body { visibility: hidden; }</style>
+    <script type="module">
+      import { guardPage } from "/lib/auth.js";
+      document.documentElement.removeAttribute("data-auth-pending");
+ guardPage().then((ok) => {
+        if (!ok) {
+          window.location.href = '/pages/auth';
+        }
+      });
+    </script>
+    <link rel="stylesheet" href="/styles/sidebar.css">
+    <link rel="stylesheet" href="/styles/block.css">
+    <link rel="stylesheet" href="/pages/study-notes/style.css">
+    <script type="module" src="/components/navbar.js"></script>
+    <script type="module" src="/pages/study-notes/icons.js"></script>
+    <script type="module" src="/pages/study-notes/script.js"></script>
+  </head>
+  <body>
+    <site-navbar current="study-notes"></site-navbar>
+
+    <div class="study-notes-shell">
+      <aside class="study-notes-sidebar" aria-label="Study notes actions">
+        <button class="study-notes-nav" type="button" id="ai-tab-btn" aria-label="AI tab" data-active="true">
+          <span class="study-notes-icon" data-icon="/assets/icons/ai.svg"></span>
+        </button>
+        <button class="study-notes-nav" type="button" id="homeworks-tab-btn" aria-label="Homeworks tab">
+          <span class="study-notes-icon" data-icon="/assets/icons/homework.svg"></span>
+        </button>
+      </aside>
+
+      <main class="study-notes-main">
+        <!-- AI Tab Content -->
+        <div class="study-notes-tab" id="ai-tab" data-active="true">
+          <div class="bento-block ai-container">
+            <div class="ai-content">
+              <div class="ai-icon-wrapper">
+                <span class="ai-icon" data-icon="/assets/icons/ai.svg"></span>
+              </div>
+              <h1 class="ai-title">Study Notes Generation</h1>
+              <p class="ai-message">Revision cards generation coming soon</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Homeworks Tab Content -->
+        <div class="study-notes-tab" id="homeworks-tab" data-active="false">
+          <div class="homeworks-header">
+            <h1 class="homeworks-title">My Subjects</h1>
+            <button class="add-btn" type="button" id="add-subject-btn" aria-label="Add subject">
+              <span class="add-icon" data-icon="/assets/icons/plus.svg"></span>
+            </button>
+          </div>
+          
+          <div class="bento-block homeworks-container">
+            <div class="subjects-list" id="subjects-list">
+              <!-- Subjects will be populated by JS -->
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- Add Subject Modal -->
+    <div class="modal" id="add-subject-modal" aria-hidden="true">
+      <div class="modal-backdrop"></div>
+      <div class="modal-content">
+        <h2 class="modal-title">Add Subject</h2>
+        <form id="add-subject-form">
+          <div class="form-group">
+            <label for="subject-name">Subject Name</label>
+            <input type="text" id="subject-name" name="name" required>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="btn-secondary" id="cancel-add-subject-btn">Cancel</button>
+            <button type="submit" class="btn-primary">Add</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Add File Modal -->
+    <div class="modal" id="add-file-modal" aria-hidden="true">
+      <div class="modal-backdrop"></div>
+      <div class="modal-content">
+        <h2 class="modal-title">Add File</h2>
+        <form id="add-file-form">
+          <div class="form-group">
+            <label for="file-name">File Name</label>
+            <input type="text" id="file-name" name="name" required>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="btn-secondary" id="cancel-add-file-btn">Cancel</button>
+            <button type="submit" class="btn-primary">Add</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Rename Modal -->
+    <div class="modal" id="rename-modal" aria-hidden="true">
+      <div class="modal-backdrop"></div>
+      <div class="modal-content">
+        <h2 class="modal-title">Rename</h2>
+        <form id="rename-form">
+          <div class="form-group">
+            <label for="rename-name">New Name</label>
+            <input type="text" id="rename-name" name="name" required>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="btn-secondary" id="cancel-rename-btn">Cancel</button>
+            <button type="submit" class="btn-primary">Save</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal" id="delete-modal" aria-hidden="true">
+      <div class="modal-backdrop"></div>
+      <div class="modal-content">
+        <h2 class="modal-title">Delete Item</h2>
+        <p class="modal-message">Are you sure you want to delete this item?</p>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" id="cancel-delete-btn">No</button>
+          <button type="button" class="btn-danger" id="confirm-delete-btn">Yes</button>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

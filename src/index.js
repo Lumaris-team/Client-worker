@@ -9,6 +9,7 @@ import { Auth, verifySessionToken } from "./backend/auth/index.js";
 import { Pomodoro } from "./backend/database/pomodoro.js";
 import { WebsitesFunction } from "./backend/database/websites.js";
 import { FilesFunction, initializeFolderArchitecture } from "./backend/database/files_management.js";
+import { StudyNotesFunction } from "./backend/database/study_notes.js";
 import { ToolsFunction } from "./backend/tools/index.js";
   
 import { sendMail } from "./backend/notifications/mail.js";
@@ -147,6 +148,8 @@ export default {
           resp = await ToolsFunction(env, url.pathname.slice("/api/tools/".length), method, body);
         } else if (url.pathname.startsWith("/api/files/")) {
           resp = await FilesFunction(env, url.pathname.slice("/api/files/".length), method, body);
+        } else if (url.pathname.startsWith("/api/study-notes/")) {
+          resp = await StudyNotesFunction(env, url.pathname.slice("/api/study-notes/".length), method, body);
         };
         // Return response
         return new Response(JSON.stringify({
@@ -243,6 +246,13 @@ export default {
       assetUrl.pathname = `/pages/${pageMatch[1]}/index.html`;
       return env.ASSETS.fetch(new Request(assetUrl, request));
     }
+   
+   // Handle /study-notes route (alias for /pages/study-notes)
+   if (url.pathname === "/study-notes") {
+     const assetUrl = new URL(request.url);
+     assetUrl.pathname = "/pages/study-notes/index.html";
+     return env.ASSETS.fetch(new Request(assetUrl, request));
+   }
 
     return env.ASSETS.fetch(request)
   },

@@ -821,9 +821,17 @@ async function loadConversation(conversationId, offset = 0, limit = 100) {
             chatContainer.insertAdjacentHTML("afterbegin", userHtml);
           }
         } else if (msg.role === "assistant") {
+          // Check if content is a base64 image
+          let messageContent;
+          if (msg.content && msg.content.startsWith('data:image/')) {
+            messageContent = `<img src="${msg.content}" alt="Generated image" style="max-width: 100%; border-radius: 8px;">`;
+          } else {
+            messageContent = formatMessage(msg.content);
+          }
+          
           const aiHtml = `
             <div class="chat-message ai">
-              <div class="chat-bubble">${formatMessage(msg.content)}</div>
+              <div class="chat-bubble">${messageContent}</div>
             </div>
           `;
           if (offset === 0) {
