@@ -33,10 +33,16 @@ async function generateConversationTitle(env, prompt, model = null) {
       messages: [
         {
           role: "user",
-          content: `Create a creative 2-3 word title. Do not use "safe", "ok", "yes", "no", or generic words. Be specific. Text: "${prompt.substring(0, 80)}"`
+          content: `Text: "How do I fix my car?"\nTitle: Car Repair
+
+Text: "What is quantum physics?"\nTitle: Quantum Physics
+
+Text: "Best restaurants in Paris"\nTitle: Paris Restaurants
+
+Text: "${prompt.substring(0, 80)}"\nTitle:`
         }
       ],
-      max_tokens: 12
+      max_tokens: 15
     });
     
     const title = response?.response || response?.output || "";
