@@ -264,7 +264,12 @@ export async function megaRead(env, path, storage = null, forceRefresh = false) 
 
     const folder = folderPath ? await getFolderIfExists(storageInstance, folderPath) : storageInstance.root;
     if (!folder) {
-      throw new Error(`File not found: ${path}`);
+      // Create folder and file if they don't exist
+      console.log(`Folder not found for ${fullPath}, creating with empty content`);
+      await getOrCreateFolder(storageInstance, folderPath);
+      const newFolder = folderPath ? await getFolderIfExists(storageInstance, folderPath) : storageInstance.root;
+      await megaWrite(env, path, "", newFolder);
+      return "";
     }
 
     // Timeout pour éviter les blocages sur children
@@ -279,7 +284,10 @@ export async function megaRead(env, path, storage = null, forceRefresh = false) 
     console.log(`Found ${fileNodes.length} files with name: ${fileName}`);
     
     if (fileNodes.length === 0) {
-      throw new Error(`File not found: ${path}`);
+      // Create file with empty content if it doesn't exist
+      console.log(`File not found for ${fullPath}, creating with empty content`);
+      await megaWrite(env, path, "", folder);
+      return "";
     }
     
     // If multiple files exist, pick the most recent one (by modification time if available)
