@@ -57,10 +57,28 @@ export async function callModel(env, model, prompt, options = {}, gatewayMetadat
       // Extract content from response
       let content;
       if (isImageModel) {
-        // Image models return a ReadableStream - use official Cloudflare approach
-        const bytes = await new Response(response).bytes();
-        const base64 = btoa(String.fromCharCode(...new Uint8Array(bytes)));
-        content = `data:image/png;base64,${base64}`;
+        // Image models return a ReadableStream - convert to base64 using Cloudflare's approach
+        if (response instanceof ReadableStream) {
+          try {
+            const bytes = await new Response(response).bytes();
+            // Convert bytes to base64 in chunks to avoid stack overflow
+            let binary = '';
+            const len = bytes.length;
+            for (let i = 0; i < len; i++) {
+              binary += String.fromCharCode(bytes[i]);
+            }
+            const base64 = btoa(binary);
+            content = `data:image/png;base64,${base64}`;
+          } catch (error) {
+            console.error("Error converting image to base64:", error);
+            content = JSON.stringify({ error: "Failed to convert image" });
+          }
+        } else if (response?.image || response?.data?.[0]?.url) {
+          // Fallback to URL if available
+          content = response?.image || response?.data?.[0]?.url;
+        } else {
+          content = JSON.stringify(response);
+        }
       } else {
         // OpenAI-style format (REST API)
         if (response?.choices?.[0]?.message?.content) {
