@@ -5,15 +5,26 @@ export async function pictures(env, model, body = {}) {
 	const category = "pictures";
 	const prompt = body?.prompt || (`Generate or describe an image for: ${body?.query || body?.text || ""}`);
 	
-	const callOptions = { ...body?.options, isImageModel: true };
+	// Merge conversation options with existing options
+	const options = {
+		...body?.options,
+		isImageModel: true,
+		conversationId: body?.conversationId || null,
+		conversationName: body?.conversationName || null,
+		titleGenerationModel: body?.titleGenerationModel || null
+	};
 	
-	const result = await callModel(env, model, prompt, callOptions, getGatewayMetadata);
+	const result = await callModel(env, model, prompt, options, getGatewayMetadata);
 	
 	// Return conversation info from gateway metadata
 	const gatewayMeta = result?.gatewayMetadata || {};
-	const conversationId = gatewayMeta.conversationId || body?.conversationId;
-	const conversationName = gatewayMeta.conversationName || body?.conversationName;
+	const finalConversationId = gatewayMeta?.gateway?.metadata?.conversationId || result?.conversationId || options.conversationId;
+	const finalConversationName = gatewayMeta?.gateway?.metadata?.conversationName || result?.conversationName || options.conversationName;
 	
-	return { result, conversationId, conversationName };
+	// Include conversation metadata directly in the result object for frontend
+	result.conversationId = finalConversationId;
+	result.conversationName = finalConversationName;
+	
+	return result;
 }
 

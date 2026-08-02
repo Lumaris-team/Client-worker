@@ -3,7 +3,7 @@
 // Get list of deleted conversation IDs from KV
 export async function getDeletedConversations(env) {
   try {
-    const deleted = await env.DELETED_CONVERSATIONS.get("deleted_list");
+    const deleted = await env.deleted_chats.get("deleted_list");
     return deleted ? JSON.parse(deleted) : [];
   } catch (error) {
     console.error("Failed to get deleted conversations:", error);
@@ -17,7 +17,7 @@ export async function addDeletedConversation(env, conversationId) {
     const deleted = await getDeletedConversations(env);
     if (!deleted.includes(conversationId)) {
       deleted.push(conversationId);
-      await env.DELETED_CONVERSATIONS.put("deleted_list", JSON.stringify(deleted));
+      await env.deleted_chats.put("deleted_list", JSON.stringify(deleted));
     }
   } catch (error) {
     console.error("Failed to add deleted conversation:", error);

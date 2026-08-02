@@ -5,13 +5,25 @@ export async function notes_remarks(env, model, body = {}) {
 	const category = "notes_remarks";
 	const prompt = body?.prompt || (`Notes and remarks task: ${body?.query || body?.text || ""}`);
 	
-	const result = await callModel(env, model, prompt, body?.options || {}, getGatewayMetadata);
+	// Merge conversation options with existing options
+	const options = {
+		...body?.options,
+		conversationId: body?.conversationId || null,
+		conversationName: body?.conversationName || null,
+		titleGenerationModel: body?.titleGenerationModel || null
+	};
+	
+	const result = await callModel(env, model, prompt, options, getGatewayMetadata);
 	
 	// Return conversation info from gateway metadata
 	const gatewayMeta = result?.gatewayMetadata || {};
-	const conversationId = gatewayMeta.conversationId || body?.conversationId;
-	const conversationName = gatewayMeta.conversationName || body?.conversationName;
+	const finalConversationId = gatewayMeta?.gateway?.metadata?.conversationId || result?.conversationId || options.conversationId;
+	const finalConversationName = gatewayMeta?.gateway?.metadata?.conversationName || result?.conversationName || options.conversationName;
 	
-	return { result, conversationId, conversationName };
+	// Include conversation metadata directly in the result object for frontend
+	result.conversationId = finalConversationId;
+	result.conversationName = finalConversationName;
+	
+	return result;
 }
 
