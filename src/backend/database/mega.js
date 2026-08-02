@@ -139,24 +139,22 @@ export async function getOrCreateFolder(storage, folderPath) {
   const segments = normalized.split("/").filter(Boolean);
   let current = storage.root;
 
-  // Vérifier que storage.root existe
   if (!current) {
     throw new Error("Storage root not available");
   }
 
   for (const segment of segments) {
-    const children = await current.children;
-    
-    let folder = children.find(child => child.name === segment && child.directory);
-    if (!folder) {
-      folder = await current.mkdir(segment);
+    try {
+      const folder = await current.find(segment);
+      if (folder && folder.directory) {
+        current = folder;
+        continue;
+      }
+    } catch (e) {
+      // Folder doesn't exist, create it
     }
-    current = folder;
-    
-    // Vérifier que current n'est pas null après l'itération
-    if (!current) {
-      throw new Error(`Failed to navigate to folder: ${segment}`);
-    }
+
+    current = await current.mkdir(segment);
   }
 
   return current;
@@ -169,20 +167,19 @@ export async function getFolderIfExists(storage, folderPath) {
   const segments = normalized.split("/").filter(Boolean);
   let current = storage.root;
 
-  // Vérifier que storage.root existe
   if (!current) {
     throw new Error("Storage root not available");
   }
 
   for (const segment of segments) {
-    const children = await current.children;
-    
-    const folder = children.find(child => child.name === segment && child.directory);
-    if (!folder) return null;
-    current = folder;
-    
-    // Vérifier que current n'est pas null après l'itération
-    if (!current) {
+    try {
+      const folder = await current.find(segment);
+      if (folder && folder.directory) {
+        current = folder;
+      } else {
+        return null;
+      }
+    } catch (e) {
       return null;
     }
   }
@@ -238,38 +235,23 @@ export async function megaRead(env, path, storage = null, forceRefresh = false) 
 
     const folder = folderPath ? await getFolderIfExists(storageInstance, folderPath) : storageInstance.root;
     if (!folder) {
-      // Create folder and file if they don't exist
       console.log(`Folder not found for ${fullPath}, creating with empty content`);
-      await getOrCreateFolder(storageInstance, folderPath);
-      const newFolder = folderPath ? await getFolderIfExists(storageInstance, folderPath) : storageInstance.root;
+      const newFolder = await getOrCreateFolder(storageInstance, folderPath);
       await megaWrite(env, path, "", newFolder);
       return "";
     }
 
-    const children = await folder.children;
-    
-    // Find ALL files with the same name
-    const fileNodes = children.filter(child => child.name === fileName && !child.directory);
-    console.log(`Found ${fileNodes.length} files with name: ${fileName}`);
-    
-    if (fileNodes.length === 0) {
-      // Create file with empty content if it doesn't exist
-      console.log(`File not found for ${fullPath}, creating with empty content`);
-      await megaWrite(env, path, "", folder);
-      return "";
-    }
-    
-    // If multiple files exist, pick the most recent one (by modification time if available)
-    // Otherwise pick the first one
-    const fileNode = fileNodes[0];
-    console.log(`Reading file node: ${fileNode.name}`);
+    try {
+      const file = await folder.find(fileName);
+      if (file && !file.directory) {
+        console.log(`Reading file node: ${file.name}`);
 
     const buffer = await withTimeout(
-      fileNode.downloadBuffer({
-        maxConnections: 4, // Par défaut selon docs Mega.js
-        initialChunkSize: 131072, // 128KB par défaut
-        chunkSizeIncrement: 131072, // 128KB par défaut
-        maxChunkSize: 1048576, // 1MB max par défaut
+      file.downloadBuffer({
+        maxConnections: 4,
+        initialChunkSize: 131072,
+        chunkSizeIncrement: 131072,
+        maxChunkSize: 1048576,
       }), 
       30000, 
       `Mega download timed out for ${fullPath}`
@@ -280,6 +262,13 @@ export async function megaRead(env, path, storage = null, forceRefresh = false) 
     } catch {
       return text;
     }
+    } catch (e) {
+      // File not found
+    }
+
+    console.log(`File not found for ${fullPath}, creating with empty content`);
+    await megaWrite(env, path, "", folder);
+    return "";
   }, 3, 30000, 500);
 }
 
@@ -299,27 +288,14 @@ export async function megaWrite(env, path, body, storage = null) {
 
     const folder = folderPath ? await getOrCreateFolder(storageInstance, folderPath) : storageInstance.root;
     
-    const children = await folder.children;
-    
-    // Find and delete ALL existing files with the same name (not just the first one)
-    const existingFiles = children.filter(child => child.name === fileName && !child.directory);
-    console.log(`Found ${existingFiles.length} existing files with name: ${fileName}`);
-    
-    for (const existing of existingFiles) {
-      try {
-        console.log(`Deleting existing file: ${existing.name}`);
-        await existing.delete();
-      } catch (deleteError) {
-        console.error(`Error deleting file ${existing.name}:`, deleteError);
+    try {
+      const existingFile = await folder.find(fileName);
+      if (existingFile && !existingFile.directory) {
+        console.log(`Deleting existing file: ${existingFile.name}`);
+        await existingFile.delete();
       }
-    }
-
-    // Refresh children after deletion to ensure clean state
-    const refreshedChildren = await folder.children;
-    
-    const stillExisting = refreshedChildren.find(child => child.name === fileName && !child.directory);
-    if (stillExisting) {
-      console.warn(`File ${fileName} still exists after deletion attempt`);
+    } catch (e) {
+      // File doesn't exist
     }
 
     const uploadPromise = new Promise((resolve, reject) => {
@@ -376,15 +352,18 @@ export async function megaDelete(env, path) {
 
     const folder = folderPath ? await getFolderIfExists(storage, folderPath) : storage.root;
     if (!folder) {
-      // nothing to delete
       return { deleted: false };
     }
 
-    const children = await folder.children;
-    
-    const existing = children.find(child => child.name === fileName && !child.directory);
-    if (!existing) return { deleted: false };
-    await existing.delete();
-    return { deleted: true };
+    try {
+      const existing = await folder.find(fileName);
+      if (existing && !existing.directory) {
+        await existing.delete();
+        return { deleted: true };
+      }
+    } catch (e) {
+      // File doesn't exist
+    }
+    return { deleted: false };
   }, 3, 10000, 500);
 }
