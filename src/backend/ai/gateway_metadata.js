@@ -28,6 +28,7 @@ async function generateConversationTitle(env, prompt, model = null) {
   try {
     // Use provided model or fallback to Llama 3.2 3B (lighter and currently supported)
     const titleModel = model || "@cf/meta/llama-3.2-3b-instruct";
+    console.log(`[Title Generation] Using model: ${titleModel} for prompt: "${prompt.substring(0, 50)}..."`);
     
     const response = await env.AI.run(titleModel, {
       messages: [
@@ -44,7 +45,9 @@ async function generateConversationTitle(env, prompt, model = null) {
     });
     
     const title = response?.response || response?.output || "";
+    console.log(`[Title Generation] AI response: "${title}"`);
     const cleanedTitle = title.trim().replace(/^["']|["']$/g, '').replace(/[.,!?;:]$/g, '').substring(0, 50);
+    console.log(`[Title Generation] Cleaned title: "${cleanedTitle}"`);
     
     // If the AI returns generic/invalid responses, use fallback
     const invalidResponses = ["safe", "ok", "yes", "no", "title", "conversation", "summary"];
