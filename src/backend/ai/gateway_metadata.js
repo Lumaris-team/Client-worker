@@ -13,7 +13,12 @@ async function generateConversationTitle(env, prompt, model = null) {
     const words = prompt.split(/\s+/).slice(0, 3);
     if (words.length === 0) return "New Conversation";
     const joined = words.join(" ");
-    return joined.charAt(0).toUpperCase() + joined.slice(1);
+    const title = joined.charAt(0).toUpperCase() + joined.slice(1);
+    // Ensure fallback never returns "safe"
+    if (title.toLowerCase() === "safe") {
+      return "New Conversation";
+    }
+    return title;
   };
   
   if (!env.AI) {
@@ -28,7 +33,7 @@ async function generateConversationTitle(env, prompt, model = null) {
       messages: [
         {
           role: "user",
-          content: `Create a 2-3 word title. Be concise. Text: "${prompt.substring(0, 80)}"`
+          content: `Create a creative 2-3 word title. Do not use "safe", "ok", "yes", "no", or generic words. Be specific. Text: "${prompt.substring(0, 80)}"`
         }
       ],
       max_tokens: 12
@@ -41,8 +46,14 @@ async function generateConversationTitle(env, prompt, model = null) {
     cleanedTitle = cleanedTitle.replace(/^(title:|title|summary:|summary|here is|the title is|a title for this is)\s*/i, '');
     cleanedTitle = cleanedTitle.trim();
     
-    // Only use fallback if title is empty or too short
-    if (!cleanedTitle || cleanedTitle.length < 2) {
+    // Strict filter for generic/invalid responses
+    const invalidResponses = ["safe", "ok", "yes", "no", "title", "conversation", "summary", "text", "create", "generate", "a", "an", "the"];
+    const lowerTitle = cleanedTitle.toLowerCase();
+    
+    // Check if title is too short, contains invalid words, or is just the input text repeated
+    if (!cleanedTitle || cleanedTitle.length < 2 || 
+        invalidResponses.some(word => lowerTitle.includes(word)) ||
+        lowerTitle.includes(prompt.substring(0, 20).toLowerCase())) {
       return fallbackTitle();
     }
     
