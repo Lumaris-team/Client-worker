@@ -113,11 +113,14 @@ export async function getClient(env, forceRefresh = false) {
     password,
     userAgent: getRandomUserAgent(),
     keepalive: true,
-    autoload: true,
+    autoload: false, // Désactivé pour réduire CPU
     autologin: true,
   });
   
   await storage.ready;
+  
+  // Charger root manuellement
+  await storage.reload();
   
   // Vérifier que root est disponible
   if (!storage.root) {
