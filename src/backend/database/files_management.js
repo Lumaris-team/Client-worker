@@ -182,13 +182,13 @@ async function listDirectory(env, relativePath = "") {
       return { files: [], folders: [], path: relativePath };
     }
 
-    // Utiliser filter() au lieu de children pour éviter de charger tout
+    // Utiliser filter() pour ne charger que les noms, pas les métadonnées complètes
     const children = await folder.filter(() => true);
     
     const files = [];
     const folders = [];
     let count = 0;
-    const MAX_ITEMS = 20; // Limiter pour réduire CPU
+    const MAX_ITEMS = 10; // Limiter pour réduire CPU
 
     for (const child of children) {
       if (count >= MAX_ITEMS) break;

@@ -88,52 +88,21 @@ export async function getClient(env, forceRefresh = false) {
   const email = env.MEGA_EMAIL;
   const password = env.MEGA_PASSWORD;
   if (!email || !password) {
-    throw new Error("Missing MEGA_EMAIL or MEGA_PASSWORD");
+    throw new Error("MEGA_EMAIL and MEGA_PASSWORD must be set");
   }
 
-  const cacheKey = email;
-  const cached = connectionCache.get(cacheKey);
-  
-  // Vérifier si la connexion est encore valide (sauf si forceRefresh)
-  if (!forceRefresh && cached && Date.now() - cached.timestamp < CACHE_TTL) {
-    console.log('Using cached MEGA connection');
-    return cached.storage;
-  }
-
-  // Nettoyer le cache si trop d'entrées ou si forceRefresh
-  if (forceRefresh || connectionCache.size >= MAX_CACHE_SIZE) {
-    const oldestKey = connectionCache.keys().next().value;
-    connectionCache.delete(oldestKey);
-    console.log('Cleared MEGA connection cache');
-  }
-
-  // Créer une nouvelle connexion
+  // Désactiver le cache pour éviter les problèmes de CPU
+  // Créer une nouvelle connexion à chaque fois
   const storage = new Storage({ 
     email, 
     password,
     userAgent: getRandomUserAgent(),
-    keepalive: true,
-    autoload: false,
-    autologin: false, // Désactivé pour contrôler le login manuellement
+    keepalive: false, // Désactiver keepalive pour réduire CPU
+    autoload: false, // Désactiver autoload pour éviter de charger toute la structure
+    autologin: true,
   });
   
-  // Login manuel explicite
-  try {
-    await storage.login();
-    console.log('MEGA login successful');
-  } catch (e) {
-    console.error('MEGA login failed:', e.message);
-    throw e;
-  }
-  
-  // NE PAS utiliser reload() - trop coûteux en CPU
-  // On utilisera find() et navigate() à la demande
-  
-  // Mettre en cache
-  connectionCache.set(cacheKey, {
-    storage,
-    timestamp: Date.now()
-  });
+  await storage.ready;
   
   return storage;
 }
@@ -167,14 +136,14 @@ export async function getFolderIfExists(storage, folderPath) {
   const normalized = normalizePath(folderPath);
   if (!normalized) return storage.root;
 
-  // Utiliser navigate() au lieu de find() pour éviter de charger les enfants
+  // Utiliser navigate() directement sans charger la structure
   try {
     const folder = storage.root.navigate(`lumaris/${normalized}`);
     if (folder && folder.directory) {
       return folder;
     }
   } catch (e) {
-    // Navigate failed
+    // Navigate failed - dossier n'existe pas
   }
 
   return null;
