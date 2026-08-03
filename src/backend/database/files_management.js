@@ -203,13 +203,6 @@ async function listDirectory(env, relativePath = "") {
       if (child.directory) {
         folders.push(item);
       } else {
-        // Générer l'URL de partage pour les fichiers
-        try {
-          const link = await child.link();
-          item.url = link;
-        } catch (e) {
-          // Si échec de génération de lien, continuer sans URL
-        }
         files.push(item);
       }
       count++;
