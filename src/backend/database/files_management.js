@@ -203,13 +203,6 @@ async function listDirectory(env, relativePath = "") {
       if (child.directory) {
         folders.push(item);
       } else {
-        // Générer l'URL de partage pour les fichiers
-        try {
-          const link = await child.link();
-          item.url = link;
-        } catch (e) {
-          // Si échec de génération de lien, continuer sans URL
-        }
         files.push(item);
       }
       count++;
@@ -235,10 +228,7 @@ async function readFile(env, relativePath) {
     }
     return { success: false, error: "File not found" };
   } catch (e) {
-    if (e.message.includes("File not found") || e.message.includes("Folder not found")) {
-      return { success: false, error: "File not found" };
-    }
-    throw e;
+    return { success: false, error: "File not found" };
   }
 }
 
@@ -404,10 +394,7 @@ async function deleteFile(env, relativePath) {
     await megaDelete(env, fullPath);
     return { success: true };
   } catch (e) {
-    if (e.message.includes("File not found") || e.message.includes("Folder not found")) {
-      return { success: false, error: "File not found" };
-    }
-    throw e;
+    return { success: false, error: "File not found" };
   }
 }
 

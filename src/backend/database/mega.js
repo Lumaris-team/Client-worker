@@ -113,16 +113,11 @@ export async function getClient(env, forceRefresh = false) {
     password,
     userAgent: getRandomUserAgent(),
     keepalive: true,
-    autoload: false, // Désactivé pour éviter le chargement CPU intensif
+    autoload: true,
     autologin: true,
   });
   
   await storage.ready;
-  
-  // Charger root manuellement seulement si nécessaire
-  if (!storage.root) {
-    await storage.reload();
-  }
   
   // Vérifier que root est disponible
   if (!storage.root) {
@@ -220,8 +215,6 @@ export async function megaRead(env, path, storage = null, forceRefresh = false) 
 
   const folder = folderPath ? await getFolderIfExists(storageInstance, folderPath) : storageInstance.root;
   if (!folder) {
-    const newFolder = await getOrCreateFolder(storageInstance, folderPath);
-    await megaWrite(env, path, "", newFolder);
     return null;
   }
 
@@ -235,7 +228,6 @@ export async function megaRead(env, path, storage = null, forceRefresh = false) 
     // File not found
   }
 
-  await megaWrite(env, path, "", folder);
   return null;
 }
 
