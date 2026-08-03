@@ -387,20 +387,28 @@ async function deleteFile(env, relativePath) {
 async function deleteFolder(env, relativePath) {
   const fullPath = normalizePath(`${STUDY_NOTES_ROOT}/${relativePath}`);
   const storage = await getClient(env);
-  
+
   try {
     const folder = await getFolderIfExists(storage, fullPath);
     if (!folder) {
       return { success: false, error: "Folder not found" };
     }
-    
+
+    // Delete all children first (recursive deletion)
+    const children = await folder.children;
+    for (const child of children) {
+      await child.delete();
+    }
+
+    // Then delete the folder itself
     await folder.delete();
     return { success: true };
   } catch (e) {
+    console.error('Error deleting folder:', e);
     if (e.message.includes("File not found") || e.message.includes("Folder not found")) {
       return { success: false, error: "Folder not found" };
     }
-    throw e;
+    return { success: false, error: e.message };
   }
 }
 
