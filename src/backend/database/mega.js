@@ -152,27 +152,16 @@ export async function getOrCreateFolder(storage, folderPath) {
   }
 
   for (const segment of segments) {
-    await withDelay();
-    const children = await withTimeout(
-      current.children, 
-      2000, 
-      `Children loading timeout for ${segment}` 
-    );
-    
-    let folder = children.find(child => child.name === segment && child.directory);
-    if (!folder) {
-      await withDelay();
-      folder = await withTimeout(
-        current.mkdir(segment), 
-        2000, 
-        `Mkdir timeout for ${segment}` 
-      );
+    try {
+      const folder = await current.find(segment);
+      if (folder && folder.directory) {
+        current = folder;
+        continue;
+      }
+    } catch (e) {
+      // Folder doesn't exist
     }
-    current = folder;
-    
-    if (!current) {
-      throw new Error(`Failed to navigate to folder: ${segment}`);
-    }
+    current = await current.mkdir(segment);
   }
 
   return current;
@@ -190,18 +179,14 @@ export async function getFolderIfExists(storage, folderPath) {
   }
 
   for (const segment of segments) {
-    await withDelay();
-    const children = await withTimeout(
-      current.children, 
-      2000, 
-      `Children loading timeout for ${segment}` 
-    );
-    
-    const folder = children.find(child => child.name === segment && child.directory);
-    if (!folder) return null;
-    current = folder;
-    
-    if (!current) {
+    try {
+      const folder = await current.find(segment);
+      if (folder && folder.directory) {
+        current = folder;
+      } else {
+        return null;
+      }
+    } catch (e) {
       return null;
     }
   }
@@ -261,40 +246,34 @@ export async function megaRead(env, path, storage = null, forceRefresh = false) 
       return "";
     }
 
-    const children = await withTimeout(
-      folder.children, 
-      2000, 
-      `Children loading timeout for ${fullPath}` 
-    );
-    
-    const fileNodes = children.filter(child => child.name === fileName && !child.directory);
-    console.log(`Found ${fileNodes.length} files with name: ${fileName}`);
-    
-    if (fileNodes.length === 0) {
-      console.log(`File not found for ${fullPath}, creating with empty content`);
-      await megaWrite(env, path, "", folder);
-      return "";
-    }
-    
-    const fileNode = fileNodes[0];
-    console.log(`Reading file node: ${fileNode.name}`);
-
-    const buffer = await withTimeout(
-      fileNode.downloadBuffer({
-        maxConnections: 1,
-        initialChunkSize: 65536,
-        chunkSizeIncrement: 65536,
-        maxChunkSize: 524288,
-      }), 
-      10000, 
-      `Mega download timed out for ${fullPath}` 
-    );
-    const text = Buffer.from(buffer).toString("utf8");
     try {
-      return JSON.parse(text);
-    } catch {
-      return text;
+      const file = await folder.find(fileName);
+      if (file && !file.directory) {
+        console.log(`Reading file node: ${file.name}`);
+        const buffer = await withTimeout(
+          file.downloadBuffer({
+            maxConnections: 1,
+            initialChunkSize: 65536,
+            chunkSizeIncrement: 65536,
+            maxChunkSize: 524288,
+          }), 
+          10000, 
+          `Mega download timed out for ${fullPath}` 
+        );
+        const text = Buffer.from(buffer).toString("utf8");
+        try {
+          return JSON.parse(text);
+        } catch {
+          return text;
+        }
+      }
+    } catch (e) {
+      // File not found
     }
+
+    console.log(`File not found for ${fullPath}, creating with empty content`);
+    await megaWrite(env, path, "", folder);
+    return "";
   }, 1, 5000, 100);
 }
 
@@ -314,23 +293,14 @@ export async function megaWrite(env, path, body, storage = null) {
 
     const folder = folderPath ? await getOrCreateFolder(storageInstance, folderPath) : storageInstance.root;
     
-    const children = await withTimeout(
-      folder.children, 
-      2000, 
-      `Children loading timeout for ${fullPath}` 
-    );
-    
-    const existingFiles = children.filter(child => child.name === fileName && !child.directory);
-    console.log(`Found ${existingFiles.length} existing files with name: ${fileName}`);
-    
-    for (const existing of existingFiles) {
-      try {
-        console.log(`Deleting existing file: ${existing.name}`);
-        await existing.delete();
-        await new Promise(resolve => setTimeout(resolve, 200));
-      } catch (deleteError) {
-        console.error(`Error deleting file ${existing.name}:`, deleteError);
+    try {
+      const existingFile = await folder.find(fileName);
+      if (existingFile && !existingFile.directory) {
+        console.log(`Deleting existing file: ${existingFile.name}`);
+        await existingFile.delete();
       }
+    } catch (e) {
+      // File doesn't exist
     }
 
     const uploadPromise = new Promise((resolve, reject) => {
@@ -389,15 +359,15 @@ export async function megaDelete(env, path) {
       return { deleted: false };
     }
 
-    const children = await withTimeout(
-      folder.children, 
-      2000, 
-      `Children loading timeout for ${fullPath}` 
-    );
-    
-    const existing = children.find(child => child.name === fileName && !child.directory);
-    if (!existing) return { deleted: false };
-    await existing.delete();
-    return { deleted: true };
+    try {
+      const existing = await folder.find(fileName);
+      if (existing && !existing.directory) {
+        await existing.delete();
+        return { deleted: true };
+      }
+    } catch (e) {
+      // File doesn't exist
+    }
+    return { deleted: false };
   }, 1, 5000, 100);
 }
