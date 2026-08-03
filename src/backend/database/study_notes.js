@@ -391,17 +391,32 @@ async function deleteFolder(env, relativePath) {
   try {
     const folder = await getFolderIfExists(storage, fullPath);
     if (!folder) {
+      console.log(`Folder not found: ${fullPath}`);
       return { success: false, error: "Folder not found" };
     }
 
+    console.log(`Deleting folder: ${fullPath}`);
+
     // Delete all children first (recursive deletion)
     const children = await folder.children;
+    console.log(`Found ${children.length} children to delete`);
     for (const child of children) {
+      console.log(`Deleting child: ${child.name}`);
       await child.delete();
     }
 
     // Then delete the folder itself
+    console.log(`Deleting folder itself`);
     await folder.delete();
+
+    // Verify deletion by trying to get the folder again
+    const verifyFolder = await getFolderIfExists(storage, fullPath);
+    if (verifyFolder) {
+      console.error(`Folder still exists after deletion: ${fullPath}`);
+      return { success: false, error: "Folder deletion failed - folder still exists" };
+    }
+
+    console.log(`Folder successfully deleted: ${fullPath}`);
     return { success: true };
   } catch (e) {
     console.error('Error deleting folder:', e);
