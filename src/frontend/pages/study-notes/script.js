@@ -7,14 +7,16 @@ let currentSubject = null;
 let deleteTarget = null;
 let renameTarget = null;
 
-// Get auth token
-function getAuthToken() {
-  return localStorage.getItem('sessionToken') || sessionStorage.getItem('sessionToken');
-}
+// Import auth functions
+import { ensureSessionToken } from "/lib/auth.js";
 
 // API call helper
 async function apiCall(endpoint, method = 'GET', body = null) {
-  const token = getAuthToken();
+  const token = await ensureSessionToken();
+  if (!token) {
+    throw new Error('Not authenticated');
+  }
+
   const headers = {
     'Authorization': `Bearer ${token}`,
   };
@@ -33,11 +35,11 @@ async function apiCall(endpoint, method = 'GET', body = null) {
 
   const response = await fetch(`${API_BASE}/${endpoint}`, options);
   const data = await response.json();
-  
+
   if (!response.ok) {
     throw new Error(data.error || 'API call failed');
   }
-  
+
   return data.resp;
 }
 
