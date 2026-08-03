@@ -56,7 +56,7 @@ async function listDirectory(env, relativePath = "") {
     const files = [];
     const folders = [];
     let count = 0;
-    const MAX_ITEMS = 50; // Limiter pour réduire CPU
+    const MAX_ITEMS = 20; // Limiter pour réduire CPU
 
     for (const child of children) {
       if (count >= MAX_ITEMS) break;
