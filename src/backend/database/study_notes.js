@@ -45,12 +45,12 @@ async function listDirectory(env, relativePath = "") {
   const storage = await getClient(env);
   const fullPath = normalizePath(`${STUDY_NOTES_ROOT}/${relativePath}`);
   
-  const folder = await getFolderIfExists(storage, fullPath);
-  if (!folder) {
-    return { files: [], folders: [], path: relativePath };
-  }
-
   try {
+    const folder = await getFolderIfExists(storage, fullPath);
+    if (!folder) {
+      return { files: [], folders: [], path: relativePath };
+    }
+
     const children = await folder.children;
     
     const files = [];
@@ -82,6 +82,7 @@ async function listDirectory(env, relativePath = "") {
 
     return { files, folders, path: relativePath, truncated: count >= MAX_ITEMS };
   } catch (e) {
+    console.error('Error in listDirectory:', e.message);
     return { files: [], folders: [], path: relativePath };
   }
 }

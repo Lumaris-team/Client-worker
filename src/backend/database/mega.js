@@ -114,17 +114,25 @@ export async function getClient(env, forceRefresh = false) {
     userAgent: getRandomUserAgent(),
     keepalive: true,
     autoload: false,
-    autologin: true,
+    autologin: false, // Désactivé pour contrôler le login manuellement
   });
   
-  await storage.ready;
-  
-  // Charger root manuellement mais sans toute la structure
+  // Login manuel explicite
   try {
-    await storage.root.loadAttributes();
+    await storage.login();
+    console.log('MEGA login successful');
   } catch (e) {
-    // Si échec, essayer reload
+    console.error('MEGA login failed:', e.message);
+    throw e;
+  }
+  
+  // Charger la structure manuellement avec reload (nécessaire quand autoload: false)
+  try {
     await storage.reload();
+    console.log('MEGA reload successful');
+  } catch (e) {
+    console.error('MEGA reload failed:', e.message);
+    throw e;
   }
   
   // Mettre en cache
@@ -164,6 +172,8 @@ export async function getOrCreateFolder(storage, folderPath) {
 }
 
 export async function getFolderIfExists(storage, folderPath) {
+  if (!folderPath) return storage.root;
+  
   const normalized = normalizePath(folderPath);
   if (!normalized) return storage.root;
 
@@ -183,6 +193,7 @@ export async function getFolderIfExists(storage, folderPath) {
         return null;
       }
     } catch (e) {
+      console.error(`Error finding folder ${segment}:`, e.message);
       return null;
     }
   }
