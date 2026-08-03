@@ -50,32 +50,40 @@ async function listDirectory(env, relativePath = "") {
     return { files: [], folders: [], path: relativePath };
   }
 
-  const children = await folder.children;
-  
-  const files = [];
-  const folders = [];
+  try {
+    const children = await folder.children;
+    
+    const files = [];
+    const folders = [];
+    let count = 0;
+    const MAX_ITEMS = 50; // Limiter pour réduire CPU
 
-  for (const child of children) {
-    const item = {
-      name: child.name,
-      path: relativePath ? `${relativePath}/${child.name}` : child.name,
-      size: child.size || 0,
-      modified: child.timestamp ? formatDate(child.timestamp) : "",
-      extension: child.directory ? "" : getFileExtension(child.name)
-    };
+    for (const child of children) {
+      if (count >= MAX_ITEMS) break;
+      
+      const item = {
+        name: child.name,
+        path: relativePath ? `${relativePath}/${child.name}` : child.name,
+        size: child.size || 0,
+        modified: child.timestamp ? formatDate(child.timestamp) : "",
+        extension: child.directory ? "" : getFileExtension(child.name)
+      };
 
-    if (child.directory) {
-      folders.push(item);
-    } else {
-      files.push(item);
+      if (child.directory) {
+        folders.push(item);
+      } else {
+        files.push(item);
+      }
+      count++;
     }
+
+    folders.sort((a, b) => a.name.localeCompare(b.name));
+    files.sort((a, b) => a.name.localeCompare(b.name));
+
+    return { files, folders, path: relativePath, truncated: count >= MAX_ITEMS };
+  } catch (e) {
+    return { files: [], folders: [], path: relativePath };
   }
-
-  // Sort: folders first, then files, both alphabetically
-  folders.sort((a, b) => a.name.localeCompare(b.name));
-  files.sort((a, b) => a.name.localeCompare(b.name));
-
-  return { files, folders, path: relativePath };
 }
 
 async function readFile(env, relativePath) {
@@ -439,11 +447,6 @@ async function createFolder(env, relativePath) {
 }
 
 export async function StudyNotesFunction(env, path, method, body) {
-  try {
-    await initializeStudyNotesArchitecture(env);
-  } catch (error) {
-    console.error('Failed to initialize study-notes folder architecture:', error);
-  }
 
   switch (method) {
     case "GET":
