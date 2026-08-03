@@ -51,7 +51,8 @@ async function listDirectory(env, relativePath = "") {
       return { files: [], folders: [], path: relativePath };
     }
 
-    const children = await folder.children;
+    // Utiliser filter() au lieu de children pour éviter de charger tout
+    const children = await folder.filter(() => true);
     
     const files = [];
     const folders = [];

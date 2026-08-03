@@ -126,14 +126,8 @@ export async function getClient(env, forceRefresh = false) {
     throw e;
   }
   
-  // Charger la structure manuellement avec reload (nécessaire quand autoload: false)
-  try {
-    await storage.reload();
-    console.log('MEGA reload successful');
-  } catch (e) {
-    console.error('MEGA reload failed:', e.message);
-    throw e;
-  }
+  // NE PAS utiliser reload() - trop coûteux en CPU
+  // On utilisera find() et navigate() à la demande
   
   // Mettre en cache
   connectionCache.set(cacheKey, {
@@ -145,27 +139,23 @@ export async function getClient(env, forceRefresh = false) {
 }
 
 export async function getOrCreateFolder(storage, folderPath) {
-  const normalized = normalizePath(folderPath);
-  if (!normalized) return storage.root;
-
-  const segments = normalized.split("/").filter(Boolean);
+  if (!folderPath) return storage.root;
+  
+  const segments = folderPath.split("/").filter(Boolean);
   let current = storage.root;
-
-  if (!current) {
-    throw new Error("Storage root not available");
-  }
-
+  
   for (const segment of segments) {
     try {
       const folder = await current.find(segment);
       if (folder && folder.directory) {
         current = folder;
-        continue;
+      } else {
+        current = await current.mkdir(segment);
       }
     } catch (e) {
       // Folder doesn't exist
+      current = await current.mkdir(segment);
     }
-    current = await current.mkdir(segment);
   }
 
   return current;
@@ -177,28 +167,17 @@ export async function getFolderIfExists(storage, folderPath) {
   const normalized = normalizePath(folderPath);
   if (!normalized) return storage.root;
 
-  const segments = normalized.split("/").filter(Boolean);
-  let current = storage.root;
-
-  if (!current) {
-    throw new Error("Storage root not available");
-  }
-
-  for (const segment of segments) {
-    try {
-      const folder = await current.find(segment);
-      if (folder && folder.directory) {
-        current = folder;
-      } else {
-        return null;
-      }
-    } catch (e) {
-      console.error(`Error finding folder ${segment}:`, e.message);
-      return null;
+  // Utiliser navigate() au lieu de find() pour éviter de charger les enfants
+  try {
+    const folder = storage.root.navigate(`lumaris/${normalized}`);
+    if (folder && folder.directory) {
+      return folder;
     }
+  } catch (e) {
+    // Navigate failed
   }
 
-  return current;
+  return null;
 }
 
 async function ensureParentFolder(storage, path) {
