@@ -113,15 +113,18 @@ export async function getClient(env, forceRefresh = false) {
     password,
     userAgent: getRandomUserAgent(),
     keepalive: true,
-    autoload: true,
+    autoload: false,
     autologin: true,
   });
   
   await storage.ready;
   
-  // Vérifier que root est disponible
-  if (!storage.root) {
-    throw new Error("Storage root not available after login");
+  // Charger root manuellement mais sans toute la structure
+  try {
+    await storage.root.loadAttributes();
+  } catch (e) {
+    // Si échec, essayer reload
+    await storage.reload();
   }
   
   // Mettre en cache
