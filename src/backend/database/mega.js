@@ -85,6 +85,7 @@ async function retryOperation(operation, attempts = 5, baseTimeoutMs = 120000, b
 }
 
 export async function getClient(env, forceRefresh = false) {
+  console.log('[getClient] START');
   const email = env.MEGA_EMAIL;
   const password = env.MEGA_PASSWORD;
   const cacheKey = `${email}:${password}`;
@@ -94,11 +95,11 @@ export async function getClient(env, forceRefresh = false) {
     const cached = connectionCache.get(cacheKey);
     const now = Date.now();
     if (now - cached.timestamp < CACHE_TTL) {
-      console.log('Using cached MEGA connection');
+      console.log('[getClient] Using cached connection');
       return cached.storage;
     } else {
       connectionCache.delete(cacheKey);
-      console.log('Cleared MEGA connection cache');
+      console.log('[getClient] Cache expired');
     }
   }
 
@@ -106,6 +107,7 @@ export async function getClient(env, forceRefresh = false) {
     throw new Error("MEGA_EMAIL and MEGA_PASSWORD must be set");
   }
 
+  console.log('[getClient] Creating new Storage');
   const storage = new Storage({ 
     email, 
     password,
@@ -115,13 +117,17 @@ export async function getClient(env, forceRefresh = false) {
     autologin: true,
   });
   
+  console.log('[getClient] Calling storage.ready');
   await storage.ready;
+  console.log('[getClient] storage.ready completed');
   
   // Charger seulement root manuellement
+  console.log('[getClient] Calling loadAttributes');
   try {
     await storage.root.loadAttributes();
+    console.log('[getClient] loadAttributes completed');
   } catch (e) {
-    // Si échec, ignorer et continuer
+    console.log('[getClient] loadAttributes failed:', e.message);
   }
   
   // Mettre en cache
@@ -130,6 +136,7 @@ export async function getClient(env, forceRefresh = false) {
     timestamp: Date.now()
   });
   
+  console.log('[getClient] END');
   return storage;
 }
 
@@ -157,6 +164,7 @@ export async function getOrCreateFolder(storage, folderPath) {
 }
 
 export async function getFolderIfExists(storage, folderPath) {
+  console.log('[getFolderIfExists] START:', folderPath);
   if (!folderPath) return storage.root;
   
   const normalized = normalizePath(folderPath);
@@ -166,9 +174,12 @@ export async function getFolderIfExists(storage, folderPath) {
   try {
     const segments = normalized.split("/").filter(Boolean);
     let current = storage.root;
+    console.log('[getFolderIfExists] Segments:', segments);
     
     for (const segment of segments) {
+      console.log('[getFolderIfExists] Finding:', segment);
       const found = await current.find(segment);
+      console.log('[getFolderIfExists] Found:', !!found);
       if (found && found.directory) {
         current = found;
       } else {
@@ -176,8 +187,10 @@ export async function getFolderIfExists(storage, folderPath) {
       }
     }
     
+    console.log('[getFolderIfExists] END: folder found');
     return current;
   } catch (e) {
+    console.error('[getFolderIfExists] ERROR:', e.message);
     return null;
   }
 }
@@ -191,38 +204,48 @@ async function ensureParentFolder(storage, path) {
 }
 
 export async function megaRead(env, path, storage = null, forceRefresh = false) {
+  console.log('[megaRead] START:', path);
   const fullPath = `lumaris/${normalizePath(path)}`;
   const storageInstance = storage || await getClient(env, forceRefresh);
 
   try {
+    console.log('[megaRead] Trying navigate');
     const file = storageInstance.root.navigate(fullPath);
     if (file && !file.directory) {
+      console.log('[megaRead] File found via navigate, getting link');
       const link = await file.link();
+      console.log('[megaRead] Link obtained');
       return { url: link, name: file.name, size: file.size };
     }
   } catch (e) {
-    // Navigate failed
+    console.log('[megaRead] Navigate failed:', e.message);
   }
 
   const segments = fullPath.split("/").filter(Boolean);
   const fileName = segments.at(-1);
   const folderPath = segments.length > 1 ? segments.slice(0, -1).join("/") : "";
 
+  console.log('[megaRead] Getting folder:', folderPath);
   const folder = folderPath ? await getFolderIfExists(storageInstance, folderPath) : storageInstance.root;
   if (!folder) {
+    console.log('[megaRead] Folder not found');
     return null;
   }
 
   try {
+    console.log('[megaRead] Finding file:', fileName);
     const file = await folder.find(fileName);
     if (file && !file.directory) {
+      console.log('[megaRead] File found, getting link');
       const link = await file.link();
+      console.log('[megaRead] Link obtained');
       return { url: link, name: file.name, size: file.size };
     }
   } catch (e) {
-    // File not found
+    console.log('[megaRead] File not found:', e.message);
   }
 
+  console.log('[megaRead] END: file not found');
   return null;
 }
 
