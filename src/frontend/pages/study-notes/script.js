@@ -297,8 +297,13 @@ function setupModals() {
   addSubjectForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const name = document.getElementById('subject-name').value.trim();
+    const submitBtn = addSubjectForm.querySelector('button[type="submit"]');
     
     if (!name) return;
+    
+    submitBtn.disabled = true;
+    submitBtn.style.opacity = '0.5';
+    submitBtn.style.cursor = 'not-allowed';
     
     try {
       await apiCall('folder', 'POST', { relativePath: name });
@@ -308,6 +313,10 @@ function setupModals() {
     } catch (error) {
       console.error('Failed to add subject:', error);
       alert('Failed to add subject: ' + error.message);
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.style.opacity = '';
+      submitBtn.style.cursor = '';
     }
   });
   
@@ -321,8 +330,13 @@ function setupModals() {
   addFileForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const name = document.getElementById('file-name').value.trim();
+    const submitBtn = addFileForm.querySelector('button[type="submit"]');
     
     if (!name || !currentSubject) return;
+    
+    submitBtn.disabled = true;
+    submitBtn.style.opacity = '0.5';
+    submitBtn.style.cursor = 'not-allowed';
     
     try {
       await apiCall('upload', 'POST', { relativePath: `${currentSubject}/${name}`, content: '' });
@@ -337,6 +351,10 @@ function setupModals() {
     } catch (error) {
       console.error('Failed to add file:', error);
       alert('Failed to add file: ' + error.message);
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.style.opacity = '';
+      submitBtn.style.cursor = '';
     }
   });
   
@@ -353,8 +371,13 @@ function setupModals() {
   renameForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const newName = document.getElementById('rename-name').value.trim();
+    const submitBtn = renameForm.querySelector('button[type="submit"]');
     
     if (!newName || !renameTarget) return;
+    
+    submitBtn.disabled = true;
+    submitBtn.style.opacity = '0.5';
+    submitBtn.style.cursor = 'not-allowed';
     
     try {
       await apiCall('rename', 'POST', { oldPath: renameTarget.path, newName });
@@ -365,6 +388,10 @@ function setupModals() {
     } catch (error) {
       console.error('Failed to rename:', error);
       alert('Failed to rename: ' + error.message);
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.style.opacity = '';
+      submitBtn.style.cursor = '';
     }
   });
   
@@ -381,6 +408,10 @@ function setupModals() {
   confirmDeleteBtn.addEventListener('click', async () => {
     if (!deleteTarget) return;
     
+    confirmDeleteBtn.disabled = true;
+    confirmDeleteBtn.style.opacity = '0.5';
+    confirmDeleteBtn.style.cursor = 'not-allowed';
+    
     try {
       if (deleteTarget.type === 'folder') {
         await apiCall(`folder/${encodeURIComponent(deleteTarget.path)}`, 'DELETE');
@@ -393,6 +424,10 @@ function setupModals() {
     } catch (error) {
       console.error('Failed to delete:', error);
       alert('Failed to delete: ' + error.message);
+    } finally {
+      confirmDeleteBtn.disabled = false;
+      confirmDeleteBtn.style.opacity = '';
+      confirmDeleteBtn.style.cursor = '';
     }
   });
   
