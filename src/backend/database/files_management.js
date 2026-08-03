@@ -173,65 +173,13 @@ function formatDate(timestamp) {
 }
 
 async function listDirectory(env, relativePath = "") {
-  const storage = await getClient(env);
-  const fullPath = normalizePath(`${FILES_ROOT}/${relativePath}`);
-  
-  try {
-    const folder = await getFolderIfExists(storage, fullPath);
-    if (!folder) {
-      return { files: [], folders: [], path: relativePath };
-    }
-
-    // Utiliser filter() pour ne charger que les noms
-    const children = await folder.filter(() => true);
-    
-    const files = [];
-    const folders = [];
-    let count = 0;
-    const MAX_ITEMS = 5; // Limiter drastiquement à 5 items
-
-    for (const child of children) {
-      if (count >= MAX_ITEMS) break;
-      
-      const item = {
-        name: child.name,
-        path: relativePath ? `${relativePath}/${child.name}` : child.name,
-        size: child.size || 0,
-        modified: child.timestamp ? formatDate(child.timestamp) : "",
-        extension: child.directory ? "" : getFileExtension(child.name)
-      };
-
-      if (child.directory) {
-        folders.push(item);
-      } else {
-        files.push(item);
-      }
-      count++;
-    }
-
-    folders.sort((a, b) => a.name.localeCompare(b.name));
-    files.sort((a, b) => a.name.localeCompare(b.name));
-
-    return { files, folders, path: relativePath, truncated: count >= MAX_ITEMS };
-  } catch (e) {
-    console.error('Error in listDirectory:', e.message);
-    return { files: [], folders: [], path: relativePath };
-  }
+  // Désactiver complètement MEGA pour isoler le problème CPU
+  return { files: [], folders: [], path: relativePath };
 }
 
 async function readFile(env, relativePath) {
-  const fullPath = normalizePath(`${FILES_ROOT}/${relativePath}`);
-  const storage = await getClient(env);
-  
-  try {
-    const fileInfo = await megaRead(env, fullPath, storage);
-    if (fileInfo) {
-      return { success: true, url: fileInfo.url, name: fileInfo.name, size: fileInfo.size };
-    }
-    return { success: false, error: "File not found" };
-  } catch (e) {
-    return { success: false, error: "File not found" };
-  }
+  // Désactiver complètement MEGA pour isoler le problème CPU
+  return { success: false, error: "MEGA disabled for testing" };
 }
 
 async function writeFile(env, relativePath, content = null, url = null, fileData = null) {
