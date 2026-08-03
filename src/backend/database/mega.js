@@ -87,22 +87,48 @@ async function retryOperation(operation, attempts = 5, baseTimeoutMs = 120000, b
 export async function getClient(env, forceRefresh = false) {
   const email = env.MEGA_EMAIL;
   const password = env.MEGA_PASSWORD;
+  const cacheKey = `${email}:${password}`;
+
+  // Réactiver le cache pour éviter de recréer des connexions (très coûteux)
+  if (!forceRefresh && connectionCache.has(cacheKey)) {
+    const cached = connectionCache.get(cacheKey);
+    const now = Date.now();
+    if (now - cached.timestamp < CACHE_TTL) {
+      console.log('Using cached MEGA connection');
+      return cached.storage;
+    } else {
+      connectionCache.delete(cacheKey);
+      console.log('Cleared MEGA connection cache');
+    }
+  }
+
   if (!email || !password) {
     throw new Error("MEGA_EMAIL and MEGA_PASSWORD must be set");
   }
 
-  // Désactiver le cache pour éviter les problèmes de CPU
-  // Créer une nouvelle connexion à chaque fois
   const storage = new Storage({ 
     email, 
     password,
     userAgent: getRandomUserAgent(),
-    keepalive: false, // Désactiver keepalive pour réduire CPU
-    autoload: false, // Désactiver autoload pour éviter de charger toute la structure
+    keepalive: true,
+    autoload: false, // Désactivé pour CPU
     autologin: true,
   });
   
   await storage.ready;
+  
+  // Charger seulement root manuellement
+  try {
+    await storage.root.loadAttributes();
+  } catch (e) {
+    // Si échec, ignorer et continuer
+  }
+  
+  // Mettre en cache
+  connectionCache.set(cacheKey, {
+    storage,
+    timestamp: Date.now()
+  });
   
   return storage;
 }
@@ -136,17 +162,24 @@ export async function getFolderIfExists(storage, folderPath) {
   const normalized = normalizePath(folderPath);
   if (!normalized) return storage.root;
 
-  // Utiliser navigate() directement sans charger la structure
+  // Utiliser find() au lieu de navigate() pour éviter l'erreur ENOENT
   try {
-    const folder = storage.root.navigate(`lumaris/${normalized}`);
-    if (folder && folder.directory) {
-      return folder;
+    const segments = normalized.split("/").filter(Boolean);
+    let current = storage.root;
+    
+    for (const segment of segments) {
+      const found = await current.find(segment);
+      if (found && found.directory) {
+        current = found;
+      } else {
+        return null;
+      }
     }
+    
+    return current;
   } catch (e) {
-    // Navigate failed - dossier n'existe pas
+    return null;
   }
-
-  return null;
 }
 
 async function ensureParentFolder(storage, path) {
