@@ -62,7 +62,6 @@ async function retryOperation(operation, attempts = 5, baseTimeoutMs = 120000, b
   for (let attempt = 1; attempt <= attempts; attempt++) {
     try {
       const timeoutMs = baseTimeoutMs; // Timeout très long pour les gros fichiers
-      console.log(`MEGA operation attempt ${attempt}/${attempts} with timeout ${timeoutMs}ms`);
       return await withTimeout(operation(), timeoutMs, `Mega operation timed out after ${timeoutMs}ms`);
     } catch (error) {
       lastError = error;
@@ -76,7 +75,6 @@ async function retryOperation(operation, attempts = 5, baseTimeoutMs = 120000, b
       
       // Exponential backoff pour rate limits et erreurs temporaires
       const delayMs = isRateLimit ? baseDelayMs * Math.pow(2, attempt) : baseDelayMs * attempt;
-      console.log(`MEGA operation failed (attempt ${attempt}/${attempts}), retrying in ${delayMs}ms...`);
       await new Promise((resolve) => setTimeout(resolve, delayMs));
     }
   }
@@ -96,7 +94,6 @@ export async function getClient(env, forceRefresh = false) {
   
   // Vérifier si la connexion est encore valide (sauf si forceRefresh)
   if (!forceRefresh && cached && Date.now() - cached.timestamp < CACHE_TTL) {
-    console.log('Using cached MEGA connection');
     return cached.storage;
   }
 
@@ -104,7 +101,6 @@ export async function getClient(env, forceRefresh = false) {
   if (forceRefresh || connectionCache.size >= MAX_CACHE_SIZE) {
     const oldestKey = connectionCache.keys().next().value;
     connectionCache.delete(oldestKey);
-    console.log('Cleared MEGA connection cache');
   }
 
   // Créer une nouvelle connexion avec optimisations pour éviter le blocage MEGA
@@ -234,7 +230,6 @@ export async function megaRead(env, path, storage = null, forceRefresh = false) 
     try {
       const file = storageInstance.root.navigate(fullPath);
       if (file && !file.directory) {
-        console.log(`Reading file via navigate: ${fullPath}`);
         // Optimisations de download pour éviter les blocages
         const buffer = await withTimeout(
           file.downloadBuffer({
@@ -255,7 +250,6 @@ export async function megaRead(env, path, storage = null, forceRefresh = false) 
       }
     } catch (e) {
       // Fallback à la méthode manuelle
-      console.log(`Navigate failed, using manual method for: ${fullPath}`);
     }
 
     const segments = fullPath.split("/").filter(Boolean);
@@ -276,7 +270,6 @@ export async function megaRead(env, path, storage = null, forceRefresh = false) 
     
     // Find ALL files with the same name
     const fileNodes = children.filter(child => child.name === fileName && !child.directory);
-    console.log(`Found ${fileNodes.length} files with name: ${fileName}`);
     
     if (fileNodes.length === 0) {
       throw new Error(`File not found: ${path}`);
@@ -285,7 +278,6 @@ export async function megaRead(env, path, storage = null, forceRefresh = false) 
     // If multiple files exist, pick the most recent one (by modification time if available)
     // Otherwise pick the first one
     const fileNode = fileNodes[0];
-    console.log(`Reading file node: ${fileNode.name}`);
 
     const buffer = await withTimeout(
       fileNode.downloadBuffer({
@@ -318,7 +310,6 @@ export async function megaWrite(env, path, body, storage = null) {
     const fileName = segments.at(-1);
     const folderPath = segments.length > 1 ? segments.slice(0, -1).join("/") : "";
 
-    console.log(`Starting upload for: ${fullPath}, size: ${content.length} bytes`);
 
     const folder = folderPath ? await getOrCreateFolder(storageInstance, folderPath) : storageInstance.root;
     
@@ -331,16 +322,13 @@ export async function megaWrite(env, path, body, storage = null) {
     
     // Find and delete ALL existing files with the same name (not just the first one)
     const existingFiles = children.filter(child => child.name === fileName && !child.directory);
-    console.log(`Found ${existingFiles.length} existing files with name: ${fileName}`);
     
     for (const existing of existingFiles) {
       try {
-        console.log(`Deleting existing file: ${existing.name}`);
         await existing.delete();
         // Wait a bit to ensure deletion is processed
         await new Promise(resolve => setTimeout(resolve, 200));
       } catch (deleteError) {
-        console.error(`Error deleting file ${existing.name}:`, deleteError);
       }
     }
 
@@ -353,7 +341,6 @@ export async function megaWrite(env, path, body, storage = null) {
     
     const stillExisting = refreshedChildren.find(child => child.name === fileName && !child.directory);
     if (stillExisting) {
-      console.warn(`File ${fileName} still exists after deletion attempt`);
     }
 
     const uploadPromise = new Promise((resolve, reject) => {
@@ -368,30 +355,25 @@ export async function megaWrite(env, path, body, storage = null) {
         maxChunkSize: 524288, // 512KB max
         // Utiliser le système de retry intégré de megajs avec backoff exponentiel
         handleRetries: (tries, error, cb) => {
-          console.log(`MEGA upload retry ${tries}/8, error:`, error.message);
           if (tries > 8) {
             // Abandonner après 8 tentatives
             cb(error);
           } else {
             // Attendre avec backoff exponentiel
             const delay = 1000 * Math.pow(2, tries);
-            console.log(`Retrying upload in ${delay}ms...`);
-            setTimeout(cb, delay);
+              setTimeout(cb, delay);
           }
         }
       }, content, (err, file) => {
         if (err) {
-          console.error(`MEGA upload error:`, err);
           reject(err);
         } else {
-          console.log(`MEGA upload complete: ${file.name}`);
           resolve(file);
         }
       });
     });
 
     const file = await withTimeout(uploadPromise, 60000, `Mega upload timed out for ${fullPath}`);
-    console.log(`Successfully uploaded file: ${file.name}`);
     return {
       name: file.name,
       size: file.size,

@@ -42,22 +42,16 @@ function formatDate(timestamp) {
 }
 
 async function listDirectory(env, relativePath = "") {
-  console.log('[listDirectory] START:', relativePath);
   const storage = await getClient(env);
-  console.log('[listDirectory] Storage obtained');
   const fullPath = normalizePath(`${STUDY_NOTES_ROOT}/${relativePath}`);
-  console.log('[listDirectory] Full path:', fullPath);
   
   try {
     const folder = await getFolderIfExists(storage, fullPath);
-    console.log('[listDirectory] Folder obtained:', !!folder);
     if (!folder) {
       return { files: [], folders: [], path: relativePath };
     }
 
-    console.log('[listDirectory] Calling filter()');
     const children = await folder.filter(() => true);
-    console.log('[listDirectory] Children count:', children.length);
     
     const files = [];
     const folders = [];
@@ -86,30 +80,23 @@ async function listDirectory(env, relativePath = "") {
     folders.sort((a, b) => a.name.localeCompare(b.name));
     files.sort((a, b) => a.name.localeCompare(b.name));
 
-    console.log('[listDirectory] END:', { files: files.length, folders: folders.length });
     return { files, folders, path: relativePath, truncated: count >= MAX_ITEMS };
   } catch (e) {
-    console.error('[listDirectory] ERROR:', e.message);
     return { files: [], folders: [], path: relativePath };
   }
 }
 
 async function readFile(env, relativePath) {
-  console.log('[readFile] START:', relativePath);
   const fullPath = normalizePath(`${STUDY_NOTES_ROOT}/${relativePath}`);
   const storage = await getClient(env);
-  console.log('[readFile] Storage obtained');
   
   try {
-    console.log('[readFile] Calling megaRead');
     const fileInfo = await megaRead(env, fullPath, storage);
-    console.log('[readFile] FileInfo obtained:', !!fileInfo);
     if (fileInfo) {
       return { success: true, url: fileInfo.url, name: fileInfo.name, size: fileInfo.size };
     }
     return { success: false, error: "File not found" };
   } catch (e) {
-    console.error('[readFile] ERROR:', e.message);
     return { success: false, error: "File not found" };
   }
 }
@@ -117,8 +104,6 @@ async function readFile(env, relativePath) {
 async function writeFile(env, relativePath, content = null, url = null, fileData = null) {
   const fullPath = normalizePath(`${STUDY_NOTES_ROOT}/${relativePath}`);
   const storage = await getClient(env);
-  
-  console.log(`writeFile called: path=${fullPath}, hasFile=${!!fileData}`);
   
   // If file data is provided (FormData upload), stream to MEGA
   if (fileData) {
