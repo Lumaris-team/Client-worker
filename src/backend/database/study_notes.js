@@ -72,6 +72,13 @@ async function listDirectory(env, relativePath = "") {
       if (child.directory) {
         folders.push(item);
       } else {
+        // Générer l'URL de partage pour les fichiers
+        try {
+          const link = await child.link();
+          item.url = link;
+        } catch (e) {
+          // Si échec de génération de lien, continuer sans URL
+        }
         files.push(item);
       }
       count++;
@@ -91,8 +98,11 @@ async function readFile(env, relativePath) {
   const storage = await getClient(env);
   
   try {
-    const content = await megaRead(env, fullPath, storage);
-    return { success: true, content };
+    const fileInfo = await megaRead(env, fullPath, storage);
+    if (fileInfo) {
+      return { success: true, url: fileInfo.url, name: fileInfo.name, size: fileInfo.size };
+    }
+    return { success: false, error: "File not found" };
   } catch (e) {
     if (e.message.includes("File not found") || e.message.includes("Folder not found")) {
       return { success: false, error: "File not found" };
@@ -135,8 +145,8 @@ async function writeFile(env, relativePath, content = null, url = null, fileData
     console.log(`Decoded base64 content, new length: ${actualContent.length}`);
   }
 
-  await megaWrite(env, fullPath, actualContent, storage);
-  return { success: true };
+  const result = await megaWrite(env, fullPath, actualContent, storage);
+  return { success: true, url: result.url, name: result.name, size: result.size };
 }
 
 // Helper function to upload from URL

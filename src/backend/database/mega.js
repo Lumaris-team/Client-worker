@@ -113,11 +113,16 @@ export async function getClient(env, forceRefresh = false) {
     password,
     userAgent: getRandomUserAgent(),
     keepalive: true,
-    autoload: true,
+    autoload: false, // Désactivé pour éviter le chargement CPU intensif
     autologin: true,
   });
   
   await storage.ready;
+  
+  // Charger root manuellement seulement si nécessaire
+  if (!storage.root) {
+    await storage.reload();
+  }
   
   // Vérifier que root est disponible
   if (!storage.root) {
@@ -202,13 +207,8 @@ export async function megaRead(env, path, storage = null, forceRefresh = false) 
   try {
     const file = storageInstance.root.navigate(fullPath);
     if (file && !file.directory) {
-      const buffer = await file.downloadBuffer();
-      const text = Buffer.from(buffer).toString("utf8");
-      try {
-        return JSON.parse(text);
-      } catch {
-        return text;
-      }
+      const link = await file.link();
+      return { url: link, name: file.name, size: file.size };
     }
   } catch (e) {
     // Navigate failed
@@ -222,26 +222,21 @@ export async function megaRead(env, path, storage = null, forceRefresh = false) 
   if (!folder) {
     const newFolder = await getOrCreateFolder(storageInstance, folderPath);
     await megaWrite(env, path, "", newFolder);
-    return "";
+    return null;
   }
 
   try {
     const file = await folder.find(fileName);
     if (file && !file.directory) {
-      const buffer = await file.downloadBuffer();
-      const text = Buffer.from(buffer).toString("utf8");
-      try {
-        return JSON.parse(text);
-      } catch {
-        return text;
-      }
+      const link = await file.link();
+      return { url: link, name: file.name, size: file.size };
     }
   } catch (e) {
     // File not found
   }
 
   await megaWrite(env, path, "", folder);
-  return "";
+  return null;
 }
 
 export async function megaWrite(env, path, body, storage = null) {
@@ -265,11 +260,13 @@ export async function megaWrite(env, path, body, storage = null) {
   }
 
   const file = await folder.upload(fileName, content).complete;
+  const link = await file.link();
   return {
     name: file.name,
     size: file.size,
     nodeId: file.nodeId,
-    downloadId: file.downloadId
+    downloadId: file.downloadId,
+    url: link
   };
 }
 
