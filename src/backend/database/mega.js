@@ -107,21 +107,17 @@ export async function getClient(env, forceRefresh = false) {
     console.log('Cleared MEGA connection cache');
   }
 
-  // Créer une nouvelle connexion avec optimisations pour éviter le blocage MEGA
+  // Créer une nouvelle connexion
   const storage = new Storage({ 
     email, 
     password,
     userAgent: getRandomUserAgent(),
     keepalive: true,
-    autoload: false, // Désactivé pour éviter le chargement CPU intensif de toute la structure
+    autoload: true,
     autologin: true,
-    autofetch: false, // Désactivé pour éviter les fetchs automatiques coûteux
-    protocol: "https",
-    host: "g.api.mega.co.nz",
-    port: 443,
   });
   
-  await withTimeout(storage.ready, 15000, "Mega login timed out");
+  await storage.ready;
   
   // Vérifier que root est disponible
   if (!storage.root) {
