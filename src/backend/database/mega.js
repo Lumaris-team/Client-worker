@@ -1,9 +1,9 @@
-import { Storage } from "megajs";
+import { Storage, API } from "megajs";
 
 // Cache des connexions pour éviter trop de logins
 const connectionCache = new Map();
-const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 heures pour éviter les blocages MEGA (credential stuffing)
-const MAX_CACHE_SIZE = 1; // Maximum 1 connexion simultanée
+const CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 jours pour éviter de recréer des connexions // 24 heures pour éviter les blocages MEGA (credential stuffing)
+const MAX_CACHE_SIZE = 5; // Augmenter pour plus de flexibilité // Maximum 1 connexion simultanée
 const MIN_OPERATION_DELAY = 0; // Désactivé pour optimiser
 let lastOperationTime = 0; // Timestamp de la dernière opération
 
@@ -108,13 +108,21 @@ export async function getClient(env, forceRefresh = false) {
   }
 
   console.log('[getClient] Creating new Storage WITHOUT autologin');
+  
+  // Créer une API minimaliste pour réduire CPU
+  const api = new API({
+    keepalive: false, // Désactiver keepalive au niveau API
+    // Autres options minimales
+  });
+  
   const storage = new Storage({ 
     email, 
     password,
     userAgent: getRandomUserAgent(),
-    keepalive: true,
+    keepalive: false, // Désactiver keepalive
     autoload: false,
-    autologin: false, // Désactiver autologin pour éviter le coût CPU
+    autologin: false,
+    api: api, // Utiliser l'API minimaliste
   });
   
   console.log('[getClient] Calling login() manuellement');
