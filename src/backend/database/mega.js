@@ -107,28 +107,19 @@ export async function getClient(env, forceRefresh = false) {
     throw new Error("MEGA_EMAIL and MEGA_PASSWORD must be set");
   }
 
-  console.log('[getClient] Creating new Storage');
+  console.log('[getClient] Creating new Storage WITHOUT autologin');
   const storage = new Storage({ 
     email, 
     password,
     userAgent: getRandomUserAgent(),
     keepalive: true,
-    autoload: false, // Désactivé pour CPU
-    autologin: true,
+    autoload: false,
+    autologin: false, // Désactiver autologin pour éviter le coût CPU
   });
   
-  console.log('[getClient] Calling storage.ready');
-  await storage.ready;
-  console.log('[getClient] storage.ready completed');
-  
-  // Charger seulement root manuellement
-  console.log('[getClient] Calling loadAttributes');
-  try {
-    await storage.root.loadAttributes();
-    console.log('[getClient] loadAttributes completed');
-  } catch (e) {
-    console.log('[getClient] loadAttributes failed:', e.message);
-  }
+  console.log('[getClient] Calling login() manuellement');
+  await storage.login();
+  console.log('[getClient] login() completed');
   
   // Mettre en cache
   connectionCache.set(cacheKey, {
