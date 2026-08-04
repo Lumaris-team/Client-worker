@@ -206,7 +206,7 @@ function getFolderIcon() {
 
 function getFileIcon(extension) {
   // Generic file icon
-  return `<span data-icon="/assets/icons/database.svg"></span>`;
+  return `<span data-icon="/assets/icons/file.svg"></span>`;
 }
 
 async function loadIcons(container) {
