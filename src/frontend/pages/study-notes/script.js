@@ -199,6 +199,7 @@ function attachSubjectListeners() {
     const path = block.dataset.path;
     const name = block.dataset.name;
     const content = block.querySelector('.subject-content');
+    const filesList = block.querySelector('.files-list');
 
     console.log(`Subject block ${index}: path=${path}, name=${name}, content=${content}`);
 
@@ -211,9 +212,10 @@ function attachSubjectListeners() {
       }
 
       const isExpanded = content.dataset.expanded === 'true';
-      console.log(`Is expanded: ${isExpanded}, loading: ${content.dataset.loading}`);
+      const isLoading = filesList.dataset.loading === 'true';
+      console.log(`Is expanded: ${isExpanded}, loading: ${isLoading}`);
 
-      if (!isExpanded && content.dataset.loading === 'false') {
+      if (!isExpanded && !isLoading) {
         content.dataset.expanded = 'true';
         loadFiles(path, block);
       } else {
