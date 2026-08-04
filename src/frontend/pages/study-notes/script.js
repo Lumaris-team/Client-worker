@@ -187,18 +187,23 @@ async function loadFiles(subjectPath, subjectBlock) {
 function attachSubjectListeners() {
   const subjectBlocks = document.querySelectorAll('.subject-block');
 
-  console.log(`Attaching listeners to ${subjectBlocks.length} subject blocks`);
+  console.log(`attachSubjectListeners called, found ${subjectBlocks.length} subject blocks`);
 
-  subjectBlocks.forEach(block => {
+  if (subjectBlocks.length === 0) {
+    console.warn('No subject blocks found to attach listeners to');
+    return;
+  }
+
+  subjectBlocks.forEach((block, index) => {
     const path = block.dataset.path;
     const name = block.dataset.name;
     const content = block.querySelector('.subject-content');
 
-    console.log(`Subject block: path=${path}, name=${name}`);
+    console.log(`Subject block ${index}: path=${path}, name=${name}, content=${content}`);
 
     // Click on subject to expand/collapse
     block.addEventListener('click', (e) => {
-      console.log('Subject block clicked', e.target);
+      console.log('Subject block clicked', { target: e.target, path, name });
       if (e.target.closest('.subject-action-btn')) {
         console.log('Click on action button, ignoring');
         return;
