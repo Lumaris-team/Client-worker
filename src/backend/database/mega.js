@@ -141,7 +141,9 @@ export async function getOrCreateFolder(storage, folderPath) {
   const normalized = normalizePath(folderPath);
   if (!normalized) return storage.root;
 
-  const segments = normalized.split("/").filter(Boolean);
+  // Add lumaris/ prefix
+  const fullPath = `lumaris/${normalized}`;
+  const segments = fullPath.split("/").filter(Boolean);
   let current = storage.root;
 
   // Vérifier que storage.root existe
@@ -182,7 +184,9 @@ export async function getFolderIfExists(storage, folderPath) {
   const normalized = normalizePath(folderPath);
   if (!normalized) return storage.root;
 
-  const segments = normalized.split("/").filter(Boolean);
+  // Add lumaris/ prefix
+  const fullPath = `lumaris/${normalized}`;
+  const segments = fullPath.split("/").filter(Boolean);
   let current = storage.root;
 
   // Vérifier que storage.root existe
@@ -221,7 +225,7 @@ async function ensureParentFolder(storage, path) {
 }
 
 export async function megaRead(env, path, storage = null, forceRefresh = false) {
-  const fullPath = `dashboard/${normalizePath(path)}`;
+  const fullPath = `lumaris/${normalizePath(path)}`;
 
   return await retryOperation(async () => {
     await withDelay(); // Rate limiting
@@ -299,7 +303,7 @@ export async function megaRead(env, path, storage = null, forceRefresh = false) 
 }
 
 export async function megaWrite(env, path, body, storage = null) {
-  const fullPath = `dashboard/${normalizePath(path)}`;
+  const fullPath = `lumaris/${normalizePath(path)}`;
   const content = Buffer.from(toText(body), "utf8");
 
   return await retryOperation(async () => {
@@ -384,7 +388,7 @@ export async function megaWrite(env, path, body, storage = null) {
 }
 
 export async function megaDelete(env, path) {
-  const fullPath = `dashboard/${normalizePath(path)}`;
+  const fullPath = `lumaris/${normalizePath(path)}`;
 
   return await retryOperation(async () => {
     await withDelay(); // Rate limiting
