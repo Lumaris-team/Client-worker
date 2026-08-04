@@ -1,3 +1,6 @@
-<svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor">
-  <path d="M5 5h6v6H5zM13 5h6v6h-6zM5 13h6v6H5zM13 13h6v6h-6z"></path>
+<svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <rect x="5" y="5" width="6" height="6"></rect>
+  <rect x="13" y="5" width="6" height="6"></rect>
+  <rect x="5" y="13" width="6" height="6"></rect>
+  <rect x="13" y="13" width="6" height="6"></rect>
 </svg> 
