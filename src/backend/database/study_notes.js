@@ -524,15 +524,15 @@ export async function StudyNotesFunction(env, path, method, body) {
   switch (method) {
     case "GET":
       if (path === "" || path === "/") {
-        return { resp: await listDirectory(env, "") };
+        return await listDirectory(env, "");
       }
       if (path.startsWith("list/")) {
         const relativePath = decodeURIComponent(path.slice("list/".length));
-        return { resp: await listDirectory(env, relativePath) };
+        return await listDirectory(env, relativePath);
       }
       if (path.startsWith("read/")) {
         const relativePath = decodeURIComponent(path.slice("read/".length));
-        return { resp: await readFile(env, relativePath) };
+        return await readFile(env, relativePath);
       }
       throw new Error("Invalid GET path");
     
@@ -555,7 +555,7 @@ export async function StudyNotesFunction(env, path, method, body) {
           // Log file info for debugging
           console.log(`Upload request: relativePath=${relativePath}, fileName=${file.name}, fileSize=${file.size}`);
 
-          return { resp: await writeFile(env, relativePath, null, null, fileData) };
+          return await writeFile(env, relativePath, null, null, fileData);
         } else {
           const { relativePath, content, url } = body;
           if (!relativePath) {
@@ -564,7 +564,7 @@ export async function StudyNotesFunction(env, path, method, body) {
           if (!content && !url) {
             throw new Error("content or url is required");
           }
-          return { resp: await writeFile(env, relativePath, content, url) };
+          return await writeFile(env, relativePath, content, url);
         }
       }
       if (path === "folder") {
@@ -572,32 +572,32 @@ export async function StudyNotesFunction(env, path, method, body) {
         if (!relativePath) {
           throw new Error("relativePath is required");
         }
-        return { resp: await createFolder(env, relativePath) };
+        return await createFolder(env, relativePath);
       }
       if (path === "rename") {
         const { oldPath, newName } = body;
         if (!oldPath || !newName) {
           throw new Error("oldPath and newName are required");
         }
-        return { resp: await renameItem(env, oldPath, newName) };
+        return await renameItem(env, oldPath, newName);
       }
       if (path === "delete") {
         const { relativePath } = body;
         if (!relativePath) {
           throw new Error("relativePath is required");
         }
-        return { resp: await deleteItem(env, relativePath) };
+        return await deleteItem(env, relativePath);
       }
       throw new Error("Invalid POST path");
     
     case "DELETE":
       if (path.startsWith("delete/")) {
         const relativePath = decodeURIComponent(path.slice("delete/".length));
-        return { resp: await deleteFile(env, relativePath) };
+        return await deleteFile(env, relativePath);
       }
       if (path.startsWith("folder/")) {
         const relativePath = decodeURIComponent(path.slice("folder/".length));
-        return { resp: await deleteFolder(env, relativePath) };
+        return await deleteFolder(env, relativePath);
       }
       throw new Error("Invalid DELETE path");
     
