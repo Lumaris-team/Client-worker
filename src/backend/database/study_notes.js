@@ -89,14 +89,63 @@ async function listDirectory(env, relativePath = "") {
 async function readFile(env, relativePath) {
   const fullPath = normalizePath(`${STUDY_NOTES_ROOT}/${relativePath}`);
   const storage = await getClient(env);
-  
+
+  console.log(`readFile called: relativePath=${relativePath}, fullPath=${fullPath}`);
+
   try {
-    const fileInfo = await megaRead(env, fullPath, storage);
-    if (fileInfo) {
-      return { success: true, url: fileInfo.url, name: fileInfo.name, size: fileInfo.size };
+    const segments = fullPath.split("/").filter(Boolean);
+    const fileName = segments.at(-1);
+    const folderPath = segments.length > 1 ? segments.slice(0, -1).join("/") : "";
+
+    console.log(`segments: ${segments.join('/')}, fileName: ${fileName}, folderPath: ${folderPath}`);
+
+    const folder = folderPath ? await getFolderIfExists(storage, folderPath) : storage.root;
+    if (!folder) {
+      console.log('Folder not found:', folderPath);
+      return { success: false, error: "File not found" };
     }
-    return { success: false, error: "File not found" };
+
+    const children = await folder.children;
+    console.log(`Found ${children.length} children in folder`);
+
+    const fileNode = children.find(child => child.name === fileName && !child.directory);
+
+    if (!fileNode) {
+      console.log('File not found:', fileName);
+      return { success: false, error: "File not found" };
+    }
+
+    console.log('Found file node:', fileNode.name, 'has link:', !!fileNode.link, 'downloadId:', fileNode.downloadId);
+
+    // Generate download URL from MEGA
+    const downloadUrl = fileNode.link;
+
+    if (!downloadUrl) {
+      console.error('File node has no link property, trying alternative method');
+      // Try to construct URL from downloadId
+      if (fileNode.downloadId) {
+        const constructedUrl = `https://mega.nz/file/${fileNode.downloadId}`;
+        console.log('Constructed URL from downloadId:', constructedUrl);
+        return {
+          success: true,
+          url: constructedUrl,
+          name: fileNode.name,
+          size: fileNode.size
+        };
+      }
+      return { success: false, error: "Could not generate download URL" };
+    }
+
+    console.log('Using file node link:', downloadUrl);
+
+    return {
+      success: true,
+      url: downloadUrl,
+      name: fileNode.name,
+      size: fileNode.size
+    };
   } catch (e) {
+    console.error('Error reading file:', e);
     return { success: false, error: "File not found" };
   }
 }
@@ -475,15 +524,15 @@ export async function StudyNotesFunction(env, path, method, body) {
   switch (method) {
     case "GET":
       if (path === "" || path === "/") {
-        return await listDirectory(env, "");
+        return { resp: await listDirectory(env, "") };
       }
       if (path.startsWith("list/")) {
         const relativePath = decodeURIComponent(path.slice("list/".length));
-        return await listDirectory(env, relativePath);
+        return { resp: await listDirectory(env, relativePath) };
       }
       if (path.startsWith("read/")) {
         const relativePath = decodeURIComponent(path.slice("read/".length));
-        return await readFile(env, relativePath);
+        return { resp: await readFile(env, relativePath) };
       }
       throw new Error("Invalid GET path");
     
