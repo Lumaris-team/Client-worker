@@ -266,19 +266,28 @@ function attachFileListeners(subjectBlock) {
       downloadBtn.addEventListener('click', async (e) => {
         e.stopPropagation();
         try {
+          // Get MEGA URL from backend
           const data = await apiCall(`read/${encodeURIComponent(path)}`, 'GET');
-          if (data.success && data.url) {
-            // Create a temporary link to trigger download
-            const link = document.createElement('a');
-            link.href = data.url;
-            link.download = data.name || name;
-            link.target = '_blank';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-          } else {
-            alert('Failed to get download URL');
+
+          if (!data.success || !data.url) {
+            throw new Error('Failed to get download URL');
           }
+
+          // Use megajs in browser to download directly from MEGA
+          const megaFile = await window.MegaFile.fromURL(data.url);
+          await megaFile.loadAttributes();
+
+          const buffer = await megaFile.downloadBuffer();
+          const blob = new Blob([buffer]);
+
+          // Create a temporary link to trigger download
+          const link = document.createElement('a');
+          link.href = URL.createObjectURL(blob);
+          link.download = data.name || name;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(link.href);
         } catch (error) {
           console.error('Failed to download file:', error);
           alert('Failed to download file: ' + error.message);
