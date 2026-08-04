@@ -53,11 +53,20 @@ async function loadSubjects() {
     const subjectsList = document.getElementById('subjects-list');
 
     console.log('loadSubjects received data:', data);
+    console.log('subjectsList element:', subjectsList);
+    console.log('data.folders:', data.folders);
+    console.log('data.folders.length:', data.folders?.length);
+
+    if (!subjectsList) {
+      console.error('subjects-list element not found!');
+      return;
+    }
 
     // Cache subjects for dropdown
     cachedSubjects = data.folders || [];
 
     if (!data.folders || data.folders.length === 0) {
+      console.log('No folders found, showing empty state');
       subjectsList.innerHTML = `
         <div class="empty-state">
           <p class="empty-state-text">No subjects yet</p>
@@ -67,7 +76,9 @@ async function loadSubjects() {
       return;
     }
 
-    subjectsList.innerHTML = data.folders.map(folder => `
+    console.log('Rendering', data.folders.length, 'folders');
+
+    const html = data.folders.map(folder => `
       <div class="subject-block" data-path="${folder.path}" data-name="${folder.name}">
         <div class="subject-icon" data-icon="/assets/icons/folder.svg"></div>
         <div class="subject-info">
@@ -88,8 +99,11 @@ async function loadSubjects() {
       </div>
     `).join('');
 
-    // Add event listeners
-    console.log('Calling attachSubjectListeners after rendering subjects');
+    console.log('Generated HTML length:', html.length);
+    subjectsList.innerHTML = html;
+    console.log('subjectsList.innerHTML set, current length:', subjectsList.innerHTML.length);
+
+    console.log('Subjects rendered, calling attachSubjectListeners');
     attachSubjectListeners();
 
     // Load icons using shared function
@@ -97,12 +111,14 @@ async function loadSubjects() {
   } catch (error) {
     console.error('Failed to load subjects:', error);
     const subjectsList = document.getElementById('subjects-list');
-    subjectsList.innerHTML = `
-      <div class="empty-state">
-        <p class="empty-state-text">Failed to load subjects</p>
-        <p class="empty-state-subtext">${error.message}</p>
-      </div>
-    `;
+    if (subjectsList) {
+      subjectsList.innerHTML = `
+        <div class="empty-state">
+          <p class="empty-state-text">Failed to load subjects</p>
+          <p class="empty-state-subtext">${error.message}</p>
+        </div>
+      `;
+    }
   }
 }
 
