@@ -466,52 +466,20 @@ function setupModals() {
 
 // Add file button in subject (shown when a subject is expanded)
 function setupAddFileButton() {
-  // Modify the homeworks header to show add file button when in a subject
-  const homeworksHeader = document.querySelector('.homeworks-header');
-  const addSubjectBtn = document.getElementById('add-subject-btn');
-  
-  // Create add file button (hidden by default)
-  const addFileBtn = document.createElement('button');
-  addFileBtn.id = 'add-file-btn';
-  addFileBtn.className = 'add-btn';
-  addFileBtn.type = 'button';
-  addFileBtn.setAttribute('aria-label', 'Add file');
-  addFileBtn.style.display = 'none';
-  addFileBtn.innerHTML = '<span class="add-icon" data-icon="/assets/icons/plus.svg"></span>';
-  
-  homeworksHeader.appendChild(addFileBtn);
-  
-  // Load icon for the new button
-  const iconSpan = addFileBtn.querySelector('[data-icon]');
-  if (iconSpan) {
-    fetch(iconSpan.dataset.icon)
-      .then(res => res.text())
-      .then(svg => iconSpan.innerHTML = svg)
-      .catch(err => console.error('Failed to load icon:', err));
-  }
-  
-  // Add file button click handler
-  addFileBtn.addEventListener('click', () => {
+  const uploadBtn = document.getElementById('upload-btn');
+  const folderBtn = document.getElementById('folder-btn');
+
+  // Upload button click handler
+  uploadBtn.addEventListener('click', () => {
     if (currentSubject) {
       openModal('add-file-modal');
     }
   });
-  
-  // Update button visibility based on current state
-  function updateAddButton() {
-    if (currentSubject) {
-      addSubjectBtn.style.display = 'none';
-      addFileBtn.style.display = 'grid';
-    } else {
-      addSubjectBtn.style.display = 'grid';
-      addFileBtn.style.display = 'none';
-    }
-  }
-  
-  // Expose function to update button state
-  window.updateAddButton = updateAddButton;
-  
-  return { addFileBtn, updateAddButton };
+
+  // Folder button click handler
+  folderBtn.addEventListener('click', () => {
+    openModal('add-subject-modal');
+  });
 }
 
 // Initialize
