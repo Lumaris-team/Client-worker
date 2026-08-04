@@ -519,7 +519,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setupTabs();
   setupModals();
   setupAddFileButton();
-  
+
   // Start on AI tab as requested
   // The AI tab is already set as active in HTML
 });
