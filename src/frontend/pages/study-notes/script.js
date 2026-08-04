@@ -347,31 +347,64 @@ function setupModals() {
   const cancelAddFileBtn = document.getElementById('cancel-add-file-btn');
   
   cancelAddFileBtn.addEventListener('click', () => closeModal('add-file-modal'));
+
+  // Load subjects when modal is opened
+  const loadSubjectsForDropdown = async () => {
+    const subjectSelect = document.getElementById('subject-select');
+    try {
+      const subjects = await apiCall('list', 'GET');
+      subjectSelect.innerHTML = '<option value="">Select a subject</option>';
+      if (subjects && subjects.length > 0) {
+        subjects.forEach(subject => {
+          const option = document.createElement('option');
+          option.value = subject.name;
+          option.textContent = subject.name;
+          subjectSelect.appendChild(option);
+        });
+      } else {
+        subjectSelect.innerHTML = '<option value="">No subjects available</option>';
+      }
+    } catch (error) {
+      console.error('Failed to load subjects:', error);
+      subjectSelect.innerHTML = '<option value="">Failed to load subjects</option>';
+    }
+  };
+
+  // Override openModal for add-file-modal to load subjects
+  const originalOpenModal = openModal;
+  openModal = (modalId) => {
+    if (modalId === 'add-file-modal') {
+      loadSubjectsForDropdown();
+    }
+    originalOpenModal(modalId);
+  };
   
   addFileForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const name = document.getElementById('file-name').value.trim();
+    const subject = document.getElementById('subject-select').value;
+    const fileInput = document.getElementById('file-input');
     const submitBtn = addFileForm.querySelector('button[type="submit"]');
-    
-    if (!name || !currentSubject) return;
-    
+
+    if (!subject || !fileInput.files[0]) return;
+
+    const formData = new FormData();
+    formData.append('file', fileInput.files[0]);
+    formData.append('relativePath', subject);
+
     submitBtn.disabled = true;
     submitBtn.style.opacity = '0.5';
     submitBtn.style.cursor = 'not-allowed';
-    
+
     try {
-      await apiCall('upload', 'POST', { relativePath: `${currentSubject}/${name}`, content: '' });
+      await apiCall('upload', 'POST', formData);
       closeModal('add-file-modal');
       addFileForm.reset();
-      
-      // Reload the current subject
-      const subjectBlock = document.querySelector(`.subject-block[data-path="${currentSubject}"]`);
-      if (subjectBlock) {
-        loadFiles(currentSubject, subjectBlock);
-      }
+
+      // Reload the subjects list
+      loadSubjects();
     } catch (error) {
-      console.error('Failed to add file:', error);
-      alert('Failed to add file: ' + error.message);
+      console.error('Failed to upload file:', error);
+      alert('Failed to upload file: ' + error.message);
     } finally {
       submitBtn.disabled = false;
       submitBtn.style.opacity = '';
@@ -469,15 +502,17 @@ function setupAddFileButton() {
   const uploadBtn = document.getElementById('upload-btn');
   const folderBtn = document.getElementById('folder-btn');
 
+  console.log('Setting up sidebar buttons:', { uploadBtn, folderBtn });
+
   // Upload button click handler
   uploadBtn.addEventListener('click', () => {
-    if (currentSubject) {
-      openModal('add-file-modal');
-    }
+    console.log('Upload button clicked');
+    openModal('add-file-modal');
   });
 
-  // Folder button click handler
+  // Folder button click handler - always opens modal to add to root
   folderBtn.addEventListener('click', () => {
+    console.log('Folder button clicked');
     openModal('add-subject-modal');
   });
 }

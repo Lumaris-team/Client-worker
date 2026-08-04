@@ -84,11 +84,14 @@
         <button class="study-notes-nav" type="button" id="ai-tab-btn" aria-label="AI tab" data-active="true">
           <span class="study-notes-icon" data-icon="/assets/icons/sparkles.svg"></span>
         </button>
+        <button class="study-notes-nav" type="button" id="homeworks-tab-btn" aria-label="Homeworks tab">
+          <span class="study-notes-icon" data-icon="/assets/icons/homework.svg"></span>
+        </button>
         <button class="study-notes-nav" type="button" id="upload-btn" aria-label="Upload file">
           <span class="study-notes-icon" data-icon="/assets/icons/plus.svg"></span>
         </button>
         <button class="study-notes-nav" type="button" id="folder-btn" aria-label="Create folder">
-          <span class="study-notes-icon" data-icon="/assets/icons/folder.svg"></span>
+          <span class="study-notes-icon" data-icon="/assets/icons/subjects.svg"></span>
         </button>
       </aside>
 
@@ -125,15 +128,15 @@
     <div class="modal" id="add-subject-modal" aria-hidden="true">
       <div class="modal-backdrop"></div>
       <div class="modal-content">
-        <h2 class="modal-title">Add Subject</h2>
+        <h2 class="modal-title">Create Subject</h2>
         <form id="add-subject-form">
           <div class="form-group">
-            <label for="subject-name">Subject Name</label>
-            <input type="text" id="subject-name" name="name" required>
+            <label for="subject-name">Enter subject name</label>
+            <input type="text" id="subject-name" name="name" required placeholder="e.g., Mathematics, Physics">
           </div>
           <div class="modal-actions">
             <button type="button" class="btn-secondary" id="cancel-add-subject-btn">Cancel</button>
-            <button type="submit" class="btn-primary">Add</button>
+            <button type="submit" class="btn-primary">Create</button>
           </div>
         </form>
       </div>
@@ -143,15 +146,21 @@
     <div class="modal" id="add-file-modal" aria-hidden="true">
       <div class="modal-backdrop"></div>
       <div class="modal-content">
-        <h2 class="modal-title">Add File</h2>
+        <h2 class="modal-title">Upload File</h2>
         <form id="add-file-form">
           <div class="form-group">
-            <label for="file-name">File Name</label>
-            <input type="text" id="file-name" name="name" required>
+            <label for="subject-select">Select Subject</label>
+            <select id="subject-select" name="subject" required>
+              <option value="">Loading subjects...</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="file-input">Choose File</label>
+            <input type="file" id="file-input" name="file" required>
           </div>
           <div class="modal-actions">
             <button type="button" class="btn-secondary" id="cancel-add-file-btn">Cancel</button>
-            <button type="submit" class="btn-primary">Add</button>
+            <button type="submit" class="btn-primary">Upload</button>
           </div>
         </form>
       </div>
