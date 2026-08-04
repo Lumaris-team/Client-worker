@@ -52,10 +52,12 @@ async function loadSubjects() {
     const data = await apiCall('', 'GET');
     const subjectsList = document.getElementById('subjects-list');
 
+    console.log('loadSubjects received data:', data);
+
     // Cache subjects for dropdown
     cachedSubjects = data.folders || [];
 
-    if (data.folders.length === 0) {
+    if (!data.folders || data.folders.length === 0) {
       subjectsList.innerHTML = `
         <div class="empty-state">
           <p class="empty-state-text">No subjects yet</p>
