@@ -135,35 +135,26 @@ async function loadFiles(subjectPath, subjectBlock) {
     
     filesList.innerHTML = data.files.map(file => `
       <div class="file-block" data-path="${file.path}" data-name="${file.name}">
-        <div class="file-icon">
-          <svg viewBox="0 0 24 24" fill="currentColor">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"></path>
-          </svg>
-        </div>
+        <div class="file-icon" data-icon="/assets/icons/file.svg"></div>
         <h4 class="file-name">${file.name}</h4>
         <div class="file-actions">
           <button class="file-action-btn download" type="button" aria-label="Download file">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-              <polyline points="7 10 12 15 17 10"></polyline>
-              <line x1="12" y1="15" x2="12" y2="3"></line>
-            </svg>
+            <span data-icon="/assets/icons/download.svg"></span>
           </button>
           <button class="file-action-btn rename" type="button" aria-label="Rename file">
-            <svg viewBox="0 0 24 24" fill="currentColor">
-              <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
-            </svg>
+            <span data-icon="/assets/icons/edit.svg"></span>
           </button>
           <button class="file-action-btn delete" type="button" aria-label="Delete file">
-            <svg viewBox="0 0 24 24" fill="currentColor">
-              <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"></path>
-            </svg>
+            <span data-icon="/assets/icons/delete.svg"></span>
           </button>
         </div>
       </div>
     `).join('');
     
     attachFileListeners(subjectBlock);
+
+    // Load icons using shared function
+    await loadIcons(filesList);
   } catch (error) {
     console.error('Failed to load files:', error);
     filesList.innerHTML = `

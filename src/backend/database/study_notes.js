@@ -270,7 +270,7 @@ async function uploadFromBuffer(env, relativePath, fileData, storage = null) {
   const storageInstance = storage || await getClient(env);
   
   console.log(`uploadFromBuffer called: path=${fullPath}, size=${fileData.length} bytes (${(fileData.length / 1024 / 1024).toFixed(2)} MB)`);
-  
+
   // Ensure parent folder exists
   const segments = fullPath.split("/").filter(Boolean);
   if (segments.length > 1) {
@@ -280,6 +280,8 @@ async function uploadFromBuffer(env, relativePath, fileData, storage = null) {
 
   const fileName = segments.at(-1);
   const folderPath = segments.length > 1 ? segments.slice(0, -1).join("/") : "";
+
+  console.log(`Uploading file with name: ${fileName}`);
   
   const folder = folderPath ? await getOrCreateFolder(storageInstance, folderPath) : storageInstance.root;
   

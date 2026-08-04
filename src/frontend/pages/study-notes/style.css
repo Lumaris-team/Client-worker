@@ -376,7 +376,8 @@ a {
 .file-icon svg {
   width: 16px;
   height: 16px;
-  fill: currentColor;
+  stroke: currentColor;
+  fill: none;
 }
 
 .file-name {
@@ -409,7 +410,7 @@ a {
   place-items: center;
   border: 1px solid var(--line);
   border-radius: 6px;
-  background: transparent;
+  background: rgba(255, 255, 255, 0.05);
   color: rgba(243, 251, 247, 0.55);
   cursor: pointer;
   transition:
@@ -422,8 +423,8 @@ a {
 .file-action-btn svg {
   width: 14px;
   height: 14px;
-  fill: currentColor;
   stroke: currentColor;
+  fill: none;
 }
 
 .file-action-btn:hover {

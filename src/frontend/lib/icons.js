@@ -28,6 +28,13 @@ const ICONS = {
   'eye-open': '/assets/icons/eye-open.svg',
   'eye-closed': '/assets/icons/eye-closed.svg',
   subjects: '/assets/icons/subjects.svg',
+  swap: '/assets/icons/swap.svg',
+  play: '/assets/icons/play.svg',
+  copy: '/assets/icons/copy.svg',
+  'arrow-left': '/assets/icons/arrow-left.svg',
+  'arrow-right': '/assets/icons/arrow-right.svg',
+  send: '/assets/icons/send.svg',
+  warning: '/assets/icons/warning.svg',
 };
 
 /**

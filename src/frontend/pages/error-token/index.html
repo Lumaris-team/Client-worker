@@ -11,16 +11,17 @@
     <link rel="icon" href="/assets/logo/square.png">
     <link rel="manifest" href="/seo/manifest.json">
     <meta name="msapplication-config" content="/seo/browserconfig.xml">
+    <script type="module" src="/lib/icons.js"></script>
+    <script type="module">
+      import { loadIcons } from '/lib/icons.js';
+      loadIcons();
+    </script>
   </head>
   <body>
     <main class="error-shell">
       <section class="error-card" role="alert">
         <span class="error-badge" aria-hidden="true">
-          <svg viewBox="0 0 24 24">
-            <path d="M12 2 1 21h22L12 2z"></path>
-            <path d="M12 9v5" class="error-bang"></path>
-            <circle cx="12" cy="17.5" r="1.1" class="error-dot"></circle>
-          </svg>
+          <span data-icon="/assets/icons/warning.svg"></span>
         </span>
         <p class="error-eyebrow">Access denied</p>
         <h1>We couldn't verify your session</h1>
