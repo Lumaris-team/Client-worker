@@ -1,6 +1,7 @@
 // ===================== FILES PAGE JAVASCRIPT =====================
 
 import { authedFetch } from "/lib/auth.js";
+import { loadIcons } from "/lib/icons.js";
 
 let currentPath = "";
 let files = [];
@@ -209,25 +210,8 @@ function getFileIcon(extension) {
   return `<span data-icon="/assets/icons/file.svg"></span>`;
 }
 
-async function loadIcons(container) {
-  const iconElements = container.querySelectorAll('[data-icon]');
-  for (const element of iconElements) {
-    const iconUrl = element.dataset.icon;
-    if (!iconUrl) continue;
-    try {
-      const response = await fetch(iconUrl);
-      const svgContent = await response.text();
-      element.innerHTML = svgContent;
-      // Set SVG attributes for proper sizing
-      const svg = element.querySelector('svg');
-      if (svg) {
-        svg.setAttribute('width', '18');
-        svg.setAttribute('height', '18');
-      }
-    } catch (error) {
-      console.error(`Failed to load icon ${iconUrl}:`, error);
-    }
-  }
+async function loadIconsLocal(container) {
+  await loadIcons(container);
 }
 
 // ===================== RENDER FUNCTIONS =====================
@@ -275,7 +259,7 @@ function renderFiles() {
         <p class="empty-state-subtext">Upload files or create a folder to get started</p>
       </div>
     `;
-    loadIcons(filesList);
+    loadIconsLocal(filesList);
     return;
   }
 
@@ -294,7 +278,7 @@ function renderFiles() {
   });
 
   // Load icons
-  loadIcons(filesList);
+  loadIconsLocal(filesList);
 }
 
 function createFolderBlock(folder) {

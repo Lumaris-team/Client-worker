@@ -423,6 +423,7 @@ a {
   width: 14px;
   height: 14px;
   fill: currentColor;
+  stroke: currentColor;
 }
 
 .file-action-btn:hover {

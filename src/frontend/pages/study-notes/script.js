@@ -1,3 +1,5 @@
+import { loadIcons } from '/lib/icons.js';
+
 // API base URL
 const API_BASE = '/api/study-notes';
 
@@ -88,25 +90,8 @@ async function loadSubjects() {
     console.log('Calling attachSubjectListeners after rendering subjects');
     attachSubjectListeners();
 
-    // Load icons
-    const iconElements = subjectsList.querySelectorAll('[data-icon]');
-    for (const element of iconElements) {
-      const iconUrl = element.dataset.icon;
-      if (!iconUrl) continue;
-      try {
-        const response = await fetch(iconUrl);
-        const svgContent = await response.text();
-        element.innerHTML = svgContent;
-        // Set SVG attributes for proper sizing
-        const svg = element.querySelector('svg');
-        if (svg) {
-          svg.setAttribute('width', '16');
-          svg.setAttribute('height', '16');
-        }
-      } catch (error) {
-        console.error(`Failed to load icon ${iconUrl}:`, error);
-      }
-    }
+    // Load icons using shared function
+    await loadIcons(subjectsList);
   } catch (error) {
     console.error('Failed to load subjects:', error);
     const subjectsList = document.getElementById('subjects-list');
@@ -158,7 +143,11 @@ async function loadFiles(subjectPath, subjectBlock) {
         <h4 class="file-name">${file.name}</h4>
         <div class="file-actions">
           <button class="file-action-btn download" type="button" aria-label="Download file">
-            <span data-icon="/assets/icons/download.svg"></span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
           </button>
           <button class="file-action-btn rename" type="button" aria-label="Rename file">
             <svg viewBox="0 0 24 24" fill="currentColor">
@@ -309,25 +298,6 @@ function attachFileListeners(subjectBlock) {
       });
     }
   });
-
-  // Load download icons dynamically
-  const downloadIcons = subjectBlock.querySelectorAll('.file-action-btn.download [data-icon]');
-  for (const element of downloadIcons) {
-    const iconUrl = element.dataset.icon;
-    if (!iconUrl) continue;
-    try {
-      const response = await fetch(iconUrl);
-      const svgContent = await response.text();
-      element.innerHTML = svgContent;
-      const svg = element.querySelector('svg');
-      if (svg) {
-        svg.setAttribute('width', '14');
-        svg.setAttribute('height', '14');
-      }
-    } catch (error) {
-      console.error(`Failed to load icon ${iconUrl}:`, error);
-    }
-  }
 }
 
 // Tab switching

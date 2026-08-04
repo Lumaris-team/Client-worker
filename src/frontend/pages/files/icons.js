@@ -1,19 +1,8 @@
-// Load icons for files page
+import { loadIcons } from '/lib/icons.js';
+
+// Load icons for files page using shared library
 async function loadFilesIcons() {
-  const iconElements = document.querySelectorAll('.files-icon[data-icon]');
-  
-  for (const element of iconElements) {
-    const iconUrl = element.dataset.icon;
-    if (!iconUrl) continue;
-    
-    try {
-      const response = await fetch(iconUrl);
-      const svgContent = await response.text();
-      element.innerHTML = svgContent;
-    } catch (error) {
-      console.error('Error loading icon:', iconUrl, error);
-    }
-  }
+  await loadIcons('.files-icon[data-icon]');
 }
 
 // Load icons when DOM is ready
