@@ -6,6 +6,7 @@ let currentPath = '';
 let currentSubject = null;
 let deleteTarget = null;
 let renameTarget = null;
+let cachedSubjects = [];
 
 // Import auth functions
 import { ensureSessionToken } from "/lib/auth.js";
@@ -48,7 +49,10 @@ async function loadSubjects() {
   try {
     const data = await apiCall('', 'GET');
     const subjectsList = document.getElementById('subjects-list');
-    
+
+    // Cache subjects for dropdown
+    cachedSubjects = data.folders || [];
+
     if (data.folders.length === 0) {
       subjectsList.innerHTML = `
         <div class="empty-state">
@@ -58,7 +62,7 @@ async function loadSubjects() {
       `;
       return;
     }
-    
+
     subjectsList.innerHTML = data.folders.map(folder => `
       <div class="subject-block" data-path="${folder.path}" data-name="${folder.name}">
         <div class="subject-icon" data-icon="/assets/icons/folder.svg"></div>
@@ -79,7 +83,7 @@ async function loadSubjects() {
         </div>
       </div>
     `).join('');
-    
+
     // Add event listeners
     attachSubjectListeners();
 
@@ -329,7 +333,8 @@ function setupModals() {
       await apiCall('folder', 'POST', { relativePath: name });
       closeModal('add-subject-modal');
       addSubjectForm.reset();
-      loadSubjects();
+      // Refresh subjects list and cache
+      await loadSubjects();
     } catch (error) {
       console.error('Failed to add subject:', error);
       alert('Failed to add subject: ' + error.message);
@@ -347,25 +352,40 @@ function setupModals() {
   
   cancelAddFileBtn.addEventListener('click', () => closeModal('add-file-modal'));
 
-  // Load subjects when modal is opened
+  // Load subjects when modal is opened (uses cache, refreshes in background)
   const loadSubjectsForDropdown = async () => {
     const subjectSelect = document.getElementById('subject-select');
+
+    // Use cached subjects immediately
+    subjectSelect.innerHTML = '<option value="">Select a subject</option>';
+    if (cachedSubjects && cachedSubjects.length > 0) {
+      cachedSubjects.forEach(subject => {
+        const option = document.createElement('option');
+        option.value = subject.name;
+        option.textContent = subject.name;
+        subjectSelect.appendChild(option);
+      });
+    } else {
+      subjectSelect.innerHTML = '<option value="">No subjects available</option>';
+    }
+
+    // Refresh cache in background
     try {
-      const subjects = await apiCall('list', 'GET');
+      const data = await apiCall('', 'GET');
+      cachedSubjects = data.folders || [];
+
+      // Update dropdown with fresh data
       subjectSelect.innerHTML = '<option value="">Select a subject</option>';
-      if (subjects && subjects.length > 0) {
-        subjects.forEach(subject => {
+      if (cachedSubjects.length > 0) {
+        cachedSubjects.forEach(subject => {
           const option = document.createElement('option');
           option.value = subject.name;
           option.textContent = subject.name;
           subjectSelect.appendChild(option);
         });
-      } else {
-        subjectSelect.innerHTML = '<option value="">No subjects available</option>';
       }
     } catch (error) {
-      console.error('Failed to load subjects:', error);
-      subjectSelect.innerHTML = '<option value="">Failed to load subjects</option>';
+      console.error('Failed to refresh subjects:', error);
     }
   };
 
