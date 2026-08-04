@@ -404,11 +404,21 @@ function setupModals() {
     const fileInput = document.getElementById('file-input');
     const submitBtn = addFileForm.querySelector('button[type="submit"]');
 
-    if (!subject || !fileInput.files[0]) return;
+    // Validation: prevent upload without subject selection
+    if (!subject) {
+      alert('Please select a subject before uploading');
+      return;
+    }
+
+    if (!fileInput.files[0]) {
+      alert('Please select a file to upload');
+      return;
+    }
 
     const formData = new FormData();
     formData.append('file', fileInput.files[0]);
-    formData.append('relativePath', subject);
+    // Include filename in the path: "subject/filename.ext"
+    formData.append('relativePath', `${subject}/${fileInput.files[0].name}`);
 
     submitBtn.disabled = true;
     submitBtn.style.opacity = '0.5';
@@ -419,8 +429,8 @@ function setupModals() {
       closeModal('add-file-modal');
       addFileForm.reset();
 
-      // Reload the subjects list
-      loadSubjects();
+      // Reload the subjects list and cache
+      await loadSubjects();
     } catch (error) {
       console.error('Failed to upload file:', error);
       alert('Failed to upload file: ' + error.message);

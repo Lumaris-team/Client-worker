@@ -490,17 +490,20 @@ export async function StudyNotesFunction(env, path, method, body) {
         if (body instanceof FormData) {
           const file = body.get('file');
           const relativePath = body.get('relativePath');
-          
+
           if (!relativePath) {
             throw new Error("relativePath is required");
           }
           if (!file) {
             throw new Error("file is required");
           }
-          
+
           const arrayBuffer = await file.arrayBuffer();
           const fileData = Buffer.from(arrayBuffer);
-          
+
+          // Log file info for debugging
+          console.log(`Upload request: relativePath=${relativePath}, fileName=${file.name}, fileSize=${file.size}`);
+
           return await writeFile(env, relativePath, null, null, fileData);
         } else {
           const { relativePath, content, url } = body;
