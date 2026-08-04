@@ -85,6 +85,7 @@ async function loadSubjects() {
     `).join('');
 
     // Add event listeners
+    console.log('Calling attachSubjectListeners after rendering subjects');
     attachSubjectListeners();
 
     // Load icons
@@ -556,6 +557,9 @@ document.addEventListener('DOMContentLoaded', () => {
   setupTabs();
   setupModals();
   setupAddFileButton();
+
+  // Load subjects on page load
+  loadSubjects();
 
   // Start on AI tab as requested
   // The AI tab is already set as active in HTML
