@@ -115,28 +115,13 @@ async function readFile(env, relativePath) {
       return { success: false, error: "File not found" };
     }
 
-    console.log('Found file node:', fileNode.name, 'has link:', !!fileNode.link, 'downloadId:', fileNode.downloadId);
+    console.log('Found file node:', fileNode.name);
 
-    // Generate download URL from MEGA
-    const downloadUrl = fileNode.link;
+    // Generate download link using megajs link() method
+    // This creates a shareable MEGA link without downloading the file
+    const downloadUrl = await fileNode.link();
 
-    if (!downloadUrl) {
-      console.error('File node has no link property, trying alternative method');
-      // Try to construct URL from downloadId
-      if (fileNode.downloadId) {
-        const constructedUrl = `https://mega.nz/file/${fileNode.downloadId}`;
-        console.log('Constructed URL from downloadId:', constructedUrl);
-        return {
-          success: true,
-          url: constructedUrl,
-          name: fileNode.name,
-          size: fileNode.size
-        };
-      }
-      return { success: false, error: "Could not generate download URL" };
-    }
-
-    console.log('Using file node link:', downloadUrl);
+    console.log('Generated download URL:', downloadUrl);
 
     return {
       success: true,
