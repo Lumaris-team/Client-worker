@@ -84,23 +84,39 @@
 
     <div class="study-notes-shell">
       <aside class="study-notes-sidebar" aria-label="Study notes actions">
-        <button class="study-notes-nav" type="button" id="ai-tab-btn" aria-label="AI tab" data-active="true">
-          <span class="study-notes-icon" data-icon="/assets/icons/sparkles.svg"></span>
-        </button>
-        <button class="study-notes-nav" type="button" id="homeworks-tab-btn" aria-label="Homeworks tab">
+        <button class="study-notes-nav" type="button" id="homeworks-tab-btn" aria-label="Homeworks tab" data-active="true">
           <span class="study-notes-icon" data-icon="/assets/icons/homework.svg"></span>
+        </button>
+        <button class="study-notes-nav" type="button" id="ai-tab-btn" aria-label="AI tab">
+          <span class="study-notes-icon" data-icon="/assets/icons/sparkles.svg"></span>
         </button>
         <button class="study-notes-nav" type="button" id="upload-btn" aria-label="Upload file">
           <span class="study-notes-icon" data-icon="/assets/icons/plus.svg"></span>
         </button>
         <button class="study-notes-nav" type="button" id="folder-btn" aria-label="Create folder">
-          <span class="study-notes-icon" data-icon="/assets/icons/subjects.svg"></span>
+          <span class="study-notes-icon" style="position: relative;">
+            <span data-icon="/assets/icons/subjects.svg"></span>
+            <span data-icon="/assets/icons/plus.svg" style="position: absolute; bottom: -4px; right: -4px; width: 14px; height: 14px; background: var(--accent); border-radius: 50%; display: grid; place-items: center; color: #08100f;"></span>
+          </span>
         </button>
       </aside>
 
       <main class="study-notes-main">
+        <!-- Homeworks Tab Content -->
+        <div class="study-notes-tab" id="homeworks-tab" data-active="true">
+          <div class="homeworks-header">
+            <h1 class="homeworks-title">My Subjects</h1>
+          </div>
+
+          <div class="bento-block homeworks-container">
+            <div class="subjects-list" id="subjects-list">
+              <!-- Subjects will be populated by JS -->
+            </div>
+          </div>
+        </div>
+
         <!-- AI Tab Content -->
-        <div class="study-notes-tab" id="ai-tab" data-active="true">
+        <div class="study-notes-tab" id="ai-tab" data-active="false">
           <div class="bento-block ai-container">
             <div class="ai-content">
               <div class="ai-icon-wrapper">
@@ -108,19 +124,6 @@
               </div>
               <h1 class="ai-title">Study Notes Generation</h1>
               <p class="ai-message">Revision cards generation coming soon</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Homeworks Tab Content -->
-        <div class="study-notes-tab" id="homeworks-tab" data-active="false">
-          <div class="homeworks-header">
-            <h1 class="homeworks-title">My Subjects</h1>
-          </div>
-          
-          <div class="bento-block homeworks-container">
-            <div class="subjects-list" id="subjects-list">
-              <!-- Subjects will be populated by JS -->
             </div>
           </div>
         </div>

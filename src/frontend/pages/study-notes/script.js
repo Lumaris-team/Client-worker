@@ -9,6 +9,7 @@ let currentSubject = null;
 let deleteTarget = null;
 let renameTarget = null;
 let cachedSubjects = [];
+let cachedFiles = {}; // Cache files by subject path: { 'maths': { files: [...], timestamp: ... } }
 
 // Import auth functions
 import { ensureSessionToken } from "/lib/auth.js";
@@ -108,6 +109,9 @@ async function loadSubjects() {
 
     // Load icons using shared function
     await loadIcons(subjectsList);
+
+    // Preload all files in background
+    preloadAllFiles();
   } catch (error) {
     console.error('Failed to load subjects:', error);
     const subjectsList = document.getElementById('subjects-list');
@@ -122,57 +126,75 @@ async function loadSubjects() {
   }
 }
 
+// Preload all files from all subjects
+async function preloadAllFiles() {
+  console.log('Preloading all files from all subjects...');
+  const subjects = cachedSubjects || [];
+
+  for (const subject of subjects) {
+    try {
+      await loadFilesSilent(subject.path);
+    } catch (error) {
+      console.error(`Failed to preload files for ${subject.path}:`, error);
+    }
+  }
+
+  console.log('All files preloaded');
+}
+
+// Load files silently (for background caching)
+async function loadFilesSilent(subjectPath) {
+  try {
+    const data = await apiCall(`list/${encodeURIComponent(subjectPath)}`, 'GET');
+    cachedFiles[subjectPath] = {
+      files: data.files || [],
+      timestamp: Date.now()
+    };
+    console.log(`Cached ${data.files?.length || 0} files for ${subjectPath}`);
+  } catch (error) {
+    console.error(`Failed to load files silently for ${subjectPath}:`, error);
+  }
+}
+
 // Load files for a subject
 async function loadFiles(subjectPath, subjectBlock) {
   const filesList = subjectBlock.querySelector('.files-list');
   const subjectCount = subjectBlock.querySelector('.subject-count');
-  
+
   // Set current subject
   currentSubject = subjectPath;
-  
+
   // Update add button
   if (window.updateAddButton) {
     window.updateAddButton();
   }
-  
+
   try {
     filesList.dataset.loading = 'true';
-    const data = await apiCall(`list/${encodeURIComponent(subjectPath)}`, 'GET');
-    
-    if (data.files.length === 0) {
-      filesList.innerHTML = `
-        <div class="empty-state" style="padding: 30px 20px; border: none;">
-          <p class="empty-state-text" style="font-size: 0.95rem;">No files in this subject</p>
-        </div>
-      `;
-      subjectCount.textContent = 'No files';
-      return;
-    }
-    
-    subjectCount.textContent = `${data.files.length} file${data.files.length > 1 ? 's' : ''}`;
-    
-    filesList.innerHTML = data.files.map(file => `
-      <div class="file-block" data-path="${file.path}" data-name="${file.name}">
-        <div class="file-icon" data-icon="/assets/icons/file.svg"></div>
-        <h4 class="file-name">${file.name}</h4>
-        <div class="file-actions">
-          <button class="file-action-btn download" type="button" aria-label="Download file">
-            <span data-icon="/assets/icons/download.svg"></span>
-          </button>
-          <button class="file-action-btn rename" type="button" aria-label="Rename file">
-            <span data-icon="/assets/icons/edit.svg"></span>
-          </button>
-          <button class="file-action-btn delete" type="button" aria-label="Delete file">
-            <span data-icon="/assets/icons/delete.svg"></span>
-          </button>
-        </div>
-      </div>
-    `).join('');
-    
-    attachFileListeners(subjectBlock);
 
-    // Load icons using shared function
-    await loadIcons(filesList);
+    // Use cached files if available
+    const cached = cachedFiles[subjectPath];
+    if (cached && cached.files) {
+      console.log(`Using cached files for ${subjectPath}`);
+      renderFiles(cached.files, filesList, subjectCount);
+      attachFileListeners(subjectBlock);
+      await loadIcons(filesList);
+    }
+
+    // Refresh silently in background
+    const data = await apiCall(`list/${encodeURIComponent(subjectPath)}`, 'GET');
+    cachedFiles[subjectPath] = {
+      files: data.files || [],
+      timestamp: Date.now()
+    };
+
+    // Re-render if data changed
+    if (!cached || JSON.stringify(cached.files) !== JSON.stringify(data.files)) {
+      console.log(`Refreshing files for ${subjectPath}`);
+      renderFiles(data.files, filesList, subjectCount);
+      attachFileListeners(subjectBlock);
+      await loadIcons(filesList);
+    }
   } catch (error) {
     console.error('Failed to load files:', error);
     filesList.innerHTML = `
@@ -183,6 +205,39 @@ async function loadFiles(subjectPath, subjectBlock) {
   } finally {
     filesList.dataset.loading = 'false';
   }
+}
+
+// Render files to the DOM
+function renderFiles(files, filesList, subjectCount) {
+  if (!files || files.length === 0) {
+    filesList.innerHTML = `
+      <div class="empty-state" style="padding: 30px 20px; border: none;">
+        <p class="empty-state-text" style="font-size: 0.95rem;">No files in this subject</p>
+      </div>
+    `;
+    subjectCount.textContent = 'No files';
+    return;
+  }
+
+  subjectCount.textContent = `${files.length} file${files.length > 1 ? 's' : ''}`;
+
+  filesList.innerHTML = files.map(file => `
+    <div class="file-block" data-path="${file.path}" data-name="${file.name}">
+      <div class="file-icon" data-icon="/assets/icons/file.svg"></div>
+      <h4 class="file-name">${file.name}</h4>
+      <div class="file-actions">
+        <button class="file-action-btn download" type="button" aria-label="Download file">
+          <span data-icon="/assets/icons/download.svg"></span>
+        </button>
+        <button class="file-action-btn rename" type="button" aria-label="Rename file">
+          <span data-icon="/assets/icons/edit.svg"></span>
+        </button>
+        <button class="file-action-btn delete" type="button" aria-label="Delete file">
+          <span data-icon="/assets/icons/delete.svg"></span>
+        </button>
+      </div>
+    </div>
+  `).join('');
 }
 
 // Attach event listeners to subject blocks
@@ -324,20 +379,20 @@ function setupTabs() {
   const homeworksTabBtn = document.getElementById('homeworks-tab-btn');
   const aiTab = document.getElementById('ai-tab');
   const homeworksTab = document.getElementById('homeworks-tab');
-  
-  aiTabBtn.addEventListener('click', () => {
-    aiTabBtn.dataset.active = 'true';
-    homeworksTabBtn.dataset.active = 'false';
-    aiTab.dataset.active = 'true';
-    homeworksTab.dataset.active = 'false';
-  });
-  
+
   homeworksTabBtn.addEventListener('click', () => {
     homeworksTabBtn.dataset.active = 'true';
     aiTabBtn.dataset.active = 'false';
     homeworksTab.dataset.active = 'true';
     aiTab.dataset.active = 'false';
     loadSubjects();
+  });
+
+  aiTabBtn.addEventListener('click', () => {
+    aiTabBtn.dataset.active = 'true';
+    homeworksTabBtn.dataset.active = 'false';
+    aiTab.dataset.active = 'true';
+    homeworksTab.dataset.active = 'false';
   });
 }
 

@@ -321,14 +321,23 @@ a {
 
 /* ===================== SUBJECT CONTENT (EXPANDED) ===================== */
 .subject-content {
-  display: none;
-  padding: 12px 0 0 0;
-  margin-top: 12px;
-  border-top: 1px solid var(--line);
+  max-height: 0;
+  overflow: hidden;
+  padding: 0 0 0 0;
+  margin-top: 0;
+  border-top: 1px solid transparent;
+  transition:
+    max-height 300ms cubic-bezier(0.4, 0, 0.2, 1),
+    padding 300ms cubic-bezier(0.4, 0, 0.2, 1),
+    margin-top 300ms cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 300ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .subject-content[data-expanded="true"] {
-  display: block;
+  max-height: 1000px;
+  padding: 12px 0 0 0;
+  margin-top: 12px;
+  border-top: 1px solid var(--line);
 }
 
 .files-list {
