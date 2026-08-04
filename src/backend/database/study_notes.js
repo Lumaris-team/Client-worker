@@ -402,12 +402,16 @@ async function deleteFolder(env, relativePath) {
     console.log(`Found ${children.length} children to delete`);
     for (const child of children) {
       console.log(`Deleting child: ${child.name}`);
-      await child.delete();
+      try {
+        await child.delete();
+      } catch (childError) {
+        console.error(`Failed to delete child ${child.name}:`, childError);
+      }
     }
 
-    // Then delete the folder itself
-    console.log(`Deleting folder itself`);
-    await folder.delete();
+    // Then delete the folder itself using megaDelete
+    console.log(`Deleting folder itself using megaDelete`);
+    await megaDelete(env, fullPath);
 
     // Verify deletion by trying to get the folder again
     const verifyFolder = await getFolderIfExists(storage, fullPath);

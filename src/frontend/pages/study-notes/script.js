@@ -61,25 +61,17 @@ async function loadSubjects() {
     
     subjectsList.innerHTML = data.folders.map(folder => `
       <div class="subject-block" data-path="${folder.path}" data-name="${folder.name}">
-        <div class="subject-icon">
-          <svg viewBox="0 0 24 24" fill="currentColor">
-            <path d="M5 3h11l3 3v15a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zm2 6v2h10V9zm0 4v2h10v-2zm0 4v2h7v-2z"></path>
-          </svg>
-        </div>
+        <div class="subject-icon" data-icon="/assets/icons/folder.svg"></div>
         <div class="subject-info">
           <h3 class="subject-name">${folder.name}</h3>
           <p class="subject-count">Click to view files</p>
         </div>
         <div class="subject-actions">
           <button class="subject-action-btn rename" type="button" aria-label="Rename subject">
-            <svg viewBox="0 0 24 24" fill="currentColor">
-              <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
-            </svg>
+            <span data-icon="/assets/icons/edit.svg"></span>
           </button>
           <button class="subject-action-btn delete" type="button" aria-label="Delete subject">
-            <svg viewBox="0 0 24 24" fill="currentColor">
-              <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"></path>
-            </svg>
+            <span data-icon="/assets/icons/delete.svg"></span>
           </button>
         </div>
         <div class="subject-content" data-expanded="false">
@@ -90,6 +82,26 @@ async function loadSubjects() {
     
     // Add event listeners
     attachSubjectListeners();
+
+    // Load icons
+    const iconElements = subjectsList.querySelectorAll('[data-icon]');
+    for (const element of iconElements) {
+      const iconUrl = element.dataset.icon;
+      if (!iconUrl) continue;
+      try {
+        const response = await fetch(iconUrl);
+        const svgContent = await response.text();
+        element.innerHTML = svgContent;
+        // Set SVG attributes for proper sizing
+        const svg = element.querySelector('svg');
+        if (svg) {
+          svg.setAttribute('width', '16');
+          svg.setAttribute('height', '16');
+        }
+      } catch (error) {
+        console.error(`Failed to load icon ${iconUrl}:`, error);
+      }
+    }
   } catch (error) {
     console.error('Failed to load subjects:', error);
     const subjectsList = document.getElementById('subjects-list');
@@ -170,18 +182,27 @@ async function loadFiles(subjectPath, subjectBlock) {
 // Attach event listeners to subject blocks
 function attachSubjectListeners() {
   const subjectBlocks = document.querySelectorAll('.subject-block');
-  
+
+  console.log(`Attaching listeners to ${subjectBlocks.length} subject blocks`);
+
   subjectBlocks.forEach(block => {
     const path = block.dataset.path;
     const name = block.dataset.name;
     const content = block.querySelector('.subject-content');
-    
+
+    console.log(`Subject block: path=${path}, name=${name}`);
+
     // Click on subject to expand/collapse
     block.addEventListener('click', (e) => {
-      if (e.target.closest('.subject-action-btn')) return;
-      
+      console.log('Subject block clicked', e.target);
+      if (e.target.closest('.subject-action-btn')) {
+        console.log('Click on action button, ignoring');
+        return;
+      }
+
       const isExpanded = content.dataset.expanded === 'true';
-      
+      console.log(`Is expanded: ${isExpanded}, loading: ${content.dataset.loading}`);
+
       if (!isExpanded && content.dataset.loading === 'false') {
         content.dataset.expanded = 'true';
         loadFiles(path, block);

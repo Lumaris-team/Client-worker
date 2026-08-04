@@ -201,12 +201,33 @@ function formatFileSize(bytes) {
 }
 
 function getFolderIcon() {
-  return `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>`;
+  return `<span data-icon="/assets/icons/folder.svg"></span>`;
 }
 
 function getFileIcon(extension) {
   // Generic file icon
-  return `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>`;
+  return `<span data-icon="/assets/icons/database.svg"></span>`;
+}
+
+async function loadIcons(container) {
+  const iconElements = container.querySelectorAll('[data-icon]');
+  for (const element of iconElements) {
+    const iconUrl = element.dataset.icon;
+    if (!iconUrl) continue;
+    try {
+      const response = await fetch(iconUrl);
+      const svgContent = await response.text();
+      element.innerHTML = svgContent;
+      // Set SVG attributes for proper sizing
+      const svg = element.querySelector('svg');
+      if (svg) {
+        svg.setAttribute('width', '18');
+        svg.setAttribute('height', '18');
+      }
+    } catch (error) {
+      console.error(`Failed to load icon ${iconUrl}:`, error);
+    }
+  }
 }
 
 // ===================== RENDER FUNCTIONS =====================
@@ -249,15 +270,12 @@ function renderFiles() {
   if (folders.length === 0 && files.length === 0) {
     filesList.innerHTML = `
       <div class="empty-state">
-        <div class="empty-state-icon">
-          <svg viewBox="0 0 24 24" fill="currentColor" width="64" height="64">
-            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-          </svg>
-        </div>
+        <div class="empty-state-icon" data-icon="/assets/icons/folder.svg"></div>
         <p class="empty-state-text">This folder is empty</p>
         <p class="empty-state-subtext">Upload files or create a folder to get started</p>
       </div>
     `;
+    loadIcons(filesList);
     return;
   }
 
@@ -274,6 +292,9 @@ function renderFiles() {
     const block = createFileBlock(file);
     filesList.appendChild(block);
   });
+
+  // Load icons
+  loadIcons(filesList);
 }
 
 function createFolderBlock(folder) {
@@ -308,7 +329,7 @@ function createFolderBlock(folder) {
   editBtn.className = 'file-action-btn edit';
   editBtn.type = 'button';
   editBtn.ariaLabel = 'Rename folder';
-  editBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>`;
+  editBtn.innerHTML = `<span data-icon="/assets/icons/edit.svg"></span>`;
   editBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     openEditModal(folder, true);
@@ -318,7 +339,7 @@ function createFolderBlock(folder) {
   deleteBtn.className = 'file-action-btn delete';
   deleteBtn.type = 'button';
   deleteBtn.ariaLabel = 'Delete folder';
-  deleteBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>`;
+  deleteBtn.innerHTML = `<span data-icon="/assets/icons/delete.svg"></span>`;
   deleteBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     openDeleteModal(folder, true);
@@ -376,7 +397,7 @@ function createFileBlock(file) {
   editBtn.className = 'file-action-btn edit';
   editBtn.type = 'button';
   editBtn.ariaLabel = 'Rename file';
-  editBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>`;
+  editBtn.innerHTML = `<span data-icon="/assets/icons/edit.svg"></span>`;
   editBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     openEditModal(file, false);
@@ -386,7 +407,7 @@ function createFileBlock(file) {
   deleteBtn.className = 'file-action-btn delete';
   deleteBtn.type = 'button';
   deleteBtn.ariaLabel = 'Delete file';
-  deleteBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>`;
+  deleteBtn.innerHTML = `<span data-icon="/assets/icons/delete.svg"></span>`;
   deleteBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     openDeleteModal(file, false);
