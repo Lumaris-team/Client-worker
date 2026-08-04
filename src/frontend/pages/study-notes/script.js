@@ -296,6 +296,7 @@ function setupTabs() {
 // Modal helpers
 function openModal(modalId) {
   const modal = document.getElementById(modalId);
+  console.log('Opening modal:', modalId, modal);
   modal.setAttribute('aria-hidden', 'false');
 }
 
@@ -307,12 +308,10 @@ function closeModal(modalId) {
 // Setup modals
 function setupModals() {
   // Add subject modal
-  const addSubjectBtn = document.getElementById('add-subject-btn');
   const addSubjectModal = document.getElementById('add-subject-modal');
   const addSubjectForm = document.getElementById('add-subject-form');
   const cancelAddSubjectBtn = document.getElementById('cancel-add-subject-btn');
-  
-  addSubjectBtn.addEventListener('click', () => openModal('add-subject-modal'));
+
   cancelAddSubjectBtn.addEventListener('click', () => closeModal('add-subject-modal'));
   
   addSubjectForm.addEventListener('submit', async (e) => {
