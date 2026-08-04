@@ -226,7 +226,8 @@ const NAVBAR_STYLE = `
   .action-icon svg {
     width: 20px;
     height: 20px;
-    fill: currentColor;
+    stroke: currentColor;
+    fill: none;
     clip-path: inset(0 round 8px);
   }
 

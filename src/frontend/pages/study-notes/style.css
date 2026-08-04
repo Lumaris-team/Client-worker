@@ -299,7 +299,7 @@ a {
 .subject-action-btn svg {
   width: 16px;
   height: 16px;
-  fill: currentColor;
+  stroke: currentColor;
 }
 
 .subject-action-btn:hover {

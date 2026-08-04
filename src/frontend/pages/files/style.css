@@ -280,7 +280,7 @@ a {
 .file-action-btn svg {
   width: 18px;
   height: 18px;
-  fill: currentColor;
+  stroke: currentColor;
 }
 
 .file-action-btn:hover {
