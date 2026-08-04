@@ -274,7 +274,7 @@ function attachFileListeners(subjectBlock) {
           }
 
           // Use megajs in browser to download directly from MEGA
-          const megaFile = await window.MegaFile.fromURL(data.url);
+          const megaFile = await window.mega.File.fromURL(data.url);
           await megaFile.loadAttributes();
 
           const buffer = await megaFile.downloadBuffer();
