@@ -157,6 +157,9 @@ async function loadFiles(subjectPath, subjectBlock) {
         </div>
         <h4 class="file-name">${file.name}</h4>
         <div class="file-actions">
+          <button class="file-action-btn download" type="button" aria-label="Download file">
+            <span data-icon="/assets/icons/download.svg"></span>
+          </button>
           <button class="file-action-btn rename" type="button" aria-label="Rename file">
             <svg viewBox="0 0 24 24" fill="currentColor">
               <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
@@ -254,11 +257,37 @@ function attachSubjectListeners() {
 // Attach event listeners to file blocks
 function attachFileListeners(subjectBlock) {
   const fileBlocks = subjectBlock.querySelectorAll('.file-block');
-  
+
   fileBlocks.forEach(block => {
     const path = block.dataset.path;
     const name = block.dataset.name;
-    
+
+    // Download button
+    const downloadBtn = block.querySelector('.file-action-btn.download');
+    if (downloadBtn) {
+      downloadBtn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        try {
+          const data = await apiCall(`read/${encodeURIComponent(path)}`, 'GET');
+          if (data.success && data.url) {
+            // Create a temporary link to trigger download
+            const link = document.createElement('a');
+            link.href = data.url;
+            link.download = data.name || name;
+            link.target = '_blank';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+          } else {
+            alert('Failed to get download URL');
+          }
+        } catch (error) {
+          console.error('Failed to download file:', error);
+          alert('Failed to download file: ' + error.message);
+        }
+      });
+    }
+
     // Rename button
     const renameBtn = block.querySelector('.file-action-btn.rename');
     if (renameBtn) {
@@ -269,7 +298,7 @@ function attachFileListeners(subjectBlock) {
         document.getElementById('rename-name').value = name;
       });
     }
-    
+
     // Delete button
     const deleteBtn = block.querySelector('.file-action-btn.delete');
     if (deleteBtn) {
@@ -280,6 +309,25 @@ function attachFileListeners(subjectBlock) {
       });
     }
   });
+
+  // Load download icons dynamically
+  const downloadIcons = subjectBlock.querySelectorAll('.file-action-btn.download [data-icon]');
+  for (const element of downloadIcons) {
+    const iconUrl = element.dataset.icon;
+    if (!iconUrl) continue;
+    try {
+      const response = await fetch(iconUrl);
+      const svgContent = await response.text();
+      element.innerHTML = svgContent;
+      const svg = element.querySelector('svg');
+      if (svg) {
+        svg.setAttribute('width', '14');
+        svg.setAttribute('height', '14');
+      }
+    } catch (error) {
+      console.error(`Failed to load icon ${iconUrl}:`, error);
+    }
+  }
 }
 
 // Tab switching
