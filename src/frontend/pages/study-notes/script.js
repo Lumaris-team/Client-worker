@@ -86,6 +86,9 @@ function renderSubjectsIncremental(subjects) {
   const subjectsList = document.getElementById('subjects-list');
   if (!subjectsList) return;
 
+  // Clear loading state when subjects are loaded
+  subjectsList.innerHTML = '';
+
   if (!subjects || subjects.length === 0) {
     subjectsList.innerHTML = `
       <div class="empty-state">
@@ -134,9 +137,6 @@ function renderSubjectsIncremental(subjects) {
         </div>
         <div class="subject-content" data-expanded="false">
           <div class="files-list" data-loading="false">
-            <div class="empty-state" style="padding: 30px 20px; border: none;">
-              <p class="empty-state-text" style="font-size: 0.95rem;">Loading...</p>
-            </div>
           </div>
         </div>
       `;
