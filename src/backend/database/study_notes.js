@@ -318,7 +318,21 @@ async function uploadFromBuffer(env, relativePath, fileData, storage = null) {
   console.log(`Uploading file with name: ${fileName}`);
   
   const folder = folderPath ? await getOrCreateFolder(storageInstance, folderPath) : storageInstance.root;
-  
+
+  // Check if file already exists and delete it to avoid duplicates
+  const children = await folder.children;
+  const existingFile = children.find(child => child.name === fileName && !child.directory);
+  if (existingFile) {
+    console.log(`File ${fileName} already exists, deleting it before upload`);
+    try {
+      await existingFile.delete();
+      console.log(`Successfully deleted existing file: ${fileName}`);
+    } catch (deleteError) {
+      console.error(`Failed to delete existing file ${fileName}:`, deleteError);
+      // Continue with upload anyway
+    }
+  }
+
   // Calculate dynamic chunk sizes based on file size
   const fileSizeMB = fileData.length / 1024 / 1024;
   let initialChunkSize = 1048576; // 1MB default

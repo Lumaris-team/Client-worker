@@ -66,52 +66,7 @@ async function loadSubjects() {
     // Cache subjects for dropdown
     cachedSubjects = data.folders || [];
 
-    if (!data.folders || data.folders.length === 0) {
-      console.log('No folders found, showing empty state');
-      subjectsList.innerHTML = `
-        <div class="empty-state">
-          <p class="empty-state-text">No subjects yet</p>
-          <p class="empty-state-subtext">Click the + button to add your first subject</p>
-        </div>
-      `;
-      return;
-    }
-
-    console.log('Rendering', data.folders.length, 'folders');
-
-    const html = data.folders.map(folder => `
-      <div class="subject-block" data-path="${folder.path}" data-name="${folder.name}">
-        <div class="subject-icon" data-icon="/assets/icons/folder.svg"></div>
-        <div class="subject-info">
-          <h3 class="subject-name">${folder.name}</h3>
-          <p class="subject-count">Click to view files</p>
-        </div>
-        <div class="subject-actions">
-          <button class="subject-action-btn rename" type="button" aria-label="Rename subject">
-            <span data-icon="/assets/icons/edit.svg"></span>
-          </button>
-          <button class="subject-action-btn delete" type="button" aria-label="Delete subject">
-            <span data-icon="/assets/icons/delete.svg"></span>
-          </button>
-        </div>
-        <div class="subject-content" data-expanded="false">
-          <div class="files-list" data-loading="false"></div>
-        </div>
-      </div>
-    `).join('');
-
-    console.log('Generated HTML length:', html.length);
-    subjectsList.innerHTML = html;
-    console.log('subjectsList.innerHTML set, current length:', subjectsList.innerHTML.length);
-
-    console.log('Subjects rendered, calling attachSubjectListeners');
-    attachSubjectListeners();
-
-    // Load icons using shared function
-    await loadIcons(subjectsList);
-
-    // Preload all files in background
-    preloadAllFiles();
+    renderSubjectsIncremental(cachedSubjects);
   } catch (error) {
     console.error('Failed to load subjects:', error);
     const subjectsList = document.getElementById('subjects-list');
@@ -124,6 +79,85 @@ async function loadSubjects() {
       `;
     }
   }
+}
+
+// Render subjects to the DOM (incremental update)
+function renderSubjectsIncremental(subjects) {
+  const subjectsList = document.getElementById('subjects-list');
+  if (!subjectsList) return;
+
+  if (!subjects || subjects.length === 0) {
+    subjectsList.innerHTML = `
+      <div class="empty-state">
+        <p class="empty-state-text">No subjects yet</p>
+        <p class="empty-state-subtext">Create a subject to get started</p>
+      </div>
+    `;
+    return;
+  }
+
+  // Get existing subject blocks
+  const existingBlocks = Array.from(subjectsList.querySelectorAll('.subject-block'));
+  const existingPaths = new Set(existingBlocks.map(block => block.dataset.path));
+  const newPaths = new Set(subjects.map(s => s.path));
+
+  // Remove subjects that no longer exist
+  existingBlocks.forEach(block => {
+    if (!newPaths.has(block.dataset.path)) {
+      block.remove();
+    }
+  });
+
+  // Add or update subjects
+  subjects.forEach(subject => {
+    const existingBlock = subjectsList.querySelector(`.subject-block[data-path="${subject.path}"]`);
+    if (!existingBlock) {
+      // Add new subject
+      const newBlock = document.createElement('div');
+      newBlock.className = 'subject-block';
+      newBlock.dataset.path = subject.path;
+      newBlock.dataset.name = subject.name;
+      newBlock.innerHTML = `
+        <div class="subject-header">
+          <div class="subject-info">
+            <span class="subject-icon" data-icon="/assets/icons/subjects.svg"></span>
+            <h3 class="subject-name">${subject.name}</h3>
+          </div>
+          <div class="subject-actions">
+            <button class="subject-action-btn rename" aria-label="Rename">
+              <span data-icon="/assets/icons/edit.svg"></span>
+            </button>
+            <button class="subject-action-btn delete" aria-label="Delete">
+              <span data-icon="/assets/icons/delete.svg"></span>
+            </button>
+          </div>
+        </div>
+        <div class="subject-content" data-expanded="false">
+          <div class="files-list" data-loading="false">
+            <div class="empty-state" style="padding: 30px 20px; border: none;">
+              <p class="empty-state-text" style="font-size: 0.95rem;">Loading...</p>
+            </div>
+          </div>
+        </div>
+      `;
+      subjectsList.appendChild(newBlock);
+    } else {
+      // Update existing subject name if changed
+      const nameElement = existingBlock.querySelector('.subject-name');
+      if (nameElement && nameElement.textContent !== subject.name) {
+        nameElement.textContent = subject.name;
+      }
+    }
+  });
+
+  console.log('Subjects rendered incrementally, calling attachSubjectListeners');
+  attachSubjectListeners();
+
+  // Load icons using shared function
+  loadIcons(subjectsList);
+
+  // Preload all files in background
+  preloadAllFiles();
 }
 
 // Preload all files from all subjects
@@ -203,7 +237,11 @@ async function loadFiles(subjectPath, subjectBlock) {
       </div>
     `;
   } finally {
-    filesList.dataset.loading = 'false';
+    // Only set loading to false if the subject is still expanded
+    const content = subjectBlock.querySelector('.subject-content');
+    if (content.dataset.expanded === 'true') {
+      filesList.dataset.loading = 'false';
+    }
   }
 }
 
@@ -274,7 +312,7 @@ function attachSubjectListeners() {
       if (!isExpanded && !isLoading) {
         content.dataset.expanded = 'true';
         loadFiles(path, block);
-      } else {
+      } else if (isExpanded) {
         content.dataset.expanded = 'false';
         // Reset current subject when collapsing
         currentSubject = null;
@@ -454,6 +492,10 @@ function setupNoteTaking() {
 
   // Import txt file
   importNoteBtn.addEventListener('click', () => {
+    importNoteBtn.disabled = true;
+    importNoteBtn.style.opacity = '0.5';
+    importNoteBtn.style.cursor = 'not-allowed';
+
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.txt';
@@ -463,8 +505,15 @@ function setupNoteTaking() {
         const reader = new FileReader();
         reader.onload = (e) => {
           noteEditor.value = e.target.result;
+          importNoteBtn.disabled = false;
+          importNoteBtn.style.opacity = '';
+          importNoteBtn.style.cursor = '';
         };
         reader.readAsText(file);
+      } else {
+        importNoteBtn.disabled = false;
+        importNoteBtn.style.opacity = '';
+        importNoteBtn.style.cursor = '';
       }
     };
     input.click();
@@ -472,6 +521,10 @@ function setupNoteTaking() {
 
   // Download to device
   downloadNoteBtn.addEventListener('click', () => {
+    downloadNoteBtn.disabled = true;
+    downloadNoteBtn.style.opacity = '0.5';
+    downloadNoteBtn.style.cursor = 'not-allowed';
+
     const content = noteEditor.value;
     const blob = new Blob([content], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
@@ -482,6 +535,12 @@ function setupNoteTaking() {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+
+    setTimeout(() => {
+      downloadNoteBtn.disabled = false;
+      downloadNoteBtn.style.opacity = '';
+      downloadNoteBtn.style.cursor = '';
+    }, 500);
   });
 
   // Save to cloud modal
@@ -500,22 +559,30 @@ function setupNoteTaking() {
   // Save note form submission
   saveNoteForm.addEventListener('submit', async (e) => {
     e.preventDefault();
+    const submitBtn = saveNoteForm.querySelector('button[type="submit"]');
     const subject = noteSubjectSelect.value;
     const filename = document.getElementById('note-filename').value + '.txt';
     const content = noteEditor.value;
 
+    submitBtn.disabled = true;
+    submitBtn.style.opacity = '0.5';
+    submitBtn.style.cursor = 'not-allowed';
+
     try {
       const formData = new FormData();
       formData.append('file', new Blob([content], { type: 'text/plain' }), filename);
-      formData.append('relativePath', subject);
+      formData.append('relativePath', `${subject}/${filename}`);
 
       await apiCall('upload', 'POST', formData);
       closeModal('save-note-modal');
-      alert('Note saved successfully!');
       noteEditor.value = '';
     } catch (error) {
       console.error('Failed to save note:', error);
       alert('Failed to save note: ' + error.message);
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.style.opacity = '';
+      submitBtn.style.cursor = '';
     }
   });
 }
