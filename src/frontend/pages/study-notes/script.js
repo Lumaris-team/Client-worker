@@ -206,19 +206,6 @@ async function loadFiles(subjectPath, subjectBlock) {
   try {
     filesList.dataset.loading = 'true';
 
-    // Always show loading state first
-    filesList.innerHTML = `
-      <div class="empty-state" style="padding: 30px 20px; border: none;">
-        <p class="empty-state-text" style="font-size: 0.95rem;">Loading...</p>
-      </div>
-    `;
-
-    // Force a reflow to ensure the loading state is rendered
-    filesList.offsetHeight;
-
-    // Wait for the content expansion animation to complete before loading
-    await new Promise(resolve => setTimeout(resolve, 350));
-
     // Use cached files if available
     const cached = cachedFiles[subjectPath];
     if (cached && cached.files) {
@@ -226,7 +213,13 @@ async function loadFiles(subjectPath, subjectBlock) {
       renderFiles(cached.files, filesList, subjectCount);
       attachFileListeners(subjectBlock);
       await loadIcons(filesList);
-      content.dataset.loaded = 'true';
+    } else {
+      // Show loading state if no cache
+      filesList.innerHTML = `
+        <div class="empty-state" style="padding: 30px 20px; border: none;">
+          <p class="empty-state-text" style="font-size: 0.95rem;">Loading...</p>
+        </div>
+      `;
     }
 
     // Refresh silently in background
@@ -243,7 +236,6 @@ async function loadFiles(subjectPath, subjectBlock) {
       attachFileListeners(subjectBlock);
       await loadIcons(filesList);
     }
-    content.dataset.loaded = 'true';
   } catch (error) {
     console.error('Failed to load files:', error);
     filesList.innerHTML = `
@@ -325,12 +317,6 @@ function attachSubjectListeners() {
       console.log(`Is expanded: ${isExpanded}, loading: ${isLoading}`);
 
       if (!isExpanded && !isLoading) {
-        // Set loading state BEFORE expanding
-        filesList.innerHTML = `
-          <div class="empty-state" style="padding: 30px 20px; border: none;">
-            <p class="empty-state-text" style="font-size: 0.95rem;">Loading...</p>
-          </div>
-        `;
         content.dataset.expanded = 'true';
         loadFiles(path, block);
       } else if (isExpanded) {
