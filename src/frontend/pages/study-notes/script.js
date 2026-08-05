@@ -53,11 +53,6 @@ async function loadSubjects() {
     const data = await apiCall('', 'GET');
     const subjectsList = document.getElementById('subjects-list');
 
-    console.log('loadSubjects received data:', data);
-    console.log('subjectsList element:', subjectsList);
-    console.log('data.folders:', data.folders);
-    console.log('data.folders.length:', data.folders?.length);
-
     if (!subjectsList) {
       console.error('subjects-list element not found!');
       return;
@@ -66,7 +61,7 @@ async function loadSubjects() {
     // Cache subjects for dropdown
     cachedSubjects = data.folders || [];
 
-    renderSubjectsIncremental(cachedSubjects);
+    renderSubjects(cachedSubjects);
   } catch (error) {
     console.error('Failed to load subjects:', error);
     const subjectsList = document.getElementById('subjects-list');
@@ -81,13 +76,10 @@ async function loadSubjects() {
   }
 }
 
-// Render subjects to the DOM (incremental update)
-function renderSubjectsIncremental(subjects) {
+// Render subjects to the DOM (simple full rebuild)
+function renderSubjects(subjects) {
   const subjectsList = document.getElementById('subjects-list');
   if (!subjectsList) return;
-
-  // Clear loading state when subjects are loaded
-  subjectsList.innerHTML = '';
 
   if (!subjects || subjects.length === 0) {
     subjectsList.innerHTML = `
@@ -99,58 +91,31 @@ function renderSubjectsIncremental(subjects) {
     return;
   }
 
-  // Get existing subject blocks
-  const existingBlocks = Array.from(subjectsList.querySelectorAll('.subject-block'));
-  const existingPaths = new Set(existingBlocks.map(block => block.dataset.path));
-  const newPaths = new Set(subjects.map(s => s.path));
-
-  // Remove subjects that no longer exist
-  existingBlocks.forEach(block => {
-    if (!newPaths.has(block.dataset.path)) {
-      block.remove();
-    }
-  });
-
-  // Add or update subjects
-  subjects.forEach(subject => {
-    const existingBlock = subjectsList.querySelector(`.subject-block[data-path="${subject.path}"]`);
-    if (!existingBlock) {
-      // Add new subject
-      const newBlock = document.createElement('div');
-      newBlock.className = 'subject-block';
-      newBlock.dataset.path = subject.path;
-      newBlock.dataset.name = subject.name;
-      newBlock.innerHTML = `
-        <div class="subject-header">
-          <div class="subject-info">
-            <span class="subject-icon" data-icon="/assets/icons/subjects.svg"></span>
-            <h3 class="subject-name">${subject.name}</h3>
-          </div>
-          <div class="subject-actions">
-            <button class="subject-action-btn rename" aria-label="Rename">
-              <span data-icon="/assets/icons/edit.svg"></span>
-            </button>
-            <button class="subject-action-btn delete" aria-label="Delete">
-              <span data-icon="/assets/icons/delete.svg"></span>
-            </button>
-          </div>
+  const html = subjects.map(subject => `
+    <div class="subject-block" data-path="${subject.path}" data-name="${subject.name}">
+      <div class="subject-header">
+        <div class="subject-info">
+          <span class="subject-icon" data-icon="/assets/icons/subjects.svg"></span>
+          <h3 class="subject-name">${subject.name}</h3>
         </div>
-        <div class="subject-content" data-expanded="false">
-          <div class="files-list" data-loading="false">
-          </div>
+        <div class="subject-actions">
+          <button class="subject-action-btn rename" aria-label="Rename">
+            <span data-icon="/assets/icons/edit.svg"></span>
+          </button>
+          <button class="subject-action-btn delete" aria-label="Delete">
+            <span data-icon="/assets/icons/delete.svg"></span>
+          </button>
         </div>
-      `;
-      subjectsList.appendChild(newBlock);
-    } else {
-      // Update existing subject name if changed
-      const nameElement = existingBlock.querySelector('.subject-name');
-      if (nameElement && nameElement.textContent !== subject.name) {
-        nameElement.textContent = subject.name;
-      }
-    }
-  });
+      </div>
+      <div class="subject-content" data-expanded="false">
+        <div class="files-list" data-loading="false">
+        </div>
+      </div>
+    </div>
+  `).join('');
 
-  console.log('Subjects rendered incrementally, calling attachSubjectListeners');
+  subjectsList.innerHTML = html;
+
   attachSubjectListeners();
 
   // Load icons using shared function
@@ -159,6 +124,7 @@ function renderSubjectsIncremental(subjects) {
   // Preload all files in background
   preloadAllFiles();
 }
+
 
 // Preload all files from all subjects
 async function preloadAllFiles() {
@@ -209,7 +175,6 @@ async function loadFiles(subjectPath, subjectBlock) {
     // Use cached files if available
     const cached = cachedFiles[subjectPath];
     if (cached && cached.files) {
-      console.log(`Using cached files for ${subjectPath}`);
       renderFiles(cached.files, filesList, subjectCount);
       attachFileListeners(subjectBlock);
       await loadIcons(filesList);
@@ -224,7 +189,6 @@ async function loadFiles(subjectPath, subjectBlock) {
 
     // Re-render if data changed
     if (!cached || JSON.stringify(cached.files) !== JSON.stringify(data.files)) {
-      console.log(`Refreshing files for ${subjectPath}`);
       renderFiles(data.files, filesList, subjectCount);
       attachFileListeners(subjectBlock);
       await loadIcons(filesList);
@@ -282,46 +246,37 @@ function renderFiles(files, filesList, subjectCount) {
 function attachSubjectListeners() {
   const subjectBlocks = document.querySelectorAll('.subject-block');
 
-  console.log(`attachSubjectListeners called, found ${subjectBlocks.length} subject blocks`);
-
   if (subjectBlocks.length === 0) {
-    console.warn('No subject blocks found to attach listeners to');
     return;
   }
 
-  subjectBlocks.forEach((block, index) => {
+  subjectBlocks.forEach((block) => {
     const path = block.dataset.path;
     const name = block.dataset.name;
     const content = block.querySelector('.subject-content');
     const filesList = block.querySelector('.files-list');
 
-    console.log(`Subject block ${index}: path=${path}, name=${name}, content=${content}`);
-
     // Click on subject to expand/collapse
     block.addEventListener('click', (e) => {
-      console.log('Subject block clicked', { target: e.target, path, name });
       if (e.target.closest('.subject-action-btn')) {
-        console.log('Click on action button, ignoring');
         return;
       }
 
       const isExpanded = content.dataset.expanded === 'true';
       const isLoading = filesList.dataset.loading === 'true';
-      console.log(`Is expanded: ${isExpanded}, loading: ${isLoading}`);
 
       if (!isExpanded && !isLoading) {
         content.dataset.expanded = 'true';
         loadFiles(path, block);
       } else if (isExpanded) {
         content.dataset.expanded = 'false';
-        // Reset current subject when collapsing
         currentSubject = null;
         if (window.updateAddButton) {
           window.updateAddButton();
         }
       }
     });
-    
+
     // Rename button
     const renameBtn = block.querySelector('.subject-action-btn.rename');
     if (renameBtn) {
@@ -332,7 +287,7 @@ function attachSubjectListeners() {
         document.getElementById('rename-name').value = name;
       });
     }
-    
+
     // Delete button
     const deleteBtn = block.querySelector('.subject-action-btn.delete');
     if (deleteBtn) {
