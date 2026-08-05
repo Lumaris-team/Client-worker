@@ -10,6 +10,7 @@ let deleteTarget = null;
 let renameTarget = null;
 let cachedSubjects = [];
 let cachedFiles = {}; // Cache files by subject path: { 'maths': { files: [...], timestamp: ... } }
+let subjectsLoading = false;
 
 // Import auth functions
 import { ensureSessionToken } from "/lib/auth.js";
@@ -49,17 +50,28 @@ async function apiCall(endpoint, method = 'GET', body = null) {
 
 // Load subjects list
 async function loadSubjects() {
+  if (subjectsLoading) {
+    console.log('study-notes: loadSubjects already in progress, skipping');
+    return;
+  }
+
   const subjectsList = document.getElementById('subjects-list');
   if (!subjectsList) {
     console.error('subjects-list element not found!');
     return;
   }
 
+  subjectsLoading = true;
+  const previousHTML = subjectsList.innerHTML;
+  const hadSubjects = subjectsList.querySelector('.subject-block') !== null;
+
   subjectsList.innerHTML = `
     <div class="empty-state loading">
       <p class="empty-state-text">Loading subjects...</p>
     </div>
   `;
+
+  console.log('study-notes: loading subjects');
 
   try {
     const data = await apiCall('', 'GET');
@@ -70,12 +82,18 @@ async function loadSubjects() {
     renderSubjects(cachedSubjects);
   } catch (error) {
     console.error('Failed to load subjects:', error);
-    subjectsList.innerHTML = `
-      <div class="empty-state">
-        <p class="empty-state-text">Failed to load subjects</p>
-        <p class="empty-state-subtext">${error.message}</p>
-      </div>
-    `;
+    if (hadSubjects) {
+      subjectsList.innerHTML = previousHTML;
+    } else {
+      subjectsList.innerHTML = `
+        <div class="empty-state">
+          <p class="empty-state-text">Failed to load subjects</p>
+          <p class="empty-state-subtext">${error.message}</p>
+        </div>
+      `;
+    }
+  } finally {
+    subjectsLoading = false;
   }
 }
 
@@ -131,6 +149,15 @@ function renderSubjects(subjects) {
   preloadAllFiles();
 }
 
+function updateSubjectCount(subjectPath, files) {
+  const subjectBlocks = document.querySelectorAll('.subject-block');
+  subjectBlocks.forEach((block) => {
+    if (block.dataset.path !== subjectPath) return;
+    const subjectCount = block.querySelector('.subject-count');
+    if (!subjectCount) return;
+    subjectCount.textContent = `${files.length} file${files.length > 1 ? 's' : ''}`;
+  });
+}
 
 // Preload all files from all subjects
 async function preloadAllFiles() {
@@ -152,11 +179,13 @@ async function preloadAllFiles() {
 async function loadFilesSilent(subjectPath) {
   try {
     const data = await apiCall(`list/${encodeURIComponent(subjectPath)}`, 'GET');
+    const files = data.files || [];
     cachedFiles[subjectPath] = {
-      files: data.files || [],
+      files,
       timestamp: Date.now()
     };
-    console.log(`Cached ${data.files?.length || 0} files for ${subjectPath}`);
+    updateSubjectCount(subjectPath, files);
+    console.log(`Cached ${files.length} files for ${subjectPath}`);
   } catch (error) {
     console.error(`Failed to load files silently for ${subjectPath}:`, error);
   }
@@ -195,24 +224,29 @@ async function loadFiles(subjectPath, subjectBlock) {
 
     // Refresh silently in background
     const data = await apiCall(`list/${encodeURIComponent(subjectPath)}`, 'GET');
+    const freshFiles = data.files || [];
     cachedFiles[subjectPath] = {
-      files: data.files || [],
+      files: freshFiles,
       timestamp: Date.now()
     };
+    updateSubjectCount(subjectPath, freshFiles);
 
     // Re-render if data changed
-    if (!cached || JSON.stringify(cached.files) !== JSON.stringify(data.files)) {
-      renderFiles(data.files, filesList, subjectCount);
+    if (!cached || JSON.stringify(cached.files) !== JSON.stringify(freshFiles)) {
+      renderFiles(freshFiles, filesList, subjectCount);
       attachFileListeners(subjectBlock);
       await loadIcons(filesList);
     }
   } catch (error) {
     console.error('Failed to load files:', error);
-    filesList.innerHTML = `
-      <div class="empty-state" style="padding: 30px 20px; border: none;">
-        <p class="empty-state-text" style="font-size: 0.95rem;">Failed to load files</p>
-      </div>
-    `;
+    const cached = cachedFiles[subjectPath];
+    if (!cached || !cached.files || cached.files.length === 0) {
+      filesList.innerHTML = `
+        <div class="empty-state" style="padding: 30px 20px; border: none;">
+          <p class="empty-state-text" style="font-size: 0.95rem;">Failed to load files</p>
+        </div>
+      `;
+    }
   } finally {
     // Only set loading to false if the subject is still expanded
     const content = subjectBlock.querySelector('.subject-content');

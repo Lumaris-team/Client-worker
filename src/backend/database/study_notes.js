@@ -55,12 +55,8 @@ async function listDirectory(env, relativePath = "") {
     
     const files = [];
     const folders = [];
-    let count = 0;
-    const MAX_ITEMS = 5;
 
     for (const child of children) {
-      if (count >= MAX_ITEMS) break;
-      
       const item = {
         name: child.name,
         path: relativePath ? `${relativePath}/${child.name}` : child.name,
@@ -74,13 +70,12 @@ async function listDirectory(env, relativePath = "") {
       } else {
         files.push(item);
       }
-      count++;
     }
 
     folders.sort((a, b) => a.name.localeCompare(b.name));
     files.sort((a, b) => a.name.localeCompare(b.name));
 
-    return { files, folders, path: relativePath, truncated: count >= MAX_ITEMS };
+    return { files, folders, path: relativePath };
   } catch (e) {
     return { files: [], folders: [], path: relativePath };
   }
