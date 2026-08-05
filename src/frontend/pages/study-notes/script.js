@@ -377,22 +377,37 @@ function attachFileListeners(subjectBlock) {
 function setupTabs() {
   const aiTabBtn = document.getElementById('ai-tab-btn');
   const homeworksTabBtn = document.getElementById('homeworks-tab-btn');
+  const noteTakingTabBtn = document.getElementById('note-taking-tab-btn');
   const aiTab = document.getElementById('ai-tab');
   const homeworksTab = document.getElementById('homeworks-tab');
+  const noteTakingTab = document.getElementById('note-taking-tab');
 
   homeworksTabBtn.addEventListener('click', () => {
     homeworksTabBtn.dataset.active = 'true';
     aiTabBtn.dataset.active = 'false';
+    noteTakingTabBtn.dataset.active = 'false';
     homeworksTab.dataset.active = 'true';
     aiTab.dataset.active = 'false';
+    noteTakingTab.dataset.active = 'false';
     loadSubjects();
+  });
+
+  noteTakingTabBtn.addEventListener('click', () => {
+    noteTakingTabBtn.dataset.active = 'true';
+    homeworksTabBtn.dataset.active = 'false';
+    aiTabBtn.dataset.active = 'false';
+    noteTakingTab.dataset.active = 'true';
+    homeworksTab.dataset.active = 'false';
+    aiTab.dataset.active = 'false';
   });
 
   aiTabBtn.addEventListener('click', () => {
     aiTabBtn.dataset.active = 'true';
     homeworksTabBtn.dataset.active = 'false';
+    noteTakingTabBtn.dataset.active = 'false';
     aiTab.dataset.active = 'true';
     homeworksTab.dataset.active = 'false';
+    noteTakingTab.dataset.active = 'false';
   });
 }
 
@@ -406,6 +421,103 @@ function openModal(modalId) {
 function closeModal(modalId) {
   const modal = document.getElementById(modalId);
   modal.setAttribute('aria-hidden', 'true');
+}
+
+// Note taking functionality
+function setupNoteTaking() {
+  const noteEditor = document.getElementById('note-editor');
+  const importNoteBtn = document.getElementById('import-note-btn');
+  const downloadNoteBtn = document.getElementById('download-note-btn');
+  const saveNoteBtn = document.getElementById('save-note-btn');
+  const saveNoteModal = document.getElementById('save-note-modal');
+  const cancelSaveNoteBtn = document.getElementById('cancel-save-note-btn');
+  const saveNoteForm = document.getElementById('save-note-form');
+  const noteSubjectSelect = document.getElementById('note-subject-select');
+
+  // Auto bullet point on new line
+  noteEditor.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const start = noteEditor.selectionStart;
+      const end = noteEditor.selectionEnd;
+      const value = noteEditor.value;
+
+      // Insert new line with bullet point
+      const newValue = value.substring(0, start) + '\n - ' + value.substring(end);
+      noteEditor.value = newValue;
+
+      // Move cursor after the bullet point
+      const newCursorPos = start + 4;
+      noteEditor.setSelectionRange(newCursorPos, newCursorPos);
+    }
+  });
+
+  // Import txt file
+  importNoteBtn.addEventListener('click', () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.txt';
+    input.onchange = (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          noteEditor.value = e.target.result;
+        };
+        reader.readAsText(file);
+      }
+    };
+    input.click();
+  });
+
+  // Download to device
+  downloadNoteBtn.addEventListener('click', () => {
+    const content = noteEditor.value;
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'note.txt';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  });
+
+  // Save to cloud modal
+  saveNoteBtn.addEventListener('click', () => {
+    // Populate subject select
+    noteSubjectSelect.innerHTML = cachedSubjects.map(subject =>
+      `<option value="${subject.path}">${subject.name}</option>`
+    ).join('');
+    openModal('save-note-modal');
+  });
+
+  cancelSaveNoteBtn.addEventListener('click', () => {
+    closeModal('save-note-modal');
+  });
+
+  // Save note form submission
+  saveNoteForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const subject = noteSubjectSelect.value;
+    const filename = document.getElementById('note-filename').value + '.txt';
+    const content = noteEditor.value;
+
+    try {
+      const formData = new FormData();
+      formData.append('file', new Blob([content], { type: 'text/plain' }), filename);
+      formData.append('relativePath', subject);
+
+      await apiCall('upload', 'POST', formData);
+      closeModal('save-note-modal');
+      alert('Note saved successfully!');
+      noteEditor.value = '';
+    } catch (error) {
+      console.error('Failed to save note:', error);
+      alert('Failed to save note: ' + error.message);
+    }
+  });
 }
 
 // Setup modals
@@ -650,10 +762,11 @@ document.addEventListener('DOMContentLoaded', () => {
   setupTabs();
   setupModals();
   setupAddFileButton();
+  setupNoteTaking();
 
   // Load subjects on page load
   loadSubjects();
 
-  // Start on AI tab as requested
-  // The AI tab is already set as active in HTML
+  // Start on homeworks tab as requested
+  // The homeworks tab is already set as active in HTML
 });
