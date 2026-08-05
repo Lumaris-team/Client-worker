@@ -49,14 +49,20 @@ async function apiCall(endpoint, method = 'GET', body = null) {
 
 // Load subjects list
 async function loadSubjects() {
+  const subjectsList = document.getElementById('subjects-list');
+  if (!subjectsList) {
+    console.error('subjects-list element not found!');
+    return;
+  }
+
+  subjectsList.innerHTML = `
+    <div class="empty-state loading">
+      <p class="empty-state-text">Loading subjects...</p>
+    </div>
+  `;
+
   try {
     const data = await apiCall('', 'GET');
-    const subjectsList = document.getElementById('subjects-list');
-
-    if (!subjectsList) {
-      console.error('subjects-list element not found!');
-      return;
-    }
 
     // Cache subjects for dropdown
     cachedSubjects = data.folders || [];
@@ -64,15 +70,12 @@ async function loadSubjects() {
     renderSubjects(cachedSubjects);
   } catch (error) {
     console.error('Failed to load subjects:', error);
-    const subjectsList = document.getElementById('subjects-list');
-    if (subjectsList) {
-      subjectsList.innerHTML = `
-        <div class="empty-state">
-          <p class="empty-state-text">Failed to load subjects</p>
-          <p class="empty-state-subtext">${error.message}</p>
-        </div>
-      `;
-    }
+    subjectsList.innerHTML = `
+      <div class="empty-state">
+        <p class="empty-state-text">Failed to load subjects</p>
+        <p class="empty-state-subtext">${error.message}</p>
+      </div>
+    `;
   }
 }
 
@@ -96,7 +99,10 @@ function renderSubjects(subjects) {
       <div class="subject-header">
         <div class="subject-info">
           <span class="subject-icon" data-icon="/assets/icons/subjects.svg"></span>
-          <h3 class="subject-name">${subject.name}</h3>
+          <div class="subject-meta">
+            <h3 class="subject-name">${subject.name}</h3>
+            <p class="subject-count">0 files</p>
+          </div>
         </div>
         <div class="subject-actions">
           <button class="subject-action-btn rename" aria-label="Rename">
@@ -171,6 +177,11 @@ async function loadFiles(subjectPath, subjectBlock) {
 
   try {
     filesList.dataset.loading = 'true';
+    filesList.innerHTML = `
+      <div class="empty-state loading">
+        <p class="empty-state-text">Loading files...</p>
+      </div>
+    `;
 
     // Use cached files if available
     const cached = cachedFiles[subjectPath];
@@ -203,7 +214,7 @@ async function loadFiles(subjectPath, subjectBlock) {
   } finally {
     // Only set loading to false if the subject is still expanded
     const content = subjectBlock.querySelector('.subject-content');
-    if (content.dataset.expanded === 'true') {
+    if (content && content.dataset.expanded === 'true') {
       filesList.dataset.loading = 'false';
     }
   }
@@ -217,11 +228,15 @@ function renderFiles(files, filesList, subjectCount) {
         <p class="empty-state-text" style="font-size: 0.95rem;">No files in this subject</p>
       </div>
     `;
-    subjectCount.textContent = 'No files';
+    if (subjectCount) {
+      subjectCount.textContent = 'No files';
+    }
     return;
   }
 
-  subjectCount.textContent = `${files.length} file${files.length > 1 ? 's' : ''}`;
+  if (subjectCount) {
+    subjectCount.textContent = `${files.length} file${files.length > 1 ? 's' : ''}`;
+  }
 
   filesList.innerHTML = files.map(file => `
     <div class="file-block" data-path="${file.path}" data-name="${file.name}">
@@ -253,29 +268,33 @@ function attachSubjectListeners() {
   subjectBlocks.forEach((block) => {
     const path = block.dataset.path;
     const name = block.dataset.name;
+    const header = block.querySelector('.subject-header');
     const content = block.querySelector('.subject-content');
     const filesList = block.querySelector('.files-list');
 
-    // Click on subject to expand/collapse
-    block.addEventListener('click', (e) => {
-      if (e.target.closest('.subject-action-btn')) {
-        return;
-      }
-
-      const isExpanded = content.dataset.expanded === 'true';
-      const isLoading = filesList.dataset.loading === 'true';
-
-      if (!isExpanded && !isLoading) {
-        content.dataset.expanded = 'true';
-        loadFiles(path, block);
-      } else if (isExpanded) {
-        content.dataset.expanded = 'false';
-        currentSubject = null;
-        if (window.updateAddButton) {
-          window.updateAddButton();
+    // Click on subject header to expand/collapse
+    if (header) {
+      header.addEventListener('click', (e) => {
+        if (e.target.closest('.subject-action-btn')) {
+          return;
         }
-      }
-    });
+
+        const isExpanded = content.dataset.expanded === 'true';
+        const isLoading = filesList.dataset.loading === 'true';
+
+        if (!isExpanded && !isLoading) {
+          content.dataset.expanded = 'true';
+          filesList.dataset.loading = 'true';
+          loadFiles(path, block);
+        } else if (isExpanded) {
+          content.dataset.expanded = 'false';
+          currentSubject = null;
+          if (window.updateAddButton) {
+            window.updateAddButton();
+          }
+        }
+      });
+    }
 
     // Rename button
     const renameBtn = block.querySelector('.subject-action-btn.rename');
