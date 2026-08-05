@@ -183,6 +183,8 @@ async function loadFiles(subjectPath, subjectBlock) {
       </div>
     `;
 
+    console.log('study-notes: loading files for subject', subjectPath);
+
     // Use cached files if available
     const cached = cachedFiles[subjectPath];
     if (cached && cached.files) {
@@ -268,33 +270,32 @@ function attachSubjectListeners() {
   subjectBlocks.forEach((block) => {
     const path = block.dataset.path;
     const name = block.dataset.name;
-    const header = block.querySelector('.subject-header');
     const content = block.querySelector('.subject-content');
     const filesList = block.querySelector('.files-list');
 
-    // Click on subject header to expand/collapse
-    if (header) {
-      header.addEventListener('click', (e) => {
-        if (e.target.closest('.subject-action-btn')) {
-          return;
-        }
+    // Click on subject block to expand/collapse
+    block.addEventListener('click', (e) => {
+      if (e.target.closest('.subject-action-btn')) {
+        return;
+      }
 
-        const isExpanded = content.dataset.expanded === 'true';
-        const isLoading = filesList.dataset.loading === 'true';
+      console.log('study-notes: subject clicked', { path, name, target: e.target.tagName });
 
-        if (!isExpanded && !isLoading) {
-          content.dataset.expanded = 'true';
-          filesList.dataset.loading = 'true';
-          loadFiles(path, block);
-        } else if (isExpanded) {
-          content.dataset.expanded = 'false';
-          currentSubject = null;
-          if (window.updateAddButton) {
-            window.updateAddButton();
-          }
+      const isExpanded = content.dataset.expanded === 'true';
+      const isLoading = filesList.dataset.loading === 'true';
+
+      if (!isExpanded && !isLoading) {
+        content.dataset.expanded = 'true';
+        filesList.dataset.loading = 'true';
+        loadFiles(path, block);
+      } else if (isExpanded) {
+        content.dataset.expanded = 'false';
+        currentSubject = null;
+        if (window.updateAddButton) {
+          window.updateAddButton();
         }
-      });
-    }
+      }
+    });
 
     // Rename button
     const renameBtn = block.querySelector('.subject-action-btn.rename');
