@@ -213,13 +213,6 @@ async function loadFiles(subjectPath, subjectBlock) {
       renderFiles(cached.files, filesList, subjectCount);
       attachFileListeners(subjectBlock);
       await loadIcons(filesList);
-    } else {
-      // Show loading state if no cache
-      filesList.innerHTML = `
-        <div class="empty-state" style="padding: 30px 20px; border: none;">
-          <p class="empty-state-text" style="font-size: 0.95rem;">Loading...</p>
-        </div>
-      `;
     }
 
     // Refresh silently in background
