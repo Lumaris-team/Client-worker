@@ -231,9 +231,11 @@ a {
 
 /* ===================== HOMEWORKS TAB ===================== */
 .homeworks-header {
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 16px;
   margin-bottom: 16px;
 }
 
@@ -299,8 +301,8 @@ a {
 /* ===================== SUBJECT BLOCK ===================== */
 .subject-block {
   display: flex;
-  align-items: center;
-  gap: 16px;
+  flex-direction: column;
+  gap: 0;
   padding: 16px 20px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -315,6 +317,14 @@ a {
     transform 180ms ease,
     box-shadow 180ms ease,
     border-color 180ms ease;
+}
+
+.subject-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
 }
 
 .subject-block:hover {
@@ -341,12 +351,16 @@ a {
 .subject-icon svg {
   width: 22px;
   height: 22px;
-  fill: currentColor;
+  stroke: currentColor;
+  fill: none;
 }
 
 .subject-info {
   flex: 1;
   min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .subject-name {
