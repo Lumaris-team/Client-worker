@@ -14,6 +14,9 @@ const fields = {
   saveButton: document.getElementById("saveSettings"),
   resetButton: document.getElementById("resetSettings"),
   preview: document.getElementById("settingsPreview"),
+  btnGradient: document.getElementById("btnGradient"),
+  btnSolid: document.getElementById("btnSolid"),
+  arrowButtons: Array.from(document.querySelectorAll(".arrow-btn")),
 };
 
 function getCurrentSettings() {
@@ -34,6 +37,23 @@ function syncSolidFieldVisibility() {
   const showSolid = fields.backgroundType.value === "solid";
   document.querySelectorAll(".solid-field").forEach((node) => {
     node.style.display = showSolid ? "grid" : "none";
+  });
+  // show/hide gradient controls
+  const isGradient = fields.backgroundType.value === "gradient";
+  document.querySelectorAll(".style-group").forEach((n) => (n.style.display = isGradient ? "grid" : "none"));
+  document.querySelectorAll(".orientation-group").forEach((n) => (n.style.display = isGradient ? "grid" : "none"));
+}
+
+function updateTypeButtons() {
+  if (!fields.btnGradient || !fields.btnSolid) return;
+  const t = fields.backgroundType.value;
+  fields.btnGradient.setAttribute("aria-pressed", t === "gradient" ? "true" : "false");
+  fields.btnSolid.setAttribute("aria-pressed", t === "solid" ? "true" : "false");
+}
+
+function setOrientationActive(orient) {
+  fields.arrowButtons.forEach((b) => {
+    b.classList.toggle("active", b.dataset.orient === orient);
   });
 }
 
@@ -64,6 +84,8 @@ function populateForm(settings) {
   fields.fontSize.value = settings.fontSize;
   fields.fontSizeValue.textContent = `${settings.fontSize}px`;
   syncSolidFieldVisibility();
+  updateTypeButtons();
+  setOrientationActive(settings.gradientOrientation || "0deg");
   renderPreview(settings);
 }
 
@@ -84,6 +106,7 @@ function resetToDefaults() {
 }
 
 function wireEvents() {
+  // wire individual inputs
   Object.values(fields).forEach((input) => {
     if (!input || input.tagName === "BUTTON" || input.tagName === "OUTPUT") return;
     const eventType = input === fields.fontSize ? "input" : "change";
@@ -91,6 +114,30 @@ function wireEvents() {
       if (input === fields.fontSize) {
         fields.fontSizeValue.textContent = `${Number(fields.fontSize.value)}px`;
       }
+      handleFieldChange();
+    });
+  });
+
+  // type toggle buttons
+  fields.btnGradient?.addEventListener("click", () => {
+    fields.backgroundType.value = "gradient";
+    updateTypeButtons();
+    syncSolidFieldVisibility();
+    handleFieldChange();
+  });
+  fields.btnSolid?.addEventListener("click", () => {
+    fields.backgroundType.value = "solid";
+    updateTypeButtons();
+    syncSolidFieldVisibility();
+    handleFieldChange();
+  });
+
+  // arrow orientation buttons
+  fields.arrowButtons.forEach((b) => {
+    b.addEventListener("click", () => {
+      const o = b.dataset.orient;
+      fields.gradientOrientation.value = o;
+      setOrientationActive(o);
       handleFieldChange();
     });
   });

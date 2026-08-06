@@ -50,6 +50,11 @@
             <h2>Fond & couleurs</h2>
           </div>
 
+              <div class="toggle-type" role="tablist" aria-label="Type de fond">
+                <button id="btnGradient" class="type-btn" data-type="gradient" aria-pressed="false">Dégradé</button>
+                <button id="btnSolid" class="type-btn" data-type="solid" aria-pressed="false">Couleur</button>
+              </div>
+
           <label class="field-group">
             <span class="field-label">Type</span>
             <select id="backgroundType" class="field-input">
@@ -58,7 +63,7 @@
             </select>
           </label>
 
-          <label class="field-group">
+          <label class="field-group style-group">
             <span class="field-label">Style</span>
             <select id="gradientStyle" class="field-input">
               <option value="linear">Dégradé linéaire</option>
@@ -66,16 +71,22 @@
             </select>
           </label>
 
-          <label class="field-group">
+          <div class="field-group orientation-group">
             <span class="field-label">Orientation</span>
-            <select id="gradientOrientation" class="field-input">
+            <div class="orientation-arrows" role="toolbar" aria-label="Orientation du dégradé">
+              <button class="arrow-btn" data-orient="0deg" title="Haut → Bas">↑</button>
+              <button class="arrow-btn" data-orient="90deg" title="Gauche → Droite">→</button>
+              <button class="arrow-btn" data-orient="180deg" title="Bas → Haut">↓</button>
+              <button class="arrow-btn" data-orient="270deg" title="Droite → Gauche">←</button>
+            </div>
+            <select id="gradientOrientation" class="field-input hidden">
               <option value="0deg">Haut → Bas</option>
               <option value="45deg">Haut gauche → Bas droite</option>
               <option value="90deg">Gauche → Droite</option>
               <option value="135deg">Bas gauche → Haut droite</option>
               <option value="180deg">Bas → Haut</option>
             </select>
-          </label>
+          </div>
 
           <div class="color-row">
             <label class="field-group color-field">

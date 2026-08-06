@@ -136,6 +136,71 @@ body {
   transform: translateY(-1px);
 }
 
+/* Type toggle buttons (Dégradé / Couleur) */
+.toggle-type {
+  display: flex;
+  gap: 10px;
+  margin: 6px 0 12px;
+}
+
+.type-btn {
+  flex: 1 1 auto;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.06);
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  color: var(--settings-text);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.type-btn[aria-pressed="true"] {
+  box-shadow: 0 10px 26px rgba(0,0,0,0.22);
+  transform: translateY(-2px);
+  border-color: rgba(255,255,255,0.18);
+}
+
+/* Orientation arrow toolbar */
+.orientation-arrows {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.arrow-btn {
+  width: 44px;
+  height: 44px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.02);
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.arrow-btn.active {
+  border-color: rgba(255,255,255,0.18);
+  transform: translateY(-2px);
+}
+
+.hidden { display: none !important; }
+
+/* Range slider and value */
+.field-input.range { padding: 6px 10px; }
+.field-group .range { display: block; }
+#fontSizeValue {
+  display: inline-block;
+  margin-left: 12px;
+  vertical-align: middle;
+  min-width: 56px;
+  text-align: center;
+  background: rgba(255,255,255,0.04);
+  padding: 6px 10px;
+  border-radius: 10px;
+  font-weight: 700;
+}
+
 .color-row {
   display: grid;
   gap: 18px;
