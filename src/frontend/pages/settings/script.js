@@ -7,6 +7,8 @@ const fields = {
   color1: document.getElementById("color1"),
   color2: document.getElementById("color2"),
   solidColor: document.getElementById("solidColor"),
+  btnLinear: document.getElementById("btnLinear"),
+  btnRadial: document.getElementById("btnRadial"),
   fontFamily: document.getElementById("fontFamily"),
   fontWeight: document.getElementById("fontWeight"),
   fontWeightBtn: document.getElementById("fontWeightBtn"),
@@ -72,6 +74,18 @@ function renderPreview(settings) {
   card.style.color = settings.backgroundType === "solid" ? "#f7fbff" : "#ffffff";
   card.style.fontFamily = settings.fontFamily;
   card.style.fontWeight = settings.fontWeight;
+  // mini preview
+  const mini = document.getElementById("miniGradientPreview");
+  if (mini) {
+    mini.style.setProperty("--c1", settings.color1);
+    mini.style.setProperty("--c2", settings.color2);
+    mini.dataset.type = settings.gradientStyle;
+    if (settings.gradientStyle === "linear" && settings.backgroundType === "gradient") {
+      mini.classList.add("animate-linear");
+    } else {
+      mini.classList.remove("animate-linear");
+    }
+  }
 }
 
 function populateForm(settings) {
@@ -89,6 +103,10 @@ function populateForm(settings) {
   syncSolidFieldVisibility();
   updateTypeButtons();
   setOrientationActive(settings.gradientOrientation || "0deg");
+  if (fields.btnLinear && fields.btnRadial) {
+    fields.btnLinear.setAttribute("aria-pressed", settings.gradientStyle === "linear" ? "true" : "false");
+    fields.btnRadial.setAttribute("aria-pressed", settings.gradientStyle === "radial" ? "true" : "false");
+  }
   renderPreview(settings);
 }
 
@@ -109,13 +127,18 @@ function resetToDefaults() {
 }
 
 function wireEvents() {
-  // wire individual inputs
+  // wire individual inputs (only real HTMLElements)
   Object.values(fields).forEach((input) => {
-    if (!input || input.tagName === "BUTTON" || input.tagName === "OUTPUT") return;
+    if (!(input instanceof HTMLElement)) return;
+    if (input.tagName === "BUTTON" || input.tagName === "OUTPUT") return;
     const eventType = input === fields.fontSize ? "input" : "change";
     input.addEventListener(eventType, () => {
       if (input === fields.fontSize) {
         fields.fontSizeValue.textContent = `${Number(fields.fontSize.value)}px`;
+        // pulse effect
+        fields.fontSizeValue.classList.add("pulse");
+        clearTimeout(fields._pulseTimeout);
+        fields._pulseTimeout = setTimeout(() => fields.fontSizeValue.classList.remove("pulse"), 200);
       }
       handleFieldChange();
     });
@@ -132,6 +155,20 @@ function wireEvents() {
     fields.backgroundType.value = "solid";
     updateTypeButtons();
     syncSolidFieldVisibility();
+    handleFieldChange();
+  });
+
+  // gradient style buttons (linear / radial)
+  fields.btnLinear?.addEventListener("click", () => {
+    fields.gradientStyle.value = "linear";
+    fields.btnLinear.setAttribute("aria-pressed", "true");
+    fields.btnRadial?.setAttribute("aria-pressed", "false");
+    handleFieldChange();
+  });
+  fields.btnRadial?.addEventListener("click", () => {
+    fields.gradientStyle.value = "radial";
+    fields.btnRadial.setAttribute("aria-pressed", "true");
+    fields.btnLinear?.setAttribute("aria-pressed", "false");
     handleFieldChange();
   });
 

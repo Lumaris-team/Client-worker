@@ -65,8 +65,11 @@
           </label>
 
           <label class="field-group style-group">
-            <span class="field-label">Style</span>
-            <select id="gradientStyle" class="field-input">
+            <div class="style-buttons">
+              <button id="btnLinear" class="type-btn" data-style="linear" aria-pressed="false">Linéaire</button>
+              <button id="btnRadial" class="type-btn" data-style="radial" aria-pressed="false">Radial</button>
+            </div>
+            <select id="gradientStyle" class="field-input hidden">
               <option value="linear">Dégradé linéaire</option>
               <option value="radial">Dégradé radial</option>
             </select>
@@ -142,7 +145,6 @@
           </label>
 
           <label class="field-group toggle-group">
-            <span class="field-label">Gras</span>
             <button id="fontWeightBtn" class="type-btn font-weight-btn" aria-pressed="false">Gras</button>
           </label>
 

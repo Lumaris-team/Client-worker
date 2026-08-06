@@ -165,6 +165,11 @@ body {
   border-radius: 12px;
 }
 
+.style-buttons { display:flex; gap:10px; }
+.style-buttons .type-btn { padding: 8px 12px; }
+
+.type-btn[aria-pressed="true"] { background: linear-gradient(180deg, rgba(43,109,246,0.12), rgba(43,109,246,0.08)); color: #fff; }
+
 /* Orientation arrow toolbar */
 .orientation-arrows {
   display: inline-flex;
@@ -295,6 +300,27 @@ input[type="range"]:focus::-webkit-slider-runnable-track {
   border-radius: 8px;
   margin-bottom: 8px;
   box-shadow: 0 6px 18px rgba(0,0,0,0.12) inset;
+}
+
+.mini-preview {
+  position: relative;
+  overflow: hidden;
+}
+.mini-preview::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 8px;
+  background: linear-gradient(90deg, var(--c1, #0b3f91) 0%, var(--c2, #1c8cff) 100%);
+  transform-origin: center;
+  transition: opacity 240ms ease;
+}
+.mini-preview.animate-linear::before {
+  animation: mini-rotate 3s linear infinite;
+}
+@keyframes mini-rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 @media (max-width: 720px) {
