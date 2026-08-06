@@ -104,9 +104,10 @@ a {
 
 .home-logo {
   width: 100%;
-  height: auto;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
   display: block;
-  border-radius: 8px;
+  border-radius: 18px;
   filter: drop-shadow(0 20px 36px rgba(0, 0, 0, 0.28));
 }
 

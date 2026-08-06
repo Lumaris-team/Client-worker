@@ -86,8 +86,11 @@ function resetToDefaults() {
 function wireEvents() {
   Object.values(fields).forEach((input) => {
     if (!input || input.tagName === "BUTTON" || input.tagName === "OUTPUT") return;
-    input.addEventListener("change", () => {
-      fields.fontSizeValue.textContent = `${Number(fields.fontSize.value)}px`;
+    const eventType = input === fields.fontSize ? "input" : "change";
+    input.addEventListener(eventType, () => {
+      if (input === fields.fontSize) {
+        fields.fontSizeValue.textContent = `${Number(fields.fontSize.value)}px`;
+      }
       handleFieldChange();
     });
   });
