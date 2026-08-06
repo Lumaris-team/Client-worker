@@ -1,0 +1,228 @@
+:root {
+  --settings-panel: rgba(18, 36, 57, 0.82);
+  --settings-panel-border: rgba(255, 255, 255, 0.08);
+  --settings-input: rgba(255, 255, 255, 0.08);
+  --settings-input-border: rgba(255, 255, 255, 0.14);
+  --settings-text: #f4fbff;
+  --settings-muted: rgba(255, 255, 255, 0.72);
+}
+
+body {
+  min-height: 100vh;
+  color: var(--settings-text);
+}
+
+.settings-shell {
+  width: min(1180px, calc(100vw - 32px));
+  margin: 108px auto 64px;
+  display: grid;
+  gap: 28px;
+}
+
+.settings-hero {
+  display: grid;
+  gap: 24px;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  align-items: center;
+}
+
+.settings-hero-copy {
+  max-width: 760px;
+}
+
+.settings-hero-copy h1 {
+  margin: 16px 0 12px;
+  font-size: clamp(2.2rem, 3.6vw, 3.6rem);
+  line-height: 1.02;
+}
+
+.settings-hero-copy p {
+  margin: 0;
+  color: var(--settings-muted);
+  font-size: 1rem;
+  line-height: 1.75;
+  max-width: 720px;
+}
+
+.settings-preview {
+  display: grid;
+  place-items: center;
+}
+
+.preview-card {
+  width: 100%;
+  min-height: 240px;
+  padding: 28px;
+  border-radius: 32px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.18);
+  backdrop-filter: blur(28px);
+}
+
+.preview-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #e8f8ff;
+  font-size: 0.77rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.preview-card h2 {
+  margin: 20px 0 12px;
+  font-size: clamp(1.5rem, 2.3vw, 2.3rem);
+}
+
+.preview-card p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.74);
+  line-height: 1.8;
+}
+
+.settings-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.settings-panel {
+  padding: 26px;
+  border-radius: 28px;
+  border: 1px solid var(--settings-panel-border);
+  background: var(--settings-panel);
+  box-shadow: 0 22px 46px rgba(0, 0, 0, 0.2);
+  display: grid;
+  gap: 18px;
+}
+
+.panel-header h2 {
+  margin: 6px 0 0;
+  font-size: 1.5rem;
+}
+
+.field-group {
+  display: grid;
+  gap: 10px;
+}
+
+.field-label {
+  color: var(--settings-muted);
+  font-size: 0.87rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.field-input {
+  width: 100%;
+  min-height: 50px;
+  border-radius: 18px;
+  border: 1px solid var(--settings-input-border);
+  background: var(--settings-input);
+  color: var(--settings-text);
+  padding: 0 16px;
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 180ms ease, transform 180ms ease;
+}
+
+.field-input:focus {
+  border-color: rgba(255, 255, 255, 0.34);
+  transform: translateY(-1px);
+}
+
+.color-row {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.color-field .field-input {
+  padding: 0;
+  height: 56px;
+  width: 100%;
+  border-radius: 20px;
+  border: none;
+}
+
+.solid-field {
+  display: none;
+}
+
+.toggle-group {
+  align-items: center;
+  grid-template-columns: auto 80px;
+}
+
+.toggle {
+  width: 100%;
+  height: 44px;
+}
+
+.range {
+  width: 100%;
+}
+
+#fontSizeValue {
+  margin-top: -6px;
+  color: var(--settings-text);
+  font-weight: 700;
+}
+
+.settings-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 16px;
+}
+
+.button {
+  border: none;
+  border-radius: 16px;
+  min-width: 150px;
+  padding: 14px 22px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 160ms ease, background 160ms ease, box-shadow 160ms ease;
+}
+
+.button:hover {
+  transform: translateY(-1px);
+}
+
+.button.primary {
+  background: linear-gradient(135deg, #60a3ff 0%, #88d3ff 100%);
+  color: #08101f;
+  box-shadow: 0 16px 32px rgba(49, 110, 217, 0.24);
+}
+
+.button.secondary {
+  background: rgba(255, 255, 255, 0.08);
+  color: #f4fbff;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+@media (max-width: 960px) {
+  .settings-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .settings-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .settings-shell {
+    margin: 88px 16px 56px;
+  }
+
+  .settings-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

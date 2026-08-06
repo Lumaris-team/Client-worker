@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="fr" data-auth-pending>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#08100f">
+    <title>Settings - Daniel Ersen Dashboard</title>
+    <meta name="description" content="Réglez le thème et les polices de votre Dashboard.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://dashboard.danielersen.fr.eu.org/settings">
+    <link rel="icon" href="/assets/logo/square.png">
+    <link rel="manifest" href="/seo/manifest.json">
+    <meta name="msapplication-config" content="/seo/browserconfig.xml">
+
+    <script type="module">
+      import { guardPage } from "/lib/auth.js";
+      guardPage().then((ok) => {
+        if (ok) document.documentElement.removeAttribute("data-auth-pending");
+      });
+    </script>
+    <script type="module" src="/lib/settings.js"></script>
+    <link rel="stylesheet" href="/styles/sidebar.css">
+    <link rel="stylesheet" href="/styles/block.css">
+    <link rel="stylesheet" href="/pages/settings/style.css">
+    <script type="module" src="/components/navbar.js"></script>
+  </head>
+  <body>
+    <site-navbar current="settings"></site-navbar>
+
+    <main class="settings-shell">
+      <section class="settings-hero">
+        <div class="settings-hero-copy">
+          <span class="block-eyebrow">Paramètres</span>
+          <h1>Personnalise ton expérience</h1>
+          <p>Change le fond, l'orientation du dégradé, le type de transitions et la typographie pour tout le Dashboard.</p>
+        </div>
+        <div class="settings-preview" id="settingsPreview">
+          <div class="preview-card">
+            <div class="preview-badge">Aperçu</div>
+            <h2>Dashboard theme</h2>
+            <p>Les réglages s'appliquent à toutes les pages immédiatement.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="settings-grid">
+        <article class="settings-panel">
+          <div class="panel-header">
+            <span class="block-eyebrow">Background</span>
+            <h2>Fond & couleurs</h2>
+          </div>
+
+          <label class="field-group">
+            <span class="field-label">Type</span>
+            <select id="backgroundType" class="field-input">
+              <option value="gradient">Dégradé</option>
+              <option value="solid">Couleur unie</option>
+            </select>
+          </label>
+
+          <label class="field-group">
+            <span class="field-label">Style</span>
+            <select id="gradientStyle" class="field-input">
+              <option value="linear">Dégradé linéaire</option>
+              <option value="radial">Dégradé radial</option>
+            </select>
+          </label>
+
+          <label class="field-group">
+            <span class="field-label">Orientation</span>
+            <select id="gradientOrientation" class="field-input">
+              <option value="0deg">Haut → Bas</option>
+              <option value="45deg">Haut gauche → Bas droite</option>
+              <option value="90deg">Gauche → Droite</option>
+              <option value="135deg">Bas gauche → Haut droite</option>
+              <option value="180deg">Bas → Haut</option>
+            </select>
+          </label>
+
+          <div class="color-row">
+            <label class="field-group color-field">
+              <span class="field-label">Couleur 1</span>
+              <input id="color1" class="field-input" type="color" value="#0b3f91">
+            </label>
+
+            <label class="field-group color-field">
+              <span class="field-label">Couleur 2</span>
+              <input id="color2" class="field-input" type="color" value="#1c8cff">
+            </label>
+          </div>
+
+          <label class="field-group solid-field">
+            <span class="field-label">Couleur unie</span>
+            <input id="solidColor" class="field-input" type="color" value="#08100f">
+          </label>
+        </article>
+
+        <article class="settings-panel">
+          <div class="panel-header">
+            <span class="block-eyebrow">Texte</span>
+            <h2>Police & hiérarchie</h2>
+          </div>
+
+          <label class="field-group">
+            <span class="field-label">Police</span>
+            <select id="fontFamily" class="field-input">
+              <option value="Inter, ui-sans-serif, system-ui, sans-serif">Inter</option>
+              <option value="'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif">IBM Plex Sans</option>
+              <option value="'Poppins', ui-sans-serif, system-ui, sans-serif">Poppins</option>
+              <option value="'JetBrains Mono', ui-monospace, monospace">JetBrains Mono</option>
+              <option value="'Lora', Georgia, serif">Lora</option>
+              <option value="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">Systeme</option>
+            </select>
+          </label>
+
+          <label class="field-group toggle-group">
+            <span class="field-label">Gras</span>
+            <input id="fontWeight" class="field-input toggle" type="checkbox">
+          </label>
+
+          <label class="field-group">
+            <span class="field-label">Taille du texte</span>
+            <input id="fontSize" class="field-input range" type="range" min="14" max="28" step="1" value="16">
+            <output id="fontSizeValue">16px</output>
+          </label>
+        </article>
+      </section>
+
+      <div class="settings-actions">
+        <button id="saveSettings" class="button primary">Enregistrer</button>
+        <button id="resetSettings" class="button secondary">Réinitialiser</button>
+      </div>
+    </main>
+
+    <script type="module" src="/pages/settings/script.js"></script>
+  </body>
+</html>

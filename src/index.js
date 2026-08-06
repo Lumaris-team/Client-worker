@@ -11,6 +11,7 @@ import { WebsitesFunction } from "./backend/database/websites.js";
 import { FilesFunction, initializeFolderArchitecture } from "./backend/database/files_management.js";
 import { StudyNotesFunction } from "./backend/database/study_notes.js";
 import { ToolsFunction } from "./backend/tools/index.js";
+import { SettingsFunction } from "./backend/settings.js";
   
 import { sendMail } from "./backend/notifications/mail.js";
 
@@ -150,6 +151,8 @@ export default {
           resp = await FilesFunction(env, url.pathname.slice("/api/files/".length), method, body);
         } else if (url.pathname.startsWith("/api/study-notes/")) {
           resp = await StudyNotesFunction(env, url.pathname.slice("/api/study-notes/".length), method, body);
+        } else if (url.pathname.startsWith("/api/settings")) {
+          resp = await SettingsFunction(env, url.pathname.slice("/api/settings".length), method, body, session.payload);
         };
         // Return response
         return new Response(JSON.stringify({
@@ -234,6 +237,12 @@ export default {
       return env.ASSETS.fetch(new Request(assetUrl, request));
     }
    
+    if (url.pathname === "/settings" || url.pathname === "/settings/") {
+      const assetUrl = new URL(request.url);
+      assetUrl.pathname = "/pages/settings/index.html";
+      return env.ASSETS.fetch(new Request(assetUrl, request));
+    }
+
     if (url.pathname === `/pages/parent`) {
       const assetUrl = new URL(request.url);
       assetUrl.pathname = "/pages/workspace/index2.html";
