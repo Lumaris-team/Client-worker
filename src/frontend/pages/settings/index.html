@@ -37,6 +37,7 @@
         <div class="settings-preview" id="settingsPreview">
           <div class="preview-card">
             <div class="preview-badge">Aperçu</div>
+            <div id="miniGradientPreview" class="mini-preview" aria-hidden="true"></div>
             <h2>Dashboard theme</h2>
             <p>Les réglages s'appliquent à toutes les pages immédiatement.</p>
           </div>
@@ -55,7 +56,7 @@
                 <button id="btnSolid" class="type-btn" data-type="solid" aria-pressed="false">Couleur</button>
               </div>
 
-          <label class="field-group">
+          <label class="field-group hidden">
             <span class="field-label">Type</span>
             <select id="backgroundType" class="field-input">
               <option value="gradient">Dégradé</option>
@@ -74,10 +75,26 @@
           <div class="field-group orientation-group">
             <span class="field-label">Orientation</span>
             <div class="orientation-arrows" role="toolbar" aria-label="Orientation du dégradé">
-              <button class="arrow-btn" data-orient="0deg" title="Haut → Bas">↑</button>
-              <button class="arrow-btn" data-orient="90deg" title="Gauche → Droite">→</button>
-              <button class="arrow-btn" data-orient="180deg" title="Bas → Haut">↓</button>
-              <button class="arrow-btn" data-orient="270deg" title="Droite → Gauche">←</button>
+              <button class="arrow-btn" data-orient="0deg" title="Haut → Bas">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+                  <path d="M12 4l8 8H4l8-8z" fill="currentColor" />
+                </svg>
+              </button>
+              <button class="arrow-btn" data-orient="90deg" title="Gauche → Droite">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+                  <path d="M12 4l8 8H4l8-8z" fill="currentColor" transform="rotate(90 12 12)" />
+                </svg>
+              </button>
+              <button class="arrow-btn" data-orient="180deg" title="Bas → Haut">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+                  <path d="M12 4l8 8H4l8-8z" fill="currentColor" transform="rotate(180 12 12)" />
+                </svg>
+              </button>
+              <button class="arrow-btn" data-orient="270deg" title="Droite → Gauche">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+                  <path d="M12 4l8 8H4l8-8z" fill="currentColor" transform="rotate(270 12 12)" />
+                </svg>
+              </button>
             </div>
             <select id="gradientOrientation" class="field-input hidden">
               <option value="0deg">Haut → Bas</option>
@@ -88,7 +105,7 @@
             </select>
           </div>
 
-          <div class="color-row">
+          <div class="color-row gradient-only">
             <label class="field-group color-field">
               <span class="field-label">Couleur 1</span>
               <input id="color1" class="field-input" type="color" value="#0b3f91">
@@ -126,7 +143,7 @@
 
           <label class="field-group toggle-group">
             <span class="field-label">Gras</span>
-            <input id="fontWeight" class="field-input toggle" type="checkbox">
+            <button id="fontWeightBtn" class="type-btn font-weight-btn" aria-pressed="false">Gras</button>
           </label>
 
           <label class="field-group">

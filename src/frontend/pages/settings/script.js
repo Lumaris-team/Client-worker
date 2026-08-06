@@ -9,6 +9,7 @@ const fields = {
   solidColor: document.getElementById("solidColor"),
   fontFamily: document.getElementById("fontFamily"),
   fontWeight: document.getElementById("fontWeight"),
+  fontWeightBtn: document.getElementById("fontWeightBtn"),
   fontSize: document.getElementById("fontSize"),
   fontSizeValue: document.getElementById("fontSizeValue"),
   saveButton: document.getElementById("saveSettings"),
@@ -42,6 +43,7 @@ function syncSolidFieldVisibility() {
   const isGradient = fields.backgroundType.value === "gradient";
   document.querySelectorAll(".style-group").forEach((n) => (n.style.display = isGradient ? "grid" : "none"));
   document.querySelectorAll(".orientation-group").forEach((n) => (n.style.display = isGradient ? "grid" : "none"));
+  document.querySelectorAll(".gradient-only").forEach((n) => (n.style.display = isGradient ? "grid" : "none"));
 }
 
 function updateTypeButtons() {
@@ -81,6 +83,7 @@ function populateForm(settings) {
   fields.solidColor.value = settings.solidColor;
   fields.fontFamily.value = settings.fontFamily;
   fields.fontWeight.checked = settings.fontWeight === "700";
+  if (fields.fontWeightBtn) fields.fontWeightBtn.setAttribute("aria-pressed", settings.fontWeight === "700" ? "true" : "false");
   fields.fontSize.value = settings.fontSize;
   fields.fontSizeValue.textContent = `${settings.fontSize}px`;
   syncSolidFieldVisibility();
@@ -129,6 +132,14 @@ function wireEvents() {
     fields.backgroundType.value = "solid";
     updateTypeButtons();
     syncSolidFieldVisibility();
+    handleFieldChange();
+  });
+
+  // font weight big button
+  fields.fontWeightBtn?.addEventListener("click", () => {
+    const isNow = fields.fontWeightBtn.getAttribute("aria-pressed") === "true" ? "false" : "true";
+    fields.fontWeightBtn.setAttribute("aria-pressed", isNow);
+    fields.fontWeight.checked = isNow === "true";
     handleFieldChange();
   });
 
