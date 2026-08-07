@@ -22,7 +22,8 @@ body {
 .settings-hero {
   display: grid;
   gap: 24px;
-  grid-template-columns: minmax(0, 1fr) 360px;
+  /* Make right column shrinkable to avoid overflow */
+  grid-template-columns: minmax(0, 1fr) minmax(0, 360px);
   align-items: center;
 }
 
@@ -47,7 +48,10 @@ body {
 .settings-preview {
   display: grid;
   place-items: center;
-  padding-right: 18px; /* évite que la carte aille trop à droite */
+  padding-right: 12px; /* avoid card touching viewport edge */
+  justify-self: end;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .preview-card {
@@ -56,11 +60,11 @@ body {
   min-height: 240px;
   padding: 28px;
   border-radius: 32px;
-  /* Use bento-block visuals when present */
   background: var(--preview-bg, rgba(255, 255, 255, 0.05));
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 24px 48px rgba(0, 0, 0, 0.16);
   backdrop-filter: blur(20px);
+  box-sizing: border-box;
 }
 
 .preview-badge {
@@ -103,6 +107,16 @@ body {
   box-shadow: none;
   display: grid;
   gap: 18px;
+  box-sizing: border-box;
+}
+
+/* Ensure any direct child panels use the bento-block visuals for uniformity */
+.settings-panel.bento-block,
+.settings-hero-copy.bento-block,
+.preview-card.bento-block {
+  background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+  border: 1px solid var(--line);
+  backdrop-filter: blur(20px) saturate(1.2);
 }
 
 .panel-header h2 {
@@ -216,12 +230,54 @@ body {
   font-weight: 700;
 }
 
-/* Specific layout for the font size control */
-label.field-group > .field-label:only-child { margin-bottom: 8px; }
-label.field-group:has(.range) {
+/* Specific layout for the font size control when marked with .range-group */
+label.field-group.range-group { box-sizing: border-box; display: flex; align-items: center; gap: 12px; }
+label.field-group.range-group > .field-label { flex: 1 0 160px; }
+label.field-group.range-group .field-input.range { flex: 1 1 auto; }
+
+/* Toggle knob displays a 'B' and changes color when active */
+.toggle::before {
+  content: "B";
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
-  gap: 12px;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 12px;
+  color: rgba(0,0,0,0.85);
+  pointer-events: none;
+}
+
+.toggle::after {
+  /* keep the circular visual as background for before's letter */
+  content: "";
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: white;
+  transition: transform 180ms ease, background 180ms ease;
+}
+
+.toggle:checked {
+  background: linear-gradient(90deg, #60a3ff 0%, #88d3ff 100%);
+  border-color: rgba(96,163,255,0.8);
+}
+
+.toggle:checked::after {
+  transform: translateX(28px);
+  background: white;
+}
+
+.toggle:checked::before {
+  transform: translateX(28px);
+  color: #0b2b66;
 }
 
 #fontSizeValue {
