@@ -49,7 +49,10 @@ body {
   display: grid;
   place-items: center;
   padding-right: 12px; /* avoid card touching viewport edge */
-  justify-self: end;
+  /* Force the preview to be centered inside its grid column
+     using logical properties so the layout behaves predictably. */
+  justify-self: center !important;
+  margin-inline: auto !important;
   width: 100%;
   box-sizing: border-box;
 }
@@ -63,7 +66,11 @@ body {
   background: var(--preview-bg, rgba(255, 255, 255, 0.05));
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 24px 48px rgba(0, 0, 0, 0.16);
+  /* keep subtle background but avoid forcing positional/layout behavior
+     Use logical centering to guarantee it stays centered */
   backdrop-filter: blur(20px);
+  justify-self: center;
+  margin-inline: auto;
   box-sizing: border-box;
 }
 
@@ -117,6 +124,18 @@ body {
   background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
   border: 1px solid var(--line);
   backdrop-filter: blur(20px) saturate(1.2);
+}
+
+/* Override: the hero copy block must not have any frosted effect or borders
+   to keep the text crisp and edge-to-edge as requested. Use !important to
+   force this visual regardless of the shared .bento-block rules above. */
+.settings-hero-copy,
+.settings-hero-copy.bento-block {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
 }
 
 .panel-header h2 {
