@@ -7,18 +7,7 @@
     <title>Login - Daniel Ersen Dashboard</title>
     <meta name="description" content="Login to your personal Dashboard.">
     <meta name="robots" content="noindex, nofollow">
-    <style>
-      /* During auth verification keep a solid black background until JS clears the flag */
-      html[data-auth-pending] body { visibility: visible; background: #000; }
-      /* Ensure the loading state covers the viewport and hides content until ready */
-      html[data-auth-pending] body::before {
-        content: "";
-        position: fixed;
-        inset: 0;
-        background: #000;
-        z-index: 9999;
-      }
-    </style>
+    <style>html[data-auth-pending] body { visibility: hidden; }</style>
     <script type="module" src="/lib/settings.js"></script>
     <link rel="stylesheet" href="/pages/auth/style.css">
     <link rel="icon" href="/assets/logo/logo.png">

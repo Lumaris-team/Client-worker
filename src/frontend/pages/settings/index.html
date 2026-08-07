@@ -50,12 +50,7 @@
             <h2>Fond & couleurs</h2>
           </div>
 
-              <div class="toggle-type" role="tablist" aria-label="Type de fond">
-                <button id="btnGradient" class="type-btn" data-type="gradient" aria-pressed="false">Dégradé</button>
-                <button id="btnSolid" class="type-btn" data-type="solid" aria-pressed="false">Couleur</button>
-              </div>
-
-          <label class="field-group hidden">
+          <label class="field-group">
             <span class="field-label">Type</span>
             <select id="backgroundType" class="field-input">
               <option value="gradient">Dégradé</option>
@@ -63,51 +58,26 @@
             </select>
           </label>
 
-          <label class="field-group style-group">
-            <div class="style-buttons">
-              <button id="btnLinear" class="type-btn" data-style="linear" aria-pressed="false">Linéaire</button>
-              <button id="btnRadial" class="type-btn" data-style="radial" aria-pressed="false">Radial</button>
-            </div>
-            <select id="gradientStyle" class="field-input hidden">
+          <label class="field-group">
+            <span class="field-label">Style</span>
+            <select id="gradientStyle" class="field-input">
               <option value="linear">Dégradé linéaire</option>
               <option value="radial">Dégradé radial</option>
             </select>
           </label>
 
-          <div class="field-group orientation-group">
+          <label class="field-group">
             <span class="field-label">Orientation</span>
-            <div class="orientation-arrows" role="toolbar" aria-label="Orientation du dégradé">
-              <button class="arrow-btn" data-orient="0deg" title="Haut → Bas">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
-                  <path d="M12 4l8 8H4l8-8z" fill="currentColor" />
-                </svg>
-              </button>
-              <button class="arrow-btn" data-orient="90deg" title="Gauche → Droite">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
-                  <path d="M12 4l8 8H4l8-8z" fill="currentColor" transform="rotate(90 12 12)" />
-                </svg>
-              </button>
-              <button class="arrow-btn" data-orient="180deg" title="Bas → Haut">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
-                  <path d="M12 4l8 8H4l8-8z" fill="currentColor" transform="rotate(180 12 12)" />
-                </svg>
-              </button>
-              <button class="arrow-btn" data-orient="270deg" title="Droite → Gauche">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
-                  <path d="M12 4l8 8H4l8-8z" fill="currentColor" transform="rotate(270 12 12)" />
-                </svg>
-              </button>
-            </div>
-            <select id="gradientOrientation" class="field-input hidden">
+            <select id="gradientOrientation" class="field-input">
               <option value="0deg">Haut → Bas</option>
               <option value="45deg">Haut gauche → Bas droite</option>
               <option value="90deg">Gauche → Droite</option>
               <option value="135deg">Bas gauche → Haut droite</option>
               <option value="180deg">Bas → Haut</option>
             </select>
-          </div>
+          </label>
 
-          <div class="color-row gradient-only">
+          <div class="color-row">
             <label class="field-group color-field">
               <span class="field-label">Couleur 1</span>
               <input id="color1" class="field-input" type="color" value="#0b3f91">
@@ -134,17 +104,18 @@
           <label class="field-group">
             <span class="field-label">Police</span>
             <select id="fontFamily" class="field-input">
-              <option style="font-family: Inter, ui-sans-serif, system-ui, sans-serif;" value="Inter, ui-sans-serif, system-ui, sans-serif">Inter</option>
-              <option style="font-family: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;" value="'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif">IBM Plex Sans</option>
-              <option style="font-family: 'Poppins', ui-sans-serif, system-ui, sans-serif;" value="'Poppins', ui-sans-serif, system-ui, sans-serif">Poppins</option>
-              <option style="font-family: 'JetBrains Mono', ui-monospace, monospace;" value="'JetBrains Mono', ui-monospace, monospace">JetBrains Mono</option>
-              <option style="font-family: 'Lora', Georgia, serif;" value="'Lora', Georgia, serif">Lora</option>
-              <option style="font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;" value="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">Systeme</option>
+              <option value="Inter, ui-sans-serif, system-ui, sans-serif">Inter</option>
+              <option value="'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif">IBM Plex Sans</option>
+              <option value="'Poppins', ui-sans-serif, system-ui, sans-serif">Poppins</option>
+              <option value="'JetBrains Mono', ui-monospace, monospace">JetBrains Mono</option>
+              <option value="'Lora', Georgia, serif">Lora</option>
+              <option value="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">Systeme</option>
             </select>
           </label>
 
           <label class="field-group toggle-group">
-            <button id="fontWeightBtn" class="type-btn font-weight-btn" aria-pressed="false">Gras</button>
+            <span class="field-label">Gras</span>
+            <input id="fontWeight" class="field-input toggle" type="checkbox">
           </label>
 
           <label class="field-group">

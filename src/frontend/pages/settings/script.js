@@ -1,29 +1,20 @@
 import { defaultSettings, loadSettings, saveSettings, applyThemeSettings, saveRemoteSettings } from "/lib/settings.js";
 
-// Fields will be bound after DOMContentLoaded to ensure elements exist
-const fields = {};
-
-function bindFields() {
-  fields.backgroundType = document.getElementById("backgroundType");
-  fields.gradientStyle = document.getElementById("gradientStyle");
-  fields.gradientOrientation = document.getElementById("gradientOrientation");
-  fields.color1 = document.getElementById("color1");
-  fields.color2 = document.getElementById("color2");
-  fields.solidColor = document.getElementById("solidColor");
-  fields.btnLinear = document.getElementById("btnLinear");
-  fields.btnRadial = document.getElementById("btnRadial");
-  fields.fontFamily = document.getElementById("fontFamily");
-  fields.fontWeight = document.getElementById("fontWeight");
-  fields.fontWeightBtn = document.getElementById("fontWeightBtn");
-  fields.fontSize = document.getElementById("fontSize");
-  fields.fontSizeValue = document.getElementById("fontSizeValue");
-  fields.saveButton = document.getElementById("saveSettings");
-  fields.resetButton = document.getElementById("resetSettings");
-  fields.preview = document.getElementById("settingsPreview");
-  fields.btnGradient = document.getElementById("btnGradient");
-  fields.btnSolid = document.getElementById("btnSolid");
-  fields.arrowButtons = Array.from(document.querySelectorAll(".arrow-btn"));
-}
+const fields = {
+  backgroundType: document.getElementById("backgroundType"),
+  gradientStyle: document.getElementById("gradientStyle"),
+  gradientOrientation: document.getElementById("gradientOrientation"),
+  color1: document.getElementById("color1"),
+  color2: document.getElementById("color2"),
+  solidColor: document.getElementById("solidColor"),
+  fontFamily: document.getElementById("fontFamily"),
+  fontWeight: document.getElementById("fontWeight"),
+  fontSize: document.getElementById("fontSize"),
+  fontSizeValue: document.getElementById("fontSizeValue"),
+  saveButton: document.getElementById("saveSettings"),
+  resetButton: document.getElementById("resetSettings"),
+  preview: document.getElementById("settingsPreview"),
+};
 
 function getCurrentSettings() {
   return {
@@ -44,24 +35,6 @@ function syncSolidFieldVisibility() {
   document.querySelectorAll(".solid-field").forEach((node) => {
     node.style.display = showSolid ? "grid" : "none";
   });
-  // show/hide gradient controls
-  const isGradient = fields.backgroundType.value === "gradient";
-  document.querySelectorAll(".style-group").forEach((n) => (n.style.display = isGradient ? "grid" : "none"));
-  document.querySelectorAll(".orientation-group").forEach((n) => (n.style.display = isGradient ? "grid" : "none"));
-  document.querySelectorAll(".gradient-only").forEach((n) => (n.style.display = isGradient ? "grid" : "none"));
-}
-
-function updateTypeButtons() {
-  if (!fields.btnGradient || !fields.btnSolid) return;
-  const t = fields.backgroundType.value;
-  fields.btnGradient.setAttribute("aria-pressed", t === "gradient" ? "true" : "false");
-  fields.btnSolid.setAttribute("aria-pressed", t === "solid" ? "true" : "false");
-}
-
-function setOrientationActive(orient) {
-  fields.arrowButtons.forEach((b) => {
-    b.classList.toggle("active", b.dataset.orient === orient);
-  });
 }
 
 function renderPreview(settings) {
@@ -77,18 +50,6 @@ function renderPreview(settings) {
   card.style.color = settings.backgroundType === "solid" ? "#f7fbff" : "#ffffff";
   card.style.fontFamily = settings.fontFamily;
   card.style.fontWeight = settings.fontWeight;
-  // mini preview
-  const mini = document.getElementById("miniGradientPreview");
-  if (mini) {
-    mini.style.setProperty("--c1", settings.color1);
-    mini.style.setProperty("--c2", settings.color2);
-    mini.dataset.type = settings.gradientStyle;
-    if (settings.gradientStyle === "linear" && settings.backgroundType === "gradient") {
-      mini.classList.add("animate-linear");
-    } else {
-      mini.classList.remove("animate-linear");
-    }
-  }
 }
 
 function populateForm(settings) {
@@ -100,16 +61,9 @@ function populateForm(settings) {
   fields.solidColor.value = settings.solidColor;
   fields.fontFamily.value = settings.fontFamily;
   fields.fontWeight.checked = settings.fontWeight === "700";
-  if (fields.fontWeightBtn) fields.fontWeightBtn.setAttribute("aria-pressed", settings.fontWeight === "700" ? "true" : "false");
   fields.fontSize.value = settings.fontSize;
   fields.fontSizeValue.textContent = `${settings.fontSize}px`;
   syncSolidFieldVisibility();
-  updateTypeButtons();
-  setOrientationActive(settings.gradientOrientation || "0deg");
-  if (fields.btnLinear && fields.btnRadial) {
-    fields.btnLinear.setAttribute("aria-pressed", settings.gradientStyle === "linear" ? "true" : "false");
-    fields.btnRadial.setAttribute("aria-pressed", settings.gradientStyle === "radial" ? "true" : "false");
-  }
   renderPreview(settings);
 }
 
@@ -130,65 +84,10 @@ function resetToDefaults() {
 }
 
 function wireEvents() {
-  // wire individual inputs (only real HTMLElements)
   Object.values(fields).forEach((input) => {
-    if (!(input instanceof HTMLElement)) return;
-    if (input.tagName === "BUTTON" || input.tagName === "OUTPUT") return;
-    const eventType = input === fields.fontSize ? "input" : "change";
-    input.addEventListener(eventType, () => {
-      if (input === fields.fontSize) {
-        fields.fontSizeValue.textContent = `${Number(fields.fontSize.value)}px`;
-        // pulse effect
-        fields.fontSizeValue.classList.add("pulse");
-        clearTimeout(fields._pulseTimeout);
-        fields._pulseTimeout = setTimeout(() => fields.fontSizeValue.classList.remove("pulse"), 200);
-      }
-      handleFieldChange();
-    });
-  });
-
-  // type toggle buttons
-  fields.btnGradient?.addEventListener("click", () => {
-    fields.backgroundType.value = "gradient";
-    updateTypeButtons();
-    syncSolidFieldVisibility();
-    handleFieldChange();
-  });
-  fields.btnSolid?.addEventListener("click", () => {
-    fields.backgroundType.value = "solid";
-    updateTypeButtons();
-    syncSolidFieldVisibility();
-    handleFieldChange();
-  });
-
-  // gradient style buttons (linear / radial)
-  fields.btnLinear?.addEventListener("click", () => {
-    fields.gradientStyle.value = "linear";
-    fields.btnLinear.setAttribute("aria-pressed", "true");
-    fields.btnRadial?.setAttribute("aria-pressed", "false");
-    handleFieldChange();
-  });
-  fields.btnRadial?.addEventListener("click", () => {
-    fields.gradientStyle.value = "radial";
-    fields.btnRadial.setAttribute("aria-pressed", "true");
-    fields.btnLinear?.setAttribute("aria-pressed", "false");
-    handleFieldChange();
-  });
-
-  // font weight big button
-  fields.fontWeightBtn?.addEventListener("click", () => {
-    const isNow = fields.fontWeightBtn.getAttribute("aria-pressed") === "true" ? "false" : "true";
-    fields.fontWeightBtn.setAttribute("aria-pressed", isNow);
-    fields.fontWeight.checked = isNow === "true";
-    handleFieldChange();
-  });
-
-  // arrow orientation buttons
-  fields.arrowButtons.forEach((b) => {
-    b.addEventListener("click", () => {
-      const o = b.dataset.orient;
-      fields.gradientOrientation.value = o;
-      setOrientationActive(o);
+    if (!input || input.tagName === "BUTTON" || input.tagName === "OUTPUT") return;
+    input.addEventListener("change", () => {
+      fields.fontSizeValue.textContent = `${Number(fields.fontSize.value)}px`;
       handleFieldChange();
     });
   });
@@ -209,7 +108,6 @@ function wireEvents() {
 }
 
 function initSettingsPage() {
-  bindFields();
   const settings = loadSettings();
   populateForm(settings);
   wireEvents();

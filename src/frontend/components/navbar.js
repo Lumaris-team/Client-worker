@@ -8,6 +8,7 @@ const NAV_ITEMS = [
   { slug: "websites", label: "Websites", href: "/pages/websites", icon: "web" },
   { slug: "files", label: "Files", href: "/pages/files", icon: "database" },
   { slug: "tools", label: "Tools", href: "/pages/tools", icon: "wrench" },
+  { slug: "settings", label: "Settings", href: "/pages/settings", icon: "settings" },
 ];
  
 const ICONS = {

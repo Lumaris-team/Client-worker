@@ -2,12 +2,12 @@ import { ensureSessionToken } from "/lib/auth.js";
 
 const STORAGE_KEY = "dashboard_settings";
 const DEFAULT_SETTINGS = {
-  backgroundType: "solid",
+  backgroundType: "gradient",
   gradientStyle: "linear",
   gradientOrientation: "135deg",
-  color1: "#000000",
-  color2: "#000000",
-  solidColor: "#000000",
+  color1: "#0b3f91",
+  color2: "#1c8cff",
+  solidColor: "#08100f",
   fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif",
   fontWeight: "500",
   fontSize: 16,
