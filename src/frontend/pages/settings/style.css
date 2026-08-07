@@ -47,17 +47,20 @@ body {
 .settings-preview {
   display: grid;
   place-items: center;
+  padding-right: 18px; /* évite que la carte aille trop à droite */
 }
 
 .preview-card {
   width: 100%;
+  max-width: 360px;
   min-height: 240px;
   padding: 28px;
   border-radius: 32px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.18);
-  backdrop-filter: blur(28px);
+  /* Use bento-block visuals when present */
+  background: var(--preview-bg, rgba(255, 255, 255, 0.05));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.16);
+  backdrop-filter: blur(20px);
 }
 
 .preview-badge {
@@ -94,9 +97,10 @@ body {
 .settings-panel {
   padding: 26px;
   border-radius: 28px;
-  border: 1px solid var(--settings-panel-border);
-  background: var(--settings-panel);
-  box-shadow: 0 22px 46px rgba(0, 0, 0, 0.2);
+  /* let .bento-block provide the frosted background/border/box-shadow */
+  background: transparent;
+  border: none;
+  box-shadow: none;
   display: grid;
   gap: 18px;
 }
@@ -160,12 +164,64 @@ body {
 }
 
 .toggle {
-  width: 100%;
-  height: 44px;
+  width: 64px;
+  height: 36px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
+  border-radius: 999px;
+  position: relative;
+  cursor: pointer;
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 6px 18px rgba(2,8,23,0.25) inset;
 }
+
+.toggle::after {
+  content: "";
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: white;
+  transform: translateX(0);
+  transition: transform 180ms ease, background 180ms ease;
+}
+
+.toggle:checked {
+  background: linear-gradient(90deg, #60a3ff 0%, #88d3ff 100%);
+  border-color: rgba(96,163,255,0.8);
+}
+
+.toggle:checked::after {
+  transform: translateX(28px);
+  background: white;
 
 .range {
   width: 100%;
+}
+
+/* Ensure range fits inside the block and the output stays visible */
+.field-group { box-sizing: border-box; }
+.field-group .range { box-sizing: border-box; width: 100%; }
+.field-group .range::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 4px 8px rgba(0,0,0,0.2); border: 1px solid rgba(0,0,0,0.08); }
+.field-group .range::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 4px 8px rgba(0,0,0,0.2); border: 1px solid rgba(0,0,0,0.08); }
+
+/* Layout the range and its value horizontally to avoid overflow */
+.field-group .range + output {
+  margin-left: 12px;
+  min-width: 54px;
+  color: var(--settings-text);
+  font-weight: 700;
+}
+
+/* Specific layout for the font size control */
+label.field-group > .field-label:only-child { margin-bottom: 8px; }
+label.field-group:has(.range) {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 #fontSizeValue {
