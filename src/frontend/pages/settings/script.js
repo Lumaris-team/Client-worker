@@ -1,26 +1,29 @@
 import { defaultSettings, loadSettings, saveSettings, applyThemeSettings, saveRemoteSettings } from "/lib/settings.js";
 
-const fields = {
-  backgroundType: document.getElementById("backgroundType"),
-  gradientStyle: document.getElementById("gradientStyle"),
-  gradientOrientation: document.getElementById("gradientOrientation"),
-  color1: document.getElementById("color1"),
-  color2: document.getElementById("color2"),
-  solidColor: document.getElementById("solidColor"),
-  btnLinear: document.getElementById("btnLinear"),
-  btnRadial: document.getElementById("btnRadial"),
-  fontFamily: document.getElementById("fontFamily"),
-  fontWeight: document.getElementById("fontWeight"),
-  fontWeightBtn: document.getElementById("fontWeightBtn"),
-  fontSize: document.getElementById("fontSize"),
-  fontSizeValue: document.getElementById("fontSizeValue"),
-  saveButton: document.getElementById("saveSettings"),
-  resetButton: document.getElementById("resetSettings"),
-  preview: document.getElementById("settingsPreview"),
-  btnGradient: document.getElementById("btnGradient"),
-  btnSolid: document.getElementById("btnSolid"),
-  arrowButtons: Array.from(document.querySelectorAll(".arrow-btn")),
-};
+// Fields will be bound after DOMContentLoaded to ensure elements exist
+const fields = {};
+
+function bindFields() {
+  fields.backgroundType = document.getElementById("backgroundType");
+  fields.gradientStyle = document.getElementById("gradientStyle");
+  fields.gradientOrientation = document.getElementById("gradientOrientation");
+  fields.color1 = document.getElementById("color1");
+  fields.color2 = document.getElementById("color2");
+  fields.solidColor = document.getElementById("solidColor");
+  fields.btnLinear = document.getElementById("btnLinear");
+  fields.btnRadial = document.getElementById("btnRadial");
+  fields.fontFamily = document.getElementById("fontFamily");
+  fields.fontWeight = document.getElementById("fontWeight");
+  fields.fontWeightBtn = document.getElementById("fontWeightBtn");
+  fields.fontSize = document.getElementById("fontSize");
+  fields.fontSizeValue = document.getElementById("fontSizeValue");
+  fields.saveButton = document.getElementById("saveSettings");
+  fields.resetButton = document.getElementById("resetSettings");
+  fields.preview = document.getElementById("settingsPreview");
+  fields.btnGradient = document.getElementById("btnGradient");
+  fields.btnSolid = document.getElementById("btnSolid");
+  fields.arrowButtons = Array.from(document.querySelectorAll(".arrow-btn"));
+}
 
 function getCurrentSettings() {
   return {
@@ -206,6 +209,7 @@ function wireEvents() {
 }
 
 function initSettingsPage() {
+  bindFields();
   const settings = loadSettings();
   populateForm(settings);
   wireEvents();
