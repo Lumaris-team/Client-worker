@@ -103,6 +103,7 @@ function setupPasswordToggle() {
 async function startOAuth(provider, button) {
   clearMessage();
   setBusy(button, true);
+  console.debug('startOAuth', provider);
   try {
     if (!(await passTurnstile())) {
       throw new Error("Human verification failed, please try again.");
@@ -125,13 +126,14 @@ function renderProviders() {
     button.className = "auth-provider";
     button.dataset.provider = provider;
     button.innerHTML = `<span class="auth-provider-icon">${meta.icon}</span><span class="auth-provider-label">${meta.label}</span>`;
-    button.addEventListener("click", () => startOAuth(provider, button));
+    button.addEventListener("click", (ev) => { console.debug('provider click', provider); startOAuth(provider, button); });
     providersEl.appendChild(button);
   }
 }
 
 emailForm.addEventListener("submit", async (event) => {
   event.preventDefault();
+  console.debug('emailForm submit');
   clearMessage();
 
   const button = emailForm.querySelector('[data-action="signin"]');
@@ -183,9 +185,11 @@ function setFormDisabled(disabled) {
 // Verify the required env variables exist before allowing any login attempt.
 // If they are missing, disable the form and tell the user exactly what's wrong.
 async function init() {
+  console.debug('auth init');
   // Already recognised on this device? Skip the form and go straight in.
   if (await redirectIfAuthenticated()) return;
   document.documentElement.removeAttribute("data-auth-pending");
+  console.debug('removed data-auth-pending');
 
   renderProviders();
   setupPasswordToggle();

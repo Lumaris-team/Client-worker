@@ -51,7 +51,7 @@ body {
 
 .preview-card {
   width: 100%;
-  min-height: 240px;
+  /* let HTML/content control height for alignment */
   padding: 28px;
   border-radius: 32px;
   background: rgba(255, 255, 255, 0.05);
@@ -296,33 +296,7 @@ input[type="range"]:focus::-webkit-slider-runnable-track {
 }
 
 .mini-preview {
-  width: 48px;
-  height: 24px;
-  border-radius: 8px;
-  margin-bottom: 8px;
-  box-shadow: 0 6px 18px rgba(0,0,0,0.12) inset;
-}
-
-.mini-preview {
-  position: relative;
-  overflow: hidden;
-}
-.mini-preview::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: 8px;
-  background: linear-gradient(90deg, var(--c1, #0b3f91) 0%, var(--c2, #1c8cff) 100%);
-  transform-origin: center;
-  transition: opacity 240ms ease;
-}
-.mini-preview.animate-linear::before {
-  animation: mini-rotate 3s linear infinite;
-}
-@keyframes mini-rotate {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
+/* mini-preview removed — handled by preview-card only */
 
 @media (max-width: 720px) {
   .field-group:has(input[type="range"]) { flex-direction: column; align-items: stretch; }
