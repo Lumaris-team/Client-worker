@@ -1,4 +1,15 @@
 import { defaultSettings, loadSettings, saveSettings, applyThemeSettings, saveRemoteSettings } from "/lib/settings.js";
+import { loadIcons } from "/lib/icons.js";
+import { authedFetch } from "/lib/auth.js";
+
+const statsData = {
+  aiUsage: 12,
+  aiLimit: 20,
+  storageCapacity: 20,
+  storageTotal: 8.5,
+  storageFiles: 5.3,
+  storageNotes: 3.2,
+};
 
 const fields = {
   backgroundType: document.getElementById("backgroundType"),
@@ -15,13 +26,17 @@ const fields = {
   orient135: document.getElementById("orient135"),
   bgGradientBtn: document.getElementById("bgGradient"),
   bgSolidBtn: document.getElementById("bgSolid"),
+  personalizationBtn: document.getElementById("personalization-btn"),
+  statisticsBtn: document.getElementById("statistics-btn"),
+  statsTemplate: document.getElementById("statistics-panel-template"),
+  pageMain: document.querySelector("main.settings-shell"),
+  settingsPreview: document.getElementById("settingsPreview"),
   fontFamily: document.getElementById("fontFamily"),
   fontWeight: document.getElementById("fontWeight"),
   fontSize: document.getElementById("fontSize"),
   fontSizeValue: document.getElementById("fontSizeValue"),
   saveButton: document.getElementById("saveSettings"),
   resetButton: document.getElementById("resetSettings"),
-  preview: document.getElementById("settingsPreview"),
 };
 
 function getCurrentSettings() {
@@ -97,8 +112,8 @@ function syncGradientStyleVisibility() {
 }
 
 function renderPreview(settings) {
-  if (!fields.preview) return;
-  const card = fields.preview.querySelector(".preview-card");
+  if (!fields.settingsPreview) return;
+  const card = fields.settingsPreview.querySelector(".preview-card");
   if (!card) return;
   card.style.background =
     settings.backgroundType === "solid"
@@ -175,6 +190,11 @@ function wireEvents() {
     });
   }
 
+  if (fields.personalizationBtn && fields.statisticsBtn) {
+    fields.personalizationBtn.addEventListener('click', () => showView('personalization'));
+    fields.statisticsBtn.addEventListener('click', () => showView('statistics'));
+  }
+
   // Gradient style toggle buttons handlers
   if (fields.gradientLinearBtn && fields.gradientRadialBtn && fields.gradientStyle) {
     fields.gradientLinearBtn.addEventListener('click', () => {
@@ -241,10 +261,118 @@ function wireEvents() {
   });
 }
 
+async function fetchStatsData() {
+  try {
+    const response = await authedFetch("/api/stats", { method: "GET" });
+    if (!response.ok) return null;
+    const payload = await response.json();
+    return payload?.resp ?? payload ?? null;
+  } catch (error) {
+    console.warn("Unable to fetch stats data:", error);
+    return null;
+  }
+}
+
+function createStatsPanel(stats) {
+  if (!fields.statsTemplate) return null;
+  const clone = fields.statsTemplate.content.firstElementChild.cloneNode(true);
+  if (!clone) return null;
+
+  const aiUsageNode = clone.querySelector(".stats-row strong");
+  if (aiUsageNode && stats?.aiUsage) {
+    aiUsageNode.textContent = `${stats.aiUsage.used} / ${stats.aiUsage.limit} requests`;
+  }
+
+  const storageValue = clone.querySelector(".storage-center span");
+  const storageSubtitle = clone.querySelector(".storage-center small");
+  if (storageValue && stats?.storage) {
+    storageValue.textContent = `${(stats.storage.totalBytes / 1024 / 1024 / 1024).toFixed(1)} GB`;
+  }
+  if (storageSubtitle && stats?.storage) {
+    storageSubtitle.textContent = `of ${stats.storage.capacityGB} GB used`;
+  }
+
+  const filesLegend = clone.querySelector(".legend-item .legend-dot.files")?.parentElement;
+  const notesLegend = clone.querySelector(".legend-item .legend-dot.notes")?.parentElement;
+  if (filesLegend && stats?.storage?.items) {
+    const filesItem = stats.storage.items.find((item) => item.key === "files/");
+    filesLegend.innerHTML = `<span class="legend-dot files"></span> ${filesItem?.label ?? "lumaris/files/"} — ${(filesItem?.bytes ?? 0) / 1024 / 1024 / 1024} GB`;
+  }
+  if (notesLegend && stats?.storage?.items) {
+    const notesItem = stats.storage.items.find((item) => item.key === "study-notes/");
+    notesLegend.innerHTML = `<span class="legend-dot notes"></span> ${notesItem?.label ?? "lumaris/study-notes/"} — ${(notesItem?.bytes ?? 0) / 1024 / 1024 / 1024} GB`;
+  }
+
+  updateStorageRing(clone, stats);
+  return clone;
+}
+
+function updateStorageRing(panel, stats) {
+  const circumference = 339.292;
+  const totalBytes = stats?.storage?.totalBytes || 0;
+  const filesBytes = stats?.storage?.items?.find((item) => item.key === "files/")?.bytes || 0;
+  const notesBytes = stats?.storage?.items?.find((item) => item.key === "study-notes/")?.bytes || 0;
+  const filesPct = totalBytes ? Math.min(filesBytes / totalBytes, 1) : 0;
+  const notesPct = totalBytes ? Math.min(notesBytes / totalBytes, 1 - filesPct) : 0;
+  const filesOffset = circumference * (1 - filesPct);
+  const notesOffset = circumference * (1 - filesPct - notesPct);
+
+  const filesCircle = panel.querySelector('.ring-files');
+  const notesCircle = panel.querySelector('.ring-notes');
+  if (filesCircle) {
+    filesCircle.setAttribute('stroke-dasharray', `${circumference}`);
+    filesCircle.setAttribute('stroke-dashoffset', `${filesOffset}`);
+  }
+  if (notesCircle) {
+    notesCircle.setAttribute('stroke-dasharray', `${circumference}`);
+    notesCircle.setAttribute('stroke-dashoffset', `${notesOffset}`);
+  }
+}
+
+let statsPanel = null;
+
+async function showView(view) {
+  if (!fields.pageMain) return;
+
+  const isPersonalization = view === 'personalization';
+  const personalizationBtn = fields.personalizationBtn;
+  const statisticsBtn = fields.statisticsBtn;
+
+  if (personalizationBtn) {
+    personalizationBtn.dataset.active = isPersonalization ? 'true' : 'false';
+    personalizationBtn.classList.toggle('active', isPersonalization);
+  }
+  if (statisticsBtn) {
+    statisticsBtn.dataset.active = !isPersonalization ? 'true' : 'false';
+    statisticsBtn.classList.toggle('active', !isPersonalization);
+  }
+
+  fields.pageMain.style.display = isPersonalization ? '' : 'none';
+
+  if (!isPersonalization) {
+    if (!statsPanel) {
+      const stats = await fetchStatsData();
+      statsPanel = createStatsPanel(stats);
+      if (statsPanel && fields.pageMain) {
+        fields.pageMain.insertAdjacentElement('afterend', statsPanel);
+      }
+    }
+    if (statsPanel) statsPanel.style.display = '';
+  } else if (statsPanel) {
+    statsPanel.style.display = 'none';
+  }
+}
+
+function loadSettingsIcons() {
+  loadIcons('.settings-icon[data-icon]').catch(() => undefined);
+}
+
 function initSettingsPage() {
   const settings = loadSettings();
   populateForm(settings);
   wireEvents();
+  loadSettingsIcons();
+  showView('personalization');
 }
 
 document.addEventListener("DOMContentLoaded", initSettingsPage);

@@ -27,6 +27,15 @@
   <body>
     <site-navbar current="settings"></site-navbar>
 
+    <aside class="settings-sidebar" aria-label="Settings sections">
+      <button class="settings-nav" type="button" id="personalization-btn" aria-label="Personalization" data-active="true">
+        <span class="settings-icon" data-icon="/assets/icons/personalization.svg"></span>
+      </button>
+      <button class="settings-nav" type="button" id="statistics-btn" aria-label="Statistics">
+        <span class="settings-icon" data-icon="/assets/icons/statistics.svg"></span>
+      </button>
+    </aside>
+
     <main class="settings-shell">
       <div class="settings-hero-copy bento-block">
         <span class="block-eyebrow">Settings</span>
@@ -143,6 +152,39 @@
         <button id="resetSettings" class="button secondary">Reset</button>
       </div>
     </main>
+
+    <template id="statistics-panel-template">
+      <aside class="settings-sidebar-panel bento-block" aria-label="Statistics overview">
+        <div class="panel-header">
+          <span class="block-eyebrow">Statistics</span>
+          <h2>AI limits & storage</h2>
+        </div>
+        <div class="stats-card">
+          <div class="stats-row">
+            <div>
+              <span class="stats-label">Daily AI Usage</span>
+              <strong>12 / 20 requests</strong>
+            </div>
+            <div class="stats-limit-chip">AI limit</div>
+          </div>
+          <div class="storage-chart" aria-hidden="true">
+            <svg viewBox="0 0 120 120" class="storage-ring">
+              <circle class="ring-bg" cx="60" cy="60" r="54" />
+              <circle class="ring-files" cx="60" cy="60" r="54" stroke-dasharray="339.292" stroke-dashoffset="169.646" />
+              <circle class="ring-notes" cx="60" cy="60" r="54" stroke-dasharray="339.292" stroke-dashoffset="251.571" />
+            </svg>
+            <div class="storage-center">
+              <span>8.5 GB</span>
+              <small>of 20 GB used</small>
+            </div>
+          </div>
+          <div class="storage-legend">
+            <div class="legend-item"><span class="legend-dot files"></span> lumaris/files/ — 5.3 GB</div>
+            <div class="legend-item"><span class="legend-dot notes"></span> lumaris/study-notes/ — 3.2 GB</div>
+          </div>
+        </div>
+      </aside>
+    </template>
 
     <script type="module" src="/pages/settings/script.js"></script>
   </body>

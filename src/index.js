@@ -12,6 +12,7 @@ import { FilesFunction, initializeFolderArchitecture } from "./backend/database/
 import { StudyNotesFunction } from "./backend/database/study_notes.js";
 import { ToolsFunction } from "./backend/tools/index.js";
 import { SettingsFunction } from "./backend/settings.js";
+import { StatsFunction } from "./backend/api_stats.js";
   
 import { sendMail } from "./backend/notifications/mail.js";
 
@@ -151,6 +152,8 @@ export default {
           resp = await FilesFunction(env, url.pathname.slice("/api/files/".length), method, body);
         } else if (url.pathname.startsWith("/api/study-notes/")) {
           resp = await StudyNotesFunction(env, url.pathname.slice("/api/study-notes/".length), method, body);
+        } else if (url.pathname === "/api/stats" || url.pathname === "/api/stats/") {
+          resp = await StatsFunction(env);
         } else if (url.pathname.startsWith("/api/settings")) {
           resp = await SettingsFunction(env, url.pathname.slice("/api/settings".length), method, body, session.payload);
         };
