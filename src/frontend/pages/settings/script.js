@@ -44,14 +44,10 @@ function syncSolidFieldVisibility() {
   document.querySelectorAll(".solid-field").forEach((node) => {
     node.style.display = showSolid ? "grid" : "none";
   });
-
   // hide/disable gradient-related controls when solid is selected
-  const gradientGroups = [];
-  if (fields.gradientStyle) gradientGroups.push(fields.gradientStyle);
-  if (fields.gradientOrientation) gradientGroups.push(fields.gradientOrientation);
-  if (fields.color2) gradientGroups.push(fields.color2);
-
-  gradientGroups.forEach((ctrl) => {
+  const gradientControls = [fields.gradientStyle, fields.gradientOrientation, fields.color1, fields.color2];
+  gradientControls.forEach((ctrl) => {
+    if (!ctrl) return;
     const group = ctrl.closest('.field-group');
     if (!group) return;
     if (showSolid) {
@@ -64,6 +60,20 @@ function syncSolidFieldVisibility() {
       group.removeAttribute('aria-hidden');
     }
   });
+
+  // hide the whole color-row (Color 1 / Color 2) when solid is selected
+  const colorRow = document.querySelector('.color-row');
+  if (colorRow) {
+    colorRow.style.display = showSolid ? 'none' : 'grid';
+    if (showSolid) {
+      // disable individual inputs to avoid them being sent accidentally
+      if (fields.color1) fields.color1.disabled = true;
+      if (fields.color2) fields.color2.disabled = true;
+    } else {
+      if (fields.color1) fields.color1.disabled = false;
+      if (fields.color2) fields.color2.disabled = false;
+    }
+  }
   // after showing/hiding gradient controls, ensure orientation matches gradient style
   syncGradientStyleVisibility();
 }
@@ -242,7 +252,7 @@ document.addEventListener("DOMContentLoaded", initSettingsPage);
 /* Helpers: update the .color-swatch element background to match input value */
 function updateColorSwatch(input) {
   try {
-    const parent = input.closest('.color-field');
+    const parent = input.closest('.color-field') || input.closest('.solid-field');
     if (!parent) return;
     const swatch = parent.querySelector('.color-swatch');
     if (!swatch) return;

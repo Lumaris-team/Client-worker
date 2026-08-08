@@ -434,13 +434,13 @@ async function iconFor(name) {
 const NAVBAR_TEMPLATE = `
   <div class="bar">
     <div class="inner">
-      <a class="brand" data-home-link href="/pages/home" aria-label="Aller à l'accueil">
+      <a class="brand" data-home-link href="/pages/home" aria-label="Go to home">
         <span class="brand-icon-wrap">
           <img class="brand-icon" src="/assets/logo/logo.png" alt="Dashboard">
         </span>
       </a>
 
-      <div class="center" role="navigation" aria-label="Navigation des features">
+      <div class="center" role="navigation" aria-label="Feature navigation">
         <div class="center-scroll" data-center-scroll tabindex="0">
           <div class="feature-list">
             ${NAV_ITEMS.map((item) => `
@@ -454,17 +454,17 @@ const NAVBAR_TEMPLATE = `
       </div>
 
       <div class="right">
-        <button class="quick" data-kind="refresh" type="button" aria-label="Rafraîchir la page">
+        <button class="quick" data-kind="refresh" type="button" aria-label="Refresh page">
           <span class="action-icon" data-icon="${ICONS.refresh}"></span>
         </button>
 
-        <a class="quick" data-kind="settings" href="/pages/settings" aria-label="Ouvrir les paramètres">
+        <a class="quick" data-kind="settings" href="/pages/settings" aria-label="Open settings">
           <span class="action-icon" data-icon="${ICONS.settings}"></span>
         </a>
-        <button class="quick" data-kind="logout" type="button" aria-label="Se déconnecter">
+        <button class="quick" data-kind="logout" type="button" aria-label="Log out">
           <span class="action-icon" data-icon="${ICONS.logout}"></span>
         </button>
-        <button class="quick more-toggle" data-kind="more" type="button" aria-label="Plus d'options" aria-expanded="false">
+        <button class="quick more-toggle" data-kind="more" type="button" aria-label="More options" aria-expanded="false">
           <span class="action-icon" data-icon="${ICONS.more}"></span>
         </button>
       </div>

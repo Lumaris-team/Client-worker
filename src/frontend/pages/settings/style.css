@@ -295,6 +295,8 @@ body {
   border: none;
   opacity: 0;
   cursor: pointer;
+.color-field .field-input[type="color"] {
+}
 
 /* Make the solid color field visually match color-field swatches */
 .solid-field {
@@ -321,7 +323,6 @@ body {
   border: none;
   opacity: 0;
   cursor: pointer;
-}
 }
 
 .solid-field {
