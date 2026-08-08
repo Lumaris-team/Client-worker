@@ -28,27 +28,24 @@
     <site-navbar current="settings"></site-navbar>
 
     <main class="settings-shell">
-      <section class="settings-hero">
-        <div class="settings-hero-copy bento-block">
-          <span class="block-eyebrow">Settings</span>
-          <h1>Customize your experience</h1>
-          <p>Change the background, gradient orientation, transition style, and typography across the Dashboard.</p>
+      <div class="settings-hero-copy bento-block">
+        <span class="block-eyebrow">Settings</span>
+        <h1>Customize your experience</h1>
+        <p>Change the background, gradient orientation, transition style, and typography across the Dashboard.</p>
+      </div>
+      <div class="settings-preview" id="settingsPreview">
+        <div class="preview-card bento-block">
+          <div class="preview-badge">Preview</div>
+          <h2>Dashboard theme</h2>
+          <p>Settings apply to all pages immediately.</p>
         </div>
-        <div class="settings-preview" id="settingsPreview">
-          <div class="preview-card bento-block">
-            <div class="preview-badge">Preview</div>
-            <h2>Dashboard theme</h2>
-            <p>Settings apply to all pages immediately.</p>
-          </div>
-        </div>
-      </section>
+      </div>
 
-      <section class="settings-grid">
-        <article class="settings-panel bento-block">
-          <div class="panel-header">
-            <span class="block-eyebrow">Background</span>
-            <h2>Background & colors</h2>
-          </div>
+      <article class="settings-panel bento-block">
+        <div class="panel-header">
+          <span class="block-eyebrow">Background</span>
+          <h2>Background & colors</h2>
+        </div>
 
           <label class="field-group">
             <span class="field-label">Type</span>
@@ -104,18 +101,18 @@
             </label>
           </div>
 
-          <label class="field-group solid-field">
+          <label class="field-group color-field solid-field">
             <span class="field-label">Solid color</span>
             <div class="color-swatch" aria-hidden="true"></div>
             <input id="solidColor" class="field-input" type="color" value="#08100f">
           </label>
         </article>
 
-        <article class="settings-panel bento-block">
-          <div class="panel-header">
-            <span class="block-eyebrow">Text</span>
-            <h2>Typography & hierarchy</h2>
-          </div>
+      <article class="settings-panel bento-block">
+        <div class="panel-header">
+          <span class="block-eyebrow">Text</span>
+          <h2>Typography & hierarchy</h2>
+        </div>
 
           <label class="field-group">
             <span class="field-label">Font</span>
@@ -139,8 +136,7 @@
             <input id="fontSize" class="field-input range" type="range" min="14" max="28" step="1" value="16">
             <output id="fontSizeValue">16px</output>
           </label>
-        </article>
-      </section>
+      </article>
 
       <div class="settings-actions">
         <button id="saveSettings" class="button primary">Save</button>

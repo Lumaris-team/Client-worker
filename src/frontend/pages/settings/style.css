@@ -16,19 +16,24 @@ body {
   width: min(1180px, calc(100vw - 32px));
   margin: 108px auto 64px;
   display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: 28px;
 }
 
-.settings-hero {
-  display: grid;
-  gap: 24px;
-  /* Make right column shrinkable to avoid overflow */
-  grid-template-columns: minmax(0, 1fr) minmax(0, 360px);
-  align-items: center;
+.settings-shell > * {
+  min-width: 0;
 }
 
 .settings-hero-copy {
-  max-width: 760px;
+  max-width: 720px;
+}
+
+.settings-preview {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  box-sizing: border-box;
+  justify-self: stretch;
 }
 
 .settings-hero-copy h1 {
@@ -103,6 +108,7 @@ body {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 24px;
+  width: 100%;
 }
 
 .settings-panel {
@@ -275,7 +281,12 @@ body {
   position: relative;
 }
 
-.color-field .color-swatch {
+.color-field, .solid-field {
+  position: relative;
+}
+
+.color-field .color-swatch,
+.solid-field .color-swatch {
   display: block;
   height: 56px;
   width: 100%;
@@ -285,34 +296,7 @@ body {
   background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.06));
 }
 
-.color-field .field-input[type="color"] {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 56px;
-  padding: 0;
-  border-radius: 20px;
-  border: none;
-  opacity: 0;
-  cursor: pointer;
-.color-field .field-input[type="color"] {
-}
-
-/* Make the solid color field visually match color-field swatches */
-.solid-field {
-  position: relative;
-}
-
-.solid-field .color-swatch {
-  display: block;
-  height: 56px;
-  width: 100%;
-  border-radius: 20px;
-  box-sizing: border-box;
-  border: 1px solid var(--settings-input-border);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(0, 0, 0, 0.06));
-}
-
+.color-field .field-input[type="color"],
 .solid-field .field-input[type="color"] {
   position: absolute;
   inset: 0;
@@ -323,6 +307,11 @@ body {
   border: none;
   opacity: 0;
   cursor: pointer;
+}
+
+/* Keep solid-field hidden until solid mode is active */
+.solid-field {
+  display: none;
 }
 
 .solid-field {
@@ -368,6 +357,7 @@ body {
 .toggle:checked::after {
   transform: translateX(28px);
   background: white;
+}
 
 .range {
   width: 100%;
@@ -447,6 +437,13 @@ label.field-group.range-group .field-input.range { flex: 1 1 auto; }
   display: flex;
   justify-content: flex-end;
   gap: 16px;
+  width: 100%;
+  grid-column: 1 / -1;
+}
+
+.settings-actions .button {
+  min-width: 140px;
+  width: auto;
 }
 
 .button {
@@ -457,13 +454,14 @@ label.field-group.range-group .field-input.range { flex: 1 1 auto; }
   justify-content: center;
   gap: 8px;
   border: none;
-  border-radius: 14px;
+  border-radius: 18px;
   min-width: 140px;
-  padding: 12px 18px;
+  padding: 14px 22px;
   font-weight: 800;
-  letter-spacing: 0.01em;
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
   cursor: pointer;
-  transition: transform 140ms cubic-bezier(.2,.9,.2,1), background 120ms ease, box-shadow 120ms ease;
+  transition: transform 140ms cubic-bezier(.2,.9,.2,1), background 120ms ease, box-shadow 120ms ease, border-color 120ms ease, color 120ms ease;
 }
 
 .button:hover {
