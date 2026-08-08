@@ -6,7 +6,8 @@
 .websites-sidebar,
 .tools-sidebar,
 .files-sidebar,
-.study-notes-sidebar {
+.study-notes-sidebar,
+.settings-sidebar {
   position: sticky;
   top: calc(var(--navbar-height) + 14px);
   display: flex;
@@ -21,7 +22,8 @@
 .websites-nav,
 .tools-nav,
 .files-nav,
-.study-notes-nav {
+.study-notes-nav,
+.settings-nav {
   width: 56px;
   height: 56px;
   display: grid;
@@ -48,15 +50,10 @@
 .settings-nav svg {
   width: 24px;
   height: 24px;
-  stroke: rgba(255,255,255,0.48);
+  stroke: rgba(255,255,255,0.92);
   fill: none;
-  opacity: 0.85;
-  filter: blur(0.35px);
-}
-
-.settings-nav svg {
-  width: 24px;
-  height: 24px;
+  opacity: 0.95;
+  filter: none;
 }
 
 .ai-nav.active svg,
