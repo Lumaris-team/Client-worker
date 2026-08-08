@@ -52,7 +52,7 @@
   height: 24px;
   stroke: rgba(255,255,255,0.92);
   fill: none;
-  opacity: 0.95;
+  opacity: 0.5;
   filter: none;
 }
 
@@ -65,9 +65,9 @@
 .study-notes-nav[data-active="true"] svg,
 .settings-nav.active svg,
 .settings-nav[data-active="true"] svg {
-  stroke: rgba(255,255,255,0.72);
-  opacity: 0.95;
-  filter: blur(0.2px);
+  stroke: rgba(0,0,0,0.8);
+  opacity: 1;
+  filter: none;
 }
 
 /* Icon container */
@@ -113,7 +113,7 @@
 .files-nav[data-active="true"],
 .study-notes-nav[data-active="true"] {
   color: var(--accent);
-  background: transparent;
+  background: rgba(255, 255, 255, 0.95);
   border-color: transparent;
 }
 
