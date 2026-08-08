@@ -26,7 +26,7 @@ const fields = {
   orient135: document.getElementById("orient135"),
   bgGradientBtn: document.getElementById("bgGradient"),
   bgSolidBtn: document.getElementById("bgSolid"),
-  personalizationBtn: document.getElementById("personalization-btn"),
+  customizationBtn: document.getElementById("customization-btn"),
   statisticsBtn: document.getElementById("statistics-btn"),
   statsTemplate: document.getElementById("statistics-panel-template"),
   pageMain: document.querySelector("main.settings-main"),
@@ -190,8 +190,8 @@ function wireEvents() {
     });
   }
 
-  if (fields.personalizationBtn && fields.statisticsBtn) {
-    fields.personalizationBtn.addEventListener('click', () => showView('personalization'));
+  if (fields.customizationBtn && fields.statisticsBtn) {
+    fields.customizationBtn.addEventListener('click', () => showView('customization'));
     fields.statisticsBtn.addEventListener('click', () => showView('statistics'));
   }
 
@@ -363,22 +363,22 @@ let statsPanel = null;
 async function showView(view) {
   if (!fields.pageMain) return;
 
-  const isPersonalization = view === 'personalization';
-  const personalizationBtn = fields.personalizationBtn;
+  const isCustomization = view === 'customization';
+  const customizationBtn = fields.customizationBtn;
   const statisticsBtn = fields.statisticsBtn;
 
-  if (personalizationBtn) {
-    personalizationBtn.dataset.active = isPersonalization ? 'true' : 'false';
-    personalizationBtn.classList.toggle('active', isPersonalization);
+  if (customizationBtn) {
+    customizationBtn.dataset.active = isCustomization ? 'true' : 'false';
+    customizationBtn.classList.toggle('active', isCustomization);
   }
   if (statisticsBtn) {
-    statisticsBtn.dataset.active = !isPersonalization ? 'true' : 'false';
-    statisticsBtn.classList.toggle('active', !isPersonalization);
+    statisticsBtn.dataset.active = !isCustomization ? 'true' : 'false';
+    statisticsBtn.classList.toggle('active', !isCustomization);
   }
 
-  fields.pageMain.style.display = isPersonalization ? '' : 'none';
+  fields.pageMain.style.display = isCustomization ? '' : 'none';
 
-  if (!isPersonalization) {
+  if (!isCustomization) {
     if (!statsPanel) {
       const stats = await fetchStatsData();
       statsPanel = createStatsPanel(stats);
@@ -401,7 +401,7 @@ function initSettingsPage() {
   populateForm(settings);
   wireEvents();
   loadSettingsIcons();
-  showView('personalization');
+  showView('customization');
 }
 
 document.addEventListener("DOMContentLoaded", initSettingsPage);

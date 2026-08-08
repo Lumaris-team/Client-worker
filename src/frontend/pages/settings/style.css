@@ -522,11 +522,18 @@ label.field-group.range-group .field-input.range { flex: 1 1 auto; }
   font-weight: 600;
 }
 
+.storage-content {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  padding: 20px 0;
+}
+
 .storage-chart {
   position: relative;
-  width: 220px;
-  height: 220px;
-  margin: 0 auto 20px;
+  width: 280px;
+  height: 280px;
+  flex-shrink: 0;
 }
 
 .storage-ring {

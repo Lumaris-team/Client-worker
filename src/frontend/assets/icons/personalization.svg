@@ -1,7 +1,10 @@
 <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-  <circle cx="8" cy="7" r="3" />
-  <path d="M5 20c0-3.314 2.686-6 6-6s6 2.686 6 6" />
-  <line x1="18" y1="6" x2="22" y2="6" />
-  <line x1="18" y1="10" x2="22" y2="10" />
-  <line x1="18" y1="14" x2="22" y2="14" />
+  <path d="M14.5 4c0 1.657-1.343 3-3 3s-3-1.343-3-3 1.343-3 3-3 3 1.343 3 3z" />
+  <path d="M14.5 4l5.5 5.5-7 7-5.5-5.5 7-7z" />
+  <path d="M13 7l-2 2" />
+  <path d="M9 11l-2 2" />
+  <path d="M5 15l-2 2" />
+  <path d="M3 19l2-2" />
+  <path d="M7 15l2-2" />
+  <path d="M11 11l2-2" />
 </svg>

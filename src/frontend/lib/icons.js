@@ -12,7 +12,7 @@ const ICONS = {
   logout: '/assets/icons/logout.svg',
   more: '/assets/icons/more.svg',
   folder: '/assets/icons/folder.svg',
-  personalization: '/assets/icons/personalization.svg',
+  customization: '/assets/icons/personalization.svg',
   file: '/assets/icons/file.svg',
   download: '/assets/icons/download.svg',
   homework: '/assets/icons/homework.svg',
