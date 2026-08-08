@@ -118,7 +118,7 @@ export async function fetchRemoteSettings() {
   if (!token) return null;
 
   try {
-    const response = await fetch("/api/settings", {
+    const response = await fetch("/api/settings/customization", {
       method: "GET",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -128,7 +128,21 @@ export async function fetchRemoteSettings() {
     const payload = await response.json();
     const data = payload?.resp?.settings ?? payload?.settings ?? null;
     if (!data || typeof data !== "object") return null;
-    return normalizeSettings(data);
+    
+    // Convert backend format (background_ prefixed) to frontend format
+    const converted = {
+      backgroundType: data.background_type || "gradient",
+      gradientStyle: data.background_gradient_style || "linear",
+      gradientOrientation: data.background_gradient_orientation || "135deg",
+      color1: data.background_color_1 || "#0b3f91",
+      color2: data.background_color_2 || "#1c8cff",
+      solidColor: data.background_solid_color || "#08100f",
+      fontFamily: data.background_font_family || "Inter, ui-sans-serif, system-ui, sans-serif",
+      fontWeight: data.background_font_weight || "500",
+      fontSize: data.background_font_size || 16,
+    };
+    
+    return normalizeSettings(converted);
   } catch (error) {
     console.warn("Unable to fetch remote settings:", error);
     return null;
@@ -140,13 +154,28 @@ export async function saveRemoteSettings(settings) {
   if (!token) return null;
 
   try {
-    const response = await fetch("/api/settings", {
+    const normalized = normalizeSettings(settings);
+    
+    // Convert frontend format to backend format (background_ prefixed)
+    const converted = {
+      background_type: normalized.backgroundType,
+      background_gradient_style: normalized.gradientStyle,
+      background_gradient_orientation: normalized.gradientOrientation,
+      background_color_1: normalized.color1,
+      background_color_2: normalized.color2,
+      background_solid_color: normalized.solidColor,
+      background_font_family: normalized.fontFamily,
+      background_font_weight: normalized.fontWeight,
+      background_font_size: normalized.fontSize,
+    };
+    
+    const response = await fetch("/api/settings/customization", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({ settings: normalizeSettings(settings) }),
+      body: JSON.stringify({ settings: converted }),
     });
     if (!response.ok) return null;
     const payload = await response.json();

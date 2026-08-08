@@ -263,7 +263,7 @@ function wireEvents() {
 
 async function fetchStatsData() {
   try {
-    const response = await authedFetch("/api/stats", { method: "GET" });
+    const response = await authedFetch("/api/settings/stats", { method: "GET" });
     if (!response.ok) return null;
     const payload = await response.json();
     return payload?.resp ?? payload ?? null;
@@ -282,19 +282,28 @@ function createStatsPanel(stats) {
   const clone = fields.statsTemplate.content.firstElementChild.cloneNode(true);
   if (!clone) return null;
 
-  const aiUsage = stats?.aiUsage || statsData.aiUsage;
+  const aiData = stats?.ai || {
+    daily: {
+      used: 0,
+      limit: 10000,
+      percentage: 0,
+      unit: "neurons"
+    },
+    models: []
+  };
+  
   const storage = stats?.storage || {
-    totalBytes: statsData.storageTotal * 1024 * 1024 * 1024,
-    capacityGB: statsData.storageCapacity,
+    totalBytes: 0,
+    capacityGB: 20,
     items: [
-      { key: "files/", label: "lumaris/files/", bytes: statsData.storageFiles * 1024 * 1024 * 1024 },
-      { key: "study-notes/", label: "lumaris/study-notes/", bytes: statsData.storageNotes * 1024 * 1024 * 1024 },
+      { key: "files/", label: "lumaris/files/", bytes: 0 },
+      { key: "study-notes/", label: "lumaris/study-notes/", bytes: 0 },
     ],
   };
 
   const aiValue = clone.querySelector(".stats-value-ai");
   if (aiValue) {
-    aiValue.textContent = `${aiUsage.used} / ${aiUsage.limit} requests`;
+    aiValue.textContent = `${aiData.daily.used} / ${aiData.daily.limit} ${aiData.daily.unit}`;
   }
 
   const storageValue = clone.querySelector(".storage-total");
@@ -320,7 +329,7 @@ function createStatsPanel(stats) {
 
   const limitChip = clone.querySelector(".stats-limit-chip");
   if (limitChip) {
-    limitChip.textContent = `${aiUsage.limit} limit`;
+    limitChip.textContent = `${aiData.daily.limit} ${aiData.daily.unit} limit`;
   }
 
   updateStorageRing(clone, storage);

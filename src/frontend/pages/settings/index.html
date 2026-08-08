@@ -156,49 +156,48 @@
     </div>
 
     <template id="statistics-panel-template">
-      <aside class="settings-sidebar-panel bento-block" aria-label="Statistics overview">
-        <div class="panel-header">
+      <aside class="settings-sidebar-panel" aria-label="Statistics overview">
+        <div class="panel-header bento-block">
           <span class="block-eyebrow">Statistics</span>
-          <h2>AI & Mega usage</h2>
+          <h2>Usage overview</h2>
         </div>
-        <div class="stats-grid">
-          <section class="stats-block stats-ai">
-            <div class="stats-block-header">
-              <span class="block-eyebrow">AI</span>
-              <h3>Daily usage</h3>
+        
+        <section class="stats-block stats-ai bento-block">
+          <div class="stats-block-header">
+            <span class="block-eyebrow">Artificial Intelligence</span>
+            <h3>Daily usage</h3>
+          </div>
+          <div class="stats-row stats-row-space">
+            <div>
+              <span class="stats-label">AI requests</span>
+              <strong class="stats-value-ai">0 / 0 neurons</strong>
             </div>
-            <div class="stats-row stats-row-space">
-              <div>
-                <span class="stats-label">AI requests</span>
-                <strong class="stats-value-ai">0 / 0 requests</strong>
-              </div>
-              <div class="stats-limit-chip">Limit</div>
-            </div>
-            <div class="stats-description">Remaining AI requests reset daily and are shared across the dashboard.</div>
-          </section>
+            <div class="stats-limit-chip">Limit</div>
+          </div>
+          <div class="stats-description">Remaining AI requests reset daily and are shared across the dashboard.</div>
+        </section>
 
-          <section class="stats-block stats-mega">
-            <div class="stats-block-header">
-              <span class="block-eyebrow">Mega</span>
-              <h3>Storage usage</h3>
+        <section class="stats-block stats-storage bento-block">
+          <div class="stats-block-header">
+            <span class="block-eyebrow">Storage</span>
+            <h3>Storage usage</h3>
+          </div>
+          <div class="storage-chart" aria-hidden="true">
+            <svg viewBox="0 0 120 120" class="storage-ring">
+              <circle class="ring-bg" cx="60" cy="60" r="54" />
+              <circle class="ring-files" cx="60" cy="60" r="54" />
+              <circle class="ring-notes" cx="60" cy="60" r="54" />
+            </svg>
+            <div class="storage-center">
+              <span class="storage-total">0.0 GB</span>
+              <small class="storage-subtitle">of 0 GB used</small>
             </div>
-            <div class="storage-chart" aria-hidden="true">
-              <svg viewBox="0 0 120 120" class="storage-ring">
-                <circle class="ring-bg" cx="60" cy="60" r="54" />
-                <circle class="ring-files" cx="60" cy="60" r="54" />
-                <circle class="ring-notes" cx="60" cy="60" r="54" />
-              </svg>
-              <div class="storage-center">
-                <span class="storage-total">0.0 GB</span>
-                <small class="storage-subtitle">of 0 GB used</small>
-              </div>
-            </div>
-            <div class="storage-legend">
-              <div class="legend-item legend-files"><span class="legend-dot files"></span><span class="legend-text">lumaris/files/ — 0.0 GB</span></div>
-              <div class="legend-item legend-notes"><span class="legend-dot notes"></span><span class="legend-text">lumaris/study-notes/ — 0.0 GB</span></div>
-            </div>
-          </section>
-        </div>
+          </div>
+          <div class="storage-legend">
+            <div class="legend-item legend-files"><span class="legend-dot files"></span><span class="legend-text">lumaris/files/ — 0.0 GB</span></div>
+            <div class="legend-item legend-notes"><span class="legend-dot notes"></span><span class="legend-text">lumaris/study-notes/ — 0.0 GB</span></div>
+          </div>
+        </section>
       </aside>
     </template>
 

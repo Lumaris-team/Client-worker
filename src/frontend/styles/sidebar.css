@@ -111,7 +111,9 @@
 .websites-nav[data-active="true"],
 .tools-nav[data-active="true"],
 .files-nav[data-active="true"],
-.study-notes-nav[data-active="true"] {
+.study-notes-nav[data-active="true"],
+.settings-nav.active,
+.settings-nav[data-active="true"] {
   color: var(--accent);
   background: rgba(255, 255, 255, 0.95);
   border-color: transparent;

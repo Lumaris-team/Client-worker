@@ -31,6 +31,12 @@ binding = "AI"
 binding = "deleted_chats"
 id = "ece9f46bc7ca471eac5be9d214de322e"
 
+# Customization settings (D1 database)
+[[d1_databases]]
+binding = "customization"
+database_name = "customization"
+database_id = "3847c9fd-58c0-42bf-922c-1a517cec2a66"
+
 # Workflows
 [[workflows]]
 name = "check_grades"

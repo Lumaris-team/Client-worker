@@ -11,8 +11,8 @@ import { WebsitesFunction } from "./backend/database/websites.js";
 import { FilesFunction, initializeFolderArchitecture } from "./backend/database/files_management.js";
 import { StudyNotesFunction } from "./backend/database/study_notes.js";
 import { ToolsFunction } from "./backend/tools/index.js";
-import { SettingsFunction } from "./backend/settings.js";
-import { StatsFunction } from "./backend/api_stats.js";
+import { StatsFunction } from "./backend/settings/stats.js";
+import { CustomizationFunction } from "./backend/settings/customization.js";
   
 import { sendMail } from "./backend/notifications/mail.js";
 
@@ -152,10 +152,10 @@ export default {
           resp = await FilesFunction(env, url.pathname.slice("/api/files/".length), method, body);
         } else if (url.pathname.startsWith("/api/study-notes/")) {
           resp = await StudyNotesFunction(env, url.pathname.slice("/api/study-notes/".length), method, body);
-        } else if (url.pathname === "/api/stats" || url.pathname === "/api/stats/") {
+        } else if (url.pathname === "/api/settings/stats" || url.pathname === "/api/settings/stats/") {
           resp = await StatsFunction(env);
-        } else if (url.pathname.startsWith("/api/settings")) {
-          resp = await SettingsFunction(env, url.pathname.slice("/api/settings".length), method, body, session.payload);
+        } else if (url.pathname === "/api/settings/customization" || url.pathname === "/api/settings/customization/") {
+          resp = await CustomizationFunction(env, url.pathname.slice("/api/settings/customization".length), method, body, session.payload);
         };
         // Return response
         return new Response(JSON.stringify({
