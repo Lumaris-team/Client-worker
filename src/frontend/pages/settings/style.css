@@ -65,18 +65,14 @@ body {
 .settings-preview {
   display: grid;
   place-items: center;
-  /* avoid card touching viewport edge */
-  padding-right: 12px;
-  /* By default align preview to the end (right) so it hugs the right column edge
-     but center it on narrow viewports via media query below. */
-  justify-self: end;
   width: 100%;
   box-sizing: border-box;
+  justify-self: stretch;
 }
 
 .preview-card {
   width: 100%;
-  max-width: 360px;
+  max-width: 100%;
   min-height: 240px;
   padding: 28px;
   border-radius: 32px;
@@ -512,11 +508,12 @@ label.field-group.range-group .field-input.range { flex: 1 1 auto; }
 }
 
 @media (max-width: 960px) {
-  .settings-hero {
+  .settings-shell {
     grid-template-columns: 1fr;
   }
+
   .settings-preview {
-    justify-self: center;
+    justify-self: stretch;
     padding-right: 0;
   }
 
