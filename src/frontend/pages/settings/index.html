@@ -1,11 +1,11 @@
 <!doctype html>
-<html lang="fr" data-auth-pending>
+<html lang="en" data-auth-pending>
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#08100f">
     <title>Settings - Daniel Ersen Dashboard</title>
-    <meta name="description" content="Réglez le thème et les polices de votre Dashboard.">
+    <meta name="description" content="Adjust the theme and fonts of your Dashboard.">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://dashboard.danielersen.fr.eu.org/settings">
     <link rel="icon" href="/assets/logo/square.png">
@@ -30,15 +30,15 @@
     <main class="settings-shell">
       <section class="settings-hero">
         <div class="settings-hero-copy bento-block">
-          <span class="block-eyebrow">Paramètres</span>
-          <h1>Personnalise ton expérience</h1>
-          <p>Change le fond, l'orientation du dégradé, le type de transitions et la typographie pour tout le Dashboard.</p>
+          <span class="block-eyebrow">Settings</span>
+          <h1>Customize your experience</h1>
+          <p>Change the background, gradient orientation, transition style, and typography across the Dashboard.</p>
         </div>
         <div class="settings-preview" id="settingsPreview">
           <div class="preview-card bento-block">
-            <div class="preview-badge">Aperçu</div>
+            <div class="preview-badge">Preview</div>
             <h2>Dashboard theme</h2>
-            <p>Les réglages s'appliquent à toutes les pages immédiatement.</p>
+            <p>Settings apply to all pages immediately.</p>
           </div>
         </div>
       </section>
@@ -47,62 +47,77 @@
         <article class="settings-panel bento-block">
           <div class="panel-header">
             <span class="block-eyebrow">Background</span>
-            <h2>Fond & couleurs</h2>
+            <h2>Background & colors</h2>
           </div>
 
           <label class="field-group">
             <span class="field-label">Type</span>
-            <select id="backgroundType" class="field-input">
-              <option value="gradient">Dégradé</option>
-              <option value="solid">Couleur unie</option>
-            </select>
+              <!-- hidden input kept for compatibility with existing JS -->
+              <input type="hidden" id="backgroundType" value="gradient">
+              <div class="bg-toggle">
+                <button id="bgGradient" type="button" class="bg-toggle-btn" data-value="gradient">Dégradé</button>
+                <button id="bgSolid" type="button" class="bg-toggle-btn" data-value="solid">Couleur unie</button>
+              </div>
           </label>
 
           <label class="field-group">
             <span class="field-label">Style</span>
-            <select id="gradientStyle" class="field-input">
-              <option value="linear">Dégradé linéaire</option>
-              <option value="radial">Dégradé radial</option>
-            </select>
+              <!-- keep a hidden input for compatibility; two buttons provide the UI -->
+              <input type="hidden" id="gradientStyle" value="linear">
+              <div class="bg-toggle gradient-toggle">
+                <button id="gradientLinear" type="button" class="bg-toggle-btn" data-value="linear">Dégradé linéaire</button>
+                <button id="gradientRadial" type="button" class="bg-toggle-btn" data-value="radial">Dégradé radial</button>
+              </div>
           </label>
 
           <label class="field-group">
             <span class="field-label">Orientation</span>
-            <select id="gradientOrientation" class="field-input">
-              <option value="0deg">Haut → Bas</option>
-              <option value="45deg">Haut gauche → Bas droite</option>
-              <option value="90deg">Gauche → Droite</option>
-              <option value="135deg">Bas gauche → Haut droite</option>
-              <option value="180deg">Bas → Haut</option>
-            </select>
+            <!-- hidden input kept for compatibility; four icon buttons provide the UI -->
+            <input type="hidden" id="gradientOrientation" value="0deg">
+            <div class="orientation-toggle">
+              <button id="orient0" type="button" class="orientation-btn" data-value="0deg" aria-label="Top to bottom" style="--orient-rot:0deg">
+                <img src="/assets/icons/arrow.svg" alt="">
+              </button>
+              <button id="orient45" type="button" class="orientation-btn" data-value="45deg" aria-label="Top-left to bottom-right" style="--orient-rot:45deg">
+                <img src="/assets/icons/arrow.svg" alt="">
+              </button>
+              <button id="orient90" type="button" class="orientation-btn" data-value="90deg" aria-label="Left to right" style="--orient-rot:90deg">
+                <img src="/assets/icons/arrow.svg" alt="">
+              </button>
+              <button id="orient135" type="button" class="orientation-btn" data-value="135deg" aria-label="Bottom-left to top-right" style="--orient-rot:135deg">
+                <img src="/assets/icons/arrow.svg" alt="">
+              </button>
+            </div>
           </label>
 
           <div class="color-row">
             <label class="field-group color-field">
-              <span class="field-label">Couleur 1</span>
+              <span class="field-label">Color 1</span>
+              <div class="color-swatch" aria-hidden="true"></div>
               <input id="color1" class="field-input" type="color" value="#0b3f91">
             </label>
 
             <label class="field-group color-field">
-              <span class="field-label">Couleur 2</span>
+              <span class="field-label">Color 2</span>
+              <div class="color-swatch" aria-hidden="true"></div>
               <input id="color2" class="field-input" type="color" value="#1c8cff">
             </label>
           </div>
 
           <label class="field-group solid-field">
-            <span class="field-label">Couleur unie</span>
+            <span class="field-label">Solid color</span>
             <input id="solidColor" class="field-input" type="color" value="#08100f">
           </label>
         </article>
 
         <article class="settings-panel bento-block">
           <div class="panel-header">
-            <span class="block-eyebrow">Texte</span>
-            <h2>Police & hiérarchie</h2>
+            <span class="block-eyebrow">Text</span>
+            <h2>Typography & hierarchy</h2>
           </div>
 
           <label class="field-group">
-            <span class="field-label">Police</span>
+            <span class="field-label">Font</span>
             <select id="fontFamily" class="field-input">
               <option value="Inter, ui-sans-serif, system-ui, sans-serif">Inter</option>
               <option value="'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif">IBM Plex Sans</option>
@@ -114,12 +129,12 @@
           </label>
 
           <label class="field-group toggle-group">
-            <span class="field-label">Gras</span>
+            <span class="field-label">Bold</span>
             <input id="fontWeight" class="field-input toggle" type="checkbox">
           </label>
 
           <label class="field-group range-group">
-            <span class="field-label">Taille du texte</span>
+            <span class="field-label">Text size</span>
             <input id="fontSize" class="field-input range" type="range" min="14" max="28" step="1" value="16">
             <output id="fontSizeValue">16px</output>
           </label>
@@ -127,8 +142,8 @@
       </section>
 
       <div class="settings-actions">
-        <button id="saveSettings" class="button primary">Enregistrer</button>
-        <button id="resetSettings" class="button secondary">Réinitialiser</button>
+        <button id="saveSettings" class="button primary">Save</button>
+        <button id="resetSettings" class="button secondary">Reset</button>
       </div>
     </main>
 

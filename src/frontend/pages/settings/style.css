@@ -179,12 +179,122 @@ body {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+/* Background type toggle buttons */
+.bg-toggle {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.bg-toggle-btn {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.06);
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  color: var(--settings-text);
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 140ms ease, background 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
+  text-align: center;
+}
+
+.bg-toggle-btn:hover {
+  transform: translateY(-2px);
+}
+
+.bg-toggle-btn.active {
+  background: linear-gradient(90deg, #60a3ff 0%, #88d3ff 100%);
+  color: #08101f;
+  border-color: rgba(96,163,255,0.8);
+  box-shadow: 0 8px 20px rgba(49,110,217,0.14);
+}
+
+@media (max-width: 480px) {
+  .bg-toggle { gap: 6px; }
+  .bg-toggle-btn { padding: 8px 10px; font-size: 0.9rem; }
+}
+
+/* Orientation icon buttons */
+.orientation-toggle {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.orientation-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 100%;
+  padding: 10px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  border: 1px solid rgba(255,255,255,0.06);
+  cursor: pointer;
+  transition: transform 120ms ease, background 120ms ease, box-shadow 120ms ease, border-color 120ms ease;
+}
+
+.orientation-btn img { width: 20px; height: 20px; display: block; }
+
+.orientation-btn:hover { transform: translateY(-2px); }
+
+.orientation-btn.active {
+  background: linear-gradient(90deg, #60a3ff 0%, #88d3ff 100%);
+  color: #08101f;
+  border-color: rgba(96,163,255,0.8);
+  box-shadow: 0 8px 20px rgba(49,110,217,0.14);
+}
+
+/* rotate the single svg icon using the css variable set on each button */
+.orientation-btn img { transform: rotate(var(--orient-rot, 0deg)); transition: transform 160ms ease; }
+
+/* focus styles for accessibility */
+.bg-toggle-btn:focus,
+.orientation-btn:focus {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(96,163,255,0.12);
+}
+
+@media (max-width: 480px) {
+  .orientation-toggle { gap: 6px; }
+  .orientation-btn { padding: 8px; }
+}
+
 .color-field .field-input {
   padding: 0;
   height: 56px;
   width: 100%;
   border-radius: 20px;
   border: none;
+}
+
+/* Make the parent label hold a visible swatch while the native color
+   input is overlayed and invisible (keeps native picker functionality) */
+.color-field {
+  position: relative;
+}
+
+.color-field .color-swatch {
+  display: block;
+  height: 56px;
+  width: 100%;
+  border-radius: 20px;
+  box-sizing: border-box;
+  border: 1px solid var(--settings-input-border);
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.06));
+}
+
+.color-field .field-input[type="color"] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 56px;
+  padding: 0;
+  border-radius: 20px;
+  border: none;
+  opacity: 0;
+  cursor: pointer;
 }
 
 .solid-field {
@@ -312,29 +422,50 @@ label.field-group.range-group .field-input.range { flex: 1 1 auto; }
 }
 
 .button {
+  -webkit-appearance: none;
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   border: none;
-  border-radius: 16px;
-  min-width: 150px;
-  padding: 14px 22px;
-  font-weight: 700;
+  border-radius: 14px;
+  min-width: 140px;
+  padding: 12px 18px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
   cursor: pointer;
-  transition: transform 160ms ease, background 160ms ease, box-shadow 160ms ease;
+  transition: transform 140ms cubic-bezier(.2,.9,.2,1), background 120ms ease, box-shadow 120ms ease;
 }
 
 .button:hover {
-  transform: translateY(-1px);
+  transform: translateY(-2px);
 }
 
 .button.primary {
-  background: linear-gradient(135deg, #60a3ff 0%, #88d3ff 100%);
-  color: #08101f;
-  box-shadow: 0 16px 32px rgba(49, 110, 217, 0.24);
+  background: linear-gradient(135deg, #4f8ef0 0%, #78c6ff 100%);
+  color: #071020;
+  box-shadow: 0 8px 28px rgba(49, 110, 217, 0.18), 0 2px 6px rgba(0,0,0,0.08) inset;
+  border: 1px solid rgba(255,255,255,0.06);
 }
 
 .button.secondary {
-  background: rgba(255, 255, 255, 0.08);
-  color: #f4fbff;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  color: var(--settings-text);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 6px 12px rgba(2,8,23,0.22);
+}
+
+.button:focus {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(96,163,255,0.12);
+  transform: translateY(-1px);
+}
+
+.button[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
 }
 
 @media (max-width: 960px) {
