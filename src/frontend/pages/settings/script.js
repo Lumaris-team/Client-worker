@@ -29,7 +29,7 @@ const fields = {
   personalizationBtn: document.getElementById("personalization-btn"),
   statisticsBtn: document.getElementById("statistics-btn"),
   statsTemplate: document.getElementById("statistics-panel-template"),
-  pageMain: document.querySelector("main.settings-shell"),
+  pageMain: document.querySelector("main.settings-main"),
   settingsPreview: document.getElementById("settingsPreview"),
   fontFamily: document.getElementById("fontFamily"),
   fontWeight: document.getElementById("fontWeight"),
@@ -273,59 +273,79 @@ async function fetchStatsData() {
   }
 }
 
+function formatBytesToGB(bytes) {
+  return (bytes / 1024 / 1024 / 1024).toFixed(1);
+}
+
 function createStatsPanel(stats) {
   if (!fields.statsTemplate) return null;
   const clone = fields.statsTemplate.content.firstElementChild.cloneNode(true);
   if (!clone) return null;
 
-  const aiUsageNode = clone.querySelector(".stats-row strong");
-  if (aiUsageNode && stats?.aiUsage) {
-    aiUsageNode.textContent = `${stats.aiUsage.used} / ${stats.aiUsage.limit} requests`;
+  const aiUsage = stats?.aiUsage || statsData.aiUsage;
+  const storage = stats?.storage || {
+    totalBytes: statsData.storageTotal * 1024 * 1024 * 1024,
+    capacityGB: statsData.storageCapacity,
+    items: [
+      { key: "files/", label: "lumaris/files/", bytes: statsData.storageFiles * 1024 * 1024 * 1024 },
+      { key: "study-notes/", label: "lumaris/study-notes/", bytes: statsData.storageNotes * 1024 * 1024 * 1024 },
+    ],
+  };
+
+  const aiValue = clone.querySelector(".stats-value-ai");
+  if (aiValue) {
+    aiValue.textContent = `${aiUsage.used} / ${aiUsage.limit} requests`;
   }
 
-  const storageValue = clone.querySelector(".storage-center span");
-  const storageSubtitle = clone.querySelector(".storage-center small");
-  if (storageValue && stats?.storage) {
-    storageValue.textContent = `${(stats.storage.totalBytes / 1024 / 1024 / 1024).toFixed(1)} GB`;
+  const storageValue = clone.querySelector(".storage-total");
+  const storageSubtitle = clone.querySelector(".storage-subtitle");
+  if (storageValue) {
+    storageValue.textContent = `${formatBytesToGB(storage.totalBytes)} GB`;
   }
-  if (storageSubtitle && stats?.storage) {
-    storageSubtitle.textContent = `of ${stats.storage.capacityGB} GB used`;
-  }
-
-  const filesLegend = clone.querySelector(".legend-item .legend-dot.files")?.parentElement;
-  const notesLegend = clone.querySelector(".legend-item .legend-dot.notes")?.parentElement;
-  if (filesLegend && stats?.storage?.items) {
-    const filesItem = stats.storage.items.find((item) => item.key === "files/");
-    filesLegend.innerHTML = `<span class="legend-dot files"></span> ${filesItem?.label ?? "lumaris/files/"} — ${(filesItem?.bytes ?? 0) / 1024 / 1024 / 1024} GB`;
-  }
-  if (notesLegend && stats?.storage?.items) {
-    const notesItem = stats.storage.items.find((item) => item.key === "study-notes/");
-    notesLegend.innerHTML = `<span class="legend-dot notes"></span> ${notesItem?.label ?? "lumaris/study-notes/"} — ${(notesItem?.bytes ?? 0) / 1024 / 1024 / 1024} GB`;
+  if (storageSubtitle) {
+    storageSubtitle.textContent = `of ${storage.capacityGB} GB used`;
   }
 
-  updateStorageRing(clone, stats);
+  const filesItem = storage.items.find((item) => item.key === "files/") || { label: "lumaris/files/", bytes: 0 };
+  const notesItem = storage.items.find((item) => item.key === "study-notes/") || { label: "lumaris/study-notes/", bytes: 0 };
+
+  const filesLegend = clone.querySelector(".legend-files .legend-text");
+  const notesLegend = clone.querySelector(".legend-notes .legend-text");
+  if (filesLegend) {
+    filesLegend.textContent = `${filesItem.label} — ${formatBytesToGB(filesItem.bytes)} GB`;
+  }
+  if (notesLegend) {
+    notesLegend.textContent = `${notesItem.label} — ${formatBytesToGB(notesItem.bytes)} GB`;
+  }
+
+  const limitChip = clone.querySelector(".stats-limit-chip");
+  if (limitChip) {
+    limitChip.textContent = `${aiUsage.limit} limit`;
+  }
+
+  updateStorageRing(clone, storage);
   return clone;
 }
 
-function updateStorageRing(panel, stats) {
+function updateStorageRing(panel, storage) {
   const circumference = 339.292;
-  const totalBytes = stats?.storage?.totalBytes || 0;
-  const filesBytes = stats?.storage?.items?.find((item) => item.key === "files/")?.bytes || 0;
-  const notesBytes = stats?.storage?.items?.find((item) => item.key === "study-notes/")?.bytes || 0;
-  const filesPct = totalBytes ? Math.min(filesBytes / totalBytes, 1) : 0;
-  const notesPct = totalBytes ? Math.min(notesBytes / totalBytes, 1 - filesPct) : 0;
-  const filesOffset = circumference * (1 - filesPct);
-  const notesOffset = circumference * (1 - filesPct - notesPct);
+  const totalBytes = storage?.totalBytes || 0;
+  const filesBytes = storage?.items?.find((item) => item.key === "files/")?.bytes || 0;
+  const notesBytes = storage?.items?.find((item) => item.key === "study-notes/")?.bytes || 0;
+
+  const filesLength = totalBytes ? Math.min(filesBytes / totalBytes, 1) * circumference : 0;
+  const notesLength = totalBytes ? Math.min(notesBytes / totalBytes, 1 - filesBytes / totalBytes) * circumference : 0;
 
   const filesCircle = panel.querySelector('.ring-files');
   const notesCircle = panel.querySelector('.ring-notes');
+
   if (filesCircle) {
-    filesCircle.setAttribute('stroke-dasharray', `${circumference}`);
-    filesCircle.setAttribute('stroke-dashoffset', `${filesOffset}`);
+    filesCircle.setAttribute('stroke-dasharray', `${filesLength} ${circumference}`);
+    filesCircle.setAttribute('stroke-dashoffset', `${circumference}`);
   }
   if (notesCircle) {
-    notesCircle.setAttribute('stroke-dasharray', `${circumference}`);
-    notesCircle.setAttribute('stroke-dashoffset', `${notesOffset}`);
+    notesCircle.setAttribute('stroke-dasharray', `${notesLength} ${circumference}`);
+    notesCircle.setAttribute('stroke-dashoffset', `${circumference - filesLength}`);
   }
 }
 

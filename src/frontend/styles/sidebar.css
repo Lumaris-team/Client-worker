@@ -44,11 +44,33 @@
 .websites-nav svg,
 .tools-nav svg,
 .files-nav svg,
-.study-notes-nav svg {
+.study-notes-nav svg,
+.settings-nav svg {
   width: 24px;
   height: 24px;
-  stroke: var(--accent);
+  stroke: rgba(255,255,255,0.48);
   fill: none;
+  opacity: 0.85;
+  filter: blur(0.35px);
+}
+
+.settings-nav svg {
+  width: 24px;
+  height: 24px;
+}
+
+.ai-nav.active svg,
+.ai-nav[data-active="true"] svg,
+.ws-nav[data-active="true"] svg,
+.websites-nav[data-active="true"] svg,
+.tools-nav[data-active="true"] svg,
+.files-nav[data-active="true"] svg,
+.study-notes-nav[data-active="true"] svg,
+.settings-nav.active svg,
+.settings-nav[data-active="true"] svg {
+  stroke: rgba(255,255,255,0.72);
+  opacity: 0.95;
+  filter: blur(0.2px);
 }
 
 /* Icon container */
