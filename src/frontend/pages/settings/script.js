@@ -480,8 +480,8 @@ async function showView(view) {
       
       if (storageSection) {
         const storage = stats?.storage || { totalBytes: 0, capacityGB: 20, items: [] };
-        const filesItem = storage.items.find((item) => item.key === "files/") || { label: "lumaris/files/", bytes: 0 };
-        const notesItem = storage.items.find((item) => item.key === "study-notes/") || { label: "lumaris/study-notes/", bytes: 0 };
+        const filesItem = storage.items.find((item) => item.key === "files/") || { label: "Files", bytes: 0 };
+        const notesItem = storage.items.find((item) => item.key === "study-notes/") || { label: "Study notes", bytes: 0 };
         
         storageSection.innerHTML = `
           <div class="panel-header">
@@ -507,8 +507,14 @@ async function showView(view) {
           </div>
         `;
         
+        // Force reflow after updating content
+        storageSection.offsetHeight;
+        
         updateStorageRing(statsPanel, storage);
       }
+      
+      // Force final reflow on the entire stats panel
+      statsPanel.offsetHeight;
     }
     if (statsPanel) statsPanel.style.display = '';
   } else if (statsPanel) {

@@ -25,26 +25,22 @@ body {
 }
 
 .settings-main {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  grid-auto-rows: auto;
+  display: flex;
+  flex-wrap: wrap;
   gap: 28px;
-  align-items: start;
-  justify-items: stretch;
-  overflow: visible;
+  align-items: flex-start;
 }
 
 .settings-main > * {
-  align-self: start;
-  justify-self: stretch;
-  width: 100%;
+  flex: 0 1 auto;
+  min-width: 280px;
+  max-width: 100%;
 }
 
 .settings-main > .settings-hero-copy,
 .settings-main > .settings-preview,
 .settings-main > .settings-panel {
-  display: flex;
-  flex-direction: column;
+  display: block;
 }
 
 .settings-hero-copy {
@@ -142,8 +138,7 @@ body {
   background: transparent;
   border: none;
   box-shadow: none;
-  display: grid;
-  gap: 18px;
+  display: block;
   box-sizing: border-box;
   height: auto !important;
   min-height: auto !important;
@@ -624,6 +619,7 @@ label.field-group.range-group .field-input.range { flex: 1 1 auto; }
 .storage-legend {
   display: grid;
   gap: 10px;
+  max-width: 100%;
 }
 
 .legend-item {
