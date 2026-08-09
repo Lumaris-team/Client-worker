@@ -33,8 +33,9 @@ const fields = {
   settingsPreview: document.getElementById("settingsPreview"),
   fontFamily: document.getElementById("fontFamily"),
   fontWeight: document.getElementById("fontWeight"),
+  boldNormal: document.getElementById("boldNormal"),
+  boldBold: document.getElementById("boldBold"),
   fontSize: document.getElementById("fontSize"),
-  fontSizeValue: document.getElementById("fontSizeValue"),
   saveButton: document.getElementById("saveSettings"),
   resetButton: document.getElementById("resetSettings"),
 };
@@ -48,7 +49,7 @@ function getCurrentSettings() {
     color2: fields.color2.value,
     solidColor: fields.solidColor.value,
     fontFamily: fields.fontFamily.value,
-    fontWeight: fields.fontWeight.checked ? "700" : "500",
+    fontWeight: fields.fontWeight.value === "bold" ? "700" : "500",
     fontSize: Number(fields.fontSize.value),
   };
 }
@@ -134,9 +135,8 @@ function populateForm(settings) {
   fields.color2.value = settings.color2;
   fields.solidColor.value = settings.solidColor;
   fields.fontFamily.value = settings.fontFamily;
-  fields.fontWeight.checked = settings.fontWeight === "700";
+  fields.fontWeight.value = settings.fontWeight === "700" ? "bold" : "normal";
   fields.fontSize.value = settings.fontSize;
-  fields.fontSizeValue.textContent = `${settings.fontSize}px`;
   syncSolidFieldVisibility();
   renderPreview(settings);
   // update visual swatches for color inputs
@@ -147,6 +147,8 @@ function populateForm(settings) {
   updateGradientToggleButtons();
   // update orientation buttons active state
   updateOrientationButtons();
+  // update bold toggle buttons active state
+  updateBoldToggleButtons();
 }
 
 function handleFieldChange() {
@@ -169,7 +171,6 @@ function wireEvents() {
   Object.values(fields).forEach((input) => {
     if (!input || input.tagName === "BUTTON" || input.tagName === "OUTPUT") return;
     input.addEventListener("change", () => {
-      fields.fontSizeValue.textContent = `${Number(fields.fontSize.value)}px`;
       handleFieldChange();
     });
   });
@@ -193,6 +194,20 @@ function wireEvents() {
   if (fields.customizationBtn && fields.statisticsBtn) {
     fields.customizationBtn.addEventListener('click', () => showView('customization'));
     fields.statisticsBtn.addEventListener('click', () => showView('statistics'));
+  }
+
+  // Bold toggle buttons handlers
+  if (fields.boldNormal && fields.boldBold && fields.fontWeight) {
+    fields.boldNormal.addEventListener('click', () => {
+      fields.fontWeight.value = 'normal';
+      updateBoldToggleButtons();
+      handleFieldChange();
+    });
+    fields.boldBold.addEventListener('click', () => {
+      fields.fontWeight.value = 'bold';
+      updateBoldToggleButtons();
+      handleFieldChange();
+    });
   }
 
   // Gradient style toggle buttons handlers
@@ -571,6 +586,15 @@ function updateBgToggleButtons() {
   fields.bgSolidBtn.classList.toggle('active', val === 'solid');
   fields.bgGradientBtn.setAttribute('aria-pressed', String(val === 'gradient'));
   fields.bgSolidBtn.setAttribute('aria-pressed', String(val === 'solid'));
+}
+
+function updateBoldToggleButtons() {
+  if (!fields.boldNormal || !fields.boldBold || !fields.fontWeight) return;
+  const val = fields.fontWeight.value;
+  fields.boldNormal.classList.toggle('active', val === 'normal');
+  fields.boldBold.classList.toggle('active', val === 'bold');
+  fields.boldNormal.setAttribute('aria-pressed', String(val === 'normal'));
+  fields.boldBold.setAttribute('aria-pressed', String(val === 'bold'));
 }
 
 function updateGradientToggleButtons() {

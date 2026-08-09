@@ -136,15 +136,18 @@
             </select>
           </label>
 
-          <label class="field-group toggle-group">
+          <label class="field-group">
             <span class="field-label">Bold</span>
-            <input id="fontWeight" class="field-input toggle" type="checkbox">
+            <input type="hidden" id="fontWeight" value="normal">
+            <div class="bg-toggle">
+              <button id="boldNormal" type="button" class="bg-toggle-btn" data-value="normal">Normal</button>
+              <button id="boldBold" type="button" class="bg-toggle-btn" data-value="bold">Bold</button>
+            </div>
           </label>
 
-          <label class="field-group range-group">
+          <label class="field-group">
             <span class="field-label">Text size</span>
-            <input id="fontSize" class="field-input range" type="range" min="14" max="28" step="1" value="16">
-            <output id="fontSizeValue">16px</output>
+            <input id="fontSize" class="field-input" type="number" min="12" max="32" step="0.5" value="16">
           </label>
       </article>
 
