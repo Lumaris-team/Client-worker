@@ -216,6 +216,9 @@ body {
   display: grid;
   gap: 18px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.color-row .field-group {
   margin-top: 20px;
 }
 
