@@ -87,12 +87,12 @@ async function setCustomizationSettings(env, userId, settings) {
     
     // Check if user already has settings
     const existing = await db.prepare(
-      "SELECT id FROM customization WHERE user_id = ?"
+      "SELECT user_id FROM customization WHERE user_id = ?"
     ).bind(userId).first();
     
     if (existing) {
       // Update existing settings
-      await db.prepare(`
+      const result = await db.prepare(`
         UPDATE customization 
         SET background_type = ?,
             background_gradient_style = ?,
@@ -117,9 +117,11 @@ async function setCustomizationSettings(env, userId, settings) {
         normalizedSettings.background_font_size,
         userId
       ).run();
+      
+      console.log("Update result:", result);
     } else {
       // Insert new settings
-      await db.prepare(`
+      const result = await db.prepare(`
         INSERT INTO customization (
           user_id,
           background_type,
@@ -146,11 +148,14 @@ async function setCustomizationSettings(env, userId, settings) {
         normalizedSettings.background_font_weight,
         normalizedSettings.background_font_size
       ).run();
+      
+      console.log("Insert result:", result);
     }
     
     return { settings: normalizedSettings };
   } catch (error) {
     console.error("Error saving customization settings:", error);
+    console.error("Error details:", error.message);
     return { error: "failed_to_save_settings" };
   }
 }
