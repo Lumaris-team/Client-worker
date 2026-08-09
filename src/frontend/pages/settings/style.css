@@ -577,8 +577,9 @@ label.field-group.range-group .field-input.range { flex: 1 1 auto; }
 
 .storage-content {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 32px;
+  gap: 24px;
   padding: 20px 0;
   min-height: 200px;
   width: 100%;
@@ -650,6 +651,7 @@ label.field-group.range-group .field-input.range { flex: 1 1 auto; }
   gap: 10px;
   min-width: 200px;
   flex: 1;
+  width: 100%;
 }
 
 .legend-item {
