@@ -49,8 +49,9 @@ body {
 }
 
 .settings-preview {
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
   width: 100%;
   box-sizing: border-box;
   justify-self: stretch;
@@ -71,8 +72,9 @@ body {
 }
 
 .settings-preview {
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
   width: 100%;
   box-sizing: border-box;
   justify-self: stretch;
@@ -572,6 +574,7 @@ label.field-group.range-group .field-input.range { flex: 1 1 auto; }
   align-items: center;
   gap: 32px;
   padding: 20px 0;
+  min-height: 200px;
 }
 
 .storage-chart {
@@ -639,6 +642,8 @@ label.field-group.range-group .field-input.range { flex: 1 1 auto; }
   display: grid;
   gap: 10px;
   max-width: 100%;
+  min-width: 200px;
+  flex: 1;
 }
 
 .legend-item {
