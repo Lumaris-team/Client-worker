@@ -306,15 +306,6 @@ function createStatsPanel(stats) {
     aiValue.textContent = `${aiData.daily.used} / ${aiData.daily.limit} ${aiData.daily.unit}`;
   }
 
-  const storageValue = clone.querySelector(".storage-total");
-  const storageSubtitle = clone.querySelector(".storage-subtitle");
-  if (storageValue) {
-    storageValue.textContent = `${formatBytesToGB(storage.totalBytes)} GB`;
-  }
-  if (storageSubtitle) {
-    storageSubtitle.textContent = `of ${storage.capacityGB} GB used`;
-  }
-
   const filesItem = storage.items.find((item) => item.key === "files/") || { label: "lumaris/files/", bytes: 0 };
   const notesItem = storage.items.find((item) => item.key === "study-notes/") || { label: "lumaris/study-notes/", bytes: 0 };
 
@@ -327,11 +318,6 @@ function createStatsPanel(stats) {
     notesLegend.textContent = `${notesItem.label} — ${formatBytesToGB(notesItem.bytes)} GB`;
   }
 
-  const limitChip = clone.querySelector(".stats-limit-chip");
-  if (limitChip) {
-    limitChip.textContent = `${aiData.daily.limit} ${aiData.daily.unit} limit`;
-  }
-
   updateStorageRing(clone, storage);
   return clone;
 }
@@ -339,6 +325,7 @@ function createStatsPanel(stats) {
 function updateStorageRing(panel, storage) {
   const circumference = 339.292;
   const totalBytes = storage?.totalBytes || 0;
+  const capacityGB = storage?.capacityGB || 20;
   const filesBytes = storage?.items?.find((item) => item.key === "files/")?.bytes || 0;
   const notesBytes = storage?.items?.find((item) => item.key === "study-notes/")?.bytes || 0;
 
@@ -355,6 +342,32 @@ function updateStorageRing(panel, storage) {
   if (notesCircle) {
     notesCircle.setAttribute('stroke-dasharray', `${notesLength} ${circumference}`);
     notesCircle.setAttribute('stroke-dashoffset', `${circumference - filesLength}`);
+  }
+
+  // Calculate percentage and update text
+  const percentage = totalBytes > 0 ? (totalBytes / (capacityGB * 1024 * 1024 * 1024)) * 100 : 0;
+  const roundedPercentage = parseFloat(percentage.toFixed(2));
+  const percentageText = roundedPercentage % 1 === 0 ? roundedPercentage.toString() : roundedPercentage.toFixed(2).replace(/\.?0+$/, '');
+
+  const percentageEl = panel.querySelector('.storage-percentage');
+  const capacityEl = panel.querySelector('.storage-capacity');
+
+  if (percentageEl) {
+    percentageEl.textContent = `${percentageText}% used`;
+    
+    // Adapt font size based on text length
+    const textLength = percentageText.length;
+    if (textLength <= 3) {
+      percentageEl.style.fontSize = '1.6rem';
+    } else if (textLength <= 4) {
+      percentageEl.style.fontSize = '1.4rem';
+    } else {
+      percentageEl.style.fontSize = '1.2rem';
+    }
+  }
+
+  if (capacityEl) {
+    capacityEl.textContent = `of ${capacityGB}GB`;
   }
 }
 

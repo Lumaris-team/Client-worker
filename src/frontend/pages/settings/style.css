@@ -23,7 +23,7 @@ body {
 
 .settings-main {
   display: grid;
-  grid-template-columns: repeat(2, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   grid-auto-rows: minmax(0, auto);
   gap: 28px;
   align-items: stretch;
@@ -531,8 +531,8 @@ label.field-group.range-group .field-input.range { flex: 1 1 auto; }
 
 .storage-chart {
   position: relative;
-  width: 280px;
-  height: 280px;
+  width: 200px;
+  height: 200px;
   flex-shrink: 0;
 }
 
@@ -546,7 +546,7 @@ label.field-group.range-group .field-input.range { flex: 1 1 auto; }
 .ring-files,
 .ring-notes {
   fill: none;
-  stroke-width: 16;
+  stroke-width: 10;
   stroke-linecap: round;
 }
 
@@ -573,16 +573,19 @@ label.field-group.range-group .field-input.range { flex: 1 1 auto; }
   color: var(--settings-text);
 }
 
-.storage-center span {
+.storage-percentage {
   display: block;
-  font-size: 2rem;
+  font-size: 1.6rem;
   font-weight: 800;
+  line-height: 1.1;
 }
 
-.storage-center small {
+.storage-capacity {
   display: block;
-  margin-top: 6px;
+  margin-top: 4px;
   color: var(--settings-muted);
+  font-size: 0.85rem;
+  font-weight: 500;
 }
 
 .storage-legend {
