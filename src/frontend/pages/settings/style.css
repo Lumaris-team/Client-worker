@@ -175,6 +175,10 @@ body {
   gap: 10px;
 }
 
+.field-group:not(:first-child) {
+  margin-top: 20px;
+}
+
 .field-label {
   color: var(--settings-muted);
   font-size: 0.87rem;
@@ -193,6 +197,22 @@ body {
   font-size: 1rem;
   outline: none;
   transition: border-color 180ms ease, transform 180ms ease;
+  -webkit-appearance: none;
+  -moz-appearance: textfield;
+}
+
+.field-input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+.field-input[type="number"]::-webkit-inner-spin-button,
+.field-input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.field-input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
 }
 
 .field-input:focus {
@@ -595,8 +615,10 @@ label.field-group.range-group .field-input.range { flex: 1 1 auto; }
 .storage-center {
   position: absolute;
   inset: 0;
-  display: grid;
-  place-items: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
   text-align: center;
   color: var(--settings-text);
 }

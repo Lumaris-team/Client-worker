@@ -308,18 +308,6 @@ function createLoadingPanel() {
     <p>Monitor your AI usage and storage consumption across the dashboard.</p>
   `;
   
-  const aiSection = document.createElement('section');
-  aiSection.className = 'settings-panel bento-block settings-panel-ai';
-  aiSection.style.height = 'auto';
-  aiSection.style.minHeight = 'auto';
-  aiSection.innerHTML = `
-    <div class="panel-header">
-      <span class="block-eyebrow">Artificial Intelligence</span>
-      <h2>Daily usage</h2>
-    </div>
-    <div class="stats-loading">Loading...</div>
-  `;
-  
   const storageSection = document.createElement('section');
   storageSection.className = 'settings-panel bento-block settings-panel-storage';
   storageSection.style.height = 'auto';
@@ -332,9 +320,21 @@ function createLoadingPanel() {
     <div class="stats-loading">Loading...</div>
   `;
   
+  const aiSection = document.createElement('section');
+  aiSection.className = 'settings-panel bento-block settings-panel-ai';
+  aiSection.style.height = 'auto';
+  aiSection.style.minHeight = 'auto';
+  aiSection.innerHTML = `
+    <div class="panel-header">
+      <span class="block-eyebrow">Artificial Intelligence</span>
+      <h2>Daily usage</h2>
+    </div>
+    <div class="stats-loading">Loading...</div>
+  `;
+  
   main.appendChild(hero);
-  main.appendChild(aiSection);
   main.appendChild(storageSection);
+  main.appendChild(aiSection);
   
   return main;
 }
@@ -466,30 +466,14 @@ async function showView(view) {
       
       // Update the loading panel in place instead of replacing it
       const hero = statsPanel.querySelector('.settings-hero-copy');
-      const aiSection = statsPanel.querySelector('.settings-panel-ai');
       const storageSection = statsPanel.querySelector('.settings-panel-storage');
+      const aiSection = statsPanel.querySelector('.settings-panel-ai');
       
       if (hero) {
         hero.innerHTML = `
           <span class="block-eyebrow">Statistics</span>
           <h1>Usage overview</h1>
           <p>Monitor your AI usage and storage consumption across the dashboard.</p>
-        `;
-      }
-      
-      if (aiSection) {
-        aiSection.innerHTML = `
-          <div class="panel-header">
-            <span class="block-eyebrow">Artificial Intelligence</span>
-            <h2>Daily usage</h2>
-          </div>
-          <div class="stats-row">
-            <div>
-              <span class="stats-label">AI requests</span>
-              <strong class="stats-value-ai">${stats?.ai?.daily?.used || 0} / ${stats?.ai?.daily?.limit || 10000} ${stats?.ai?.daily?.unit || 'neurons'}</strong>
-            </div>
-          </div>
-          <div class="stats-description">Remaining AI requests reset daily and are shared across the dashboard.</div>
         `;
       }
       
@@ -526,6 +510,22 @@ async function showView(view) {
         storageSection.offsetHeight;
         
         updateStorageRing(statsPanel, storage);
+      }
+      
+      if (aiSection) {
+        aiSection.innerHTML = `
+          <div class="panel-header">
+            <span class="block-eyebrow">Artificial Intelligence</span>
+            <h2>Daily usage</h2>
+          </div>
+          <div class="stats-row">
+            <div>
+              <span class="stats-label">AI requests</span>
+              <strong class="stats-value-ai">${stats?.ai?.daily?.used || 0} / ${stats?.ai?.daily?.limit || 10000} ${stats?.ai?.daily?.unit || 'neurons'}</strong>
+            </div>
+          </div>
+          <div class="stats-description">Remaining AI requests reset daily and are shared across the dashboard.</div>
+        `;
       }
       
       // Force final reflow on the entire stats panel
