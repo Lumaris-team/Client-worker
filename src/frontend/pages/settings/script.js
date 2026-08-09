@@ -444,6 +444,15 @@ async function showView(view) {
       statsPanel = createStatsPanel(stats);
       if (statsPanel && fields.pageMain) {
         fields.pageMain.insertAdjacentElement('afterend', statsPanel);
+        // Force complete grid recalculation
+        requestAnimationFrame(() => {
+          const settingsShell = document.querySelector('.settings-shell');
+          if (settingsShell) {
+            settingsShell.style.display = 'none';
+            settingsShell.offsetHeight; // Force reflow
+            settingsShell.style.display = 'grid';
+          }
+        });
       }
     }
     if (statsPanel) statsPanel.style.display = '';
