@@ -550,6 +550,17 @@ async function showView(view) {
       
       // Force final reflow on the entire stats panel
       statsPanel.offsetHeight;
+      
+      // Force grid recalculation on the main container
+      const settingsMain = statsPanel.closest('.settings-main');
+      if (settingsMain) {
+        settingsMain.offsetHeight;
+        // Force grid to recalculate by temporarily changing display
+        const originalDisplay = settingsMain.style.display;
+        settingsMain.style.display = 'grid';
+        void settingsMain.offsetHeight; // Force reflow
+        settingsMain.style.display = originalDisplay;
+      }
     }
     if (statsPanel) statsPanel.style.display = '';
   } else if (statsPanel) {

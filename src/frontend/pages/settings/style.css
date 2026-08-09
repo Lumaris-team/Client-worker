@@ -30,6 +30,7 @@ body {
   grid-auto-rows: auto;
   gap: 28px;
   align-items: stretch;
+  width: 100%;
 }
 
 .settings-main > * {
