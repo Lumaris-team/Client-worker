@@ -557,6 +557,8 @@ label.field-group.range-group .field-input.range { flex: 1 1 auto; }
   align-items: center;
   gap: 32px;
   padding: 20px 0;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .storage-chart {
@@ -621,6 +623,8 @@ label.field-group.range-group .field-input.range { flex: 1 1 auto; }
 .storage-legend {
   display: grid;
   gap: 10px;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .legend-item {
@@ -629,6 +633,17 @@ label.field-group.range-group .field-input.range { flex: 1 1 auto; }
   gap: 10px;
   color: var(--settings-text);
   font-size: 0.95rem;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  min-width: 0;
+}
+
+.legend-text {
+  flex: 1;
+  min-width: 0;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;
 }
 
 .legend-dot {
