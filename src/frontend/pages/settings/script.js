@@ -210,6 +210,18 @@ function wireEvents() {
     });
   }
 
+  // Font size validation - only allow integers or .5 values
+  if (fields.fontSize) {
+    fields.fontSize.addEventListener('input', () => {
+      let value = parseFloat(fields.fontSize.value);
+      if (!isNaN(value)) {
+        // Round to nearest 0.5
+        const rounded = Math.round(value * 2) / 2;
+        fields.fontSize.value = rounded;
+      }
+    });
+  }
+
   // Gradient style toggle buttons handlers
   if (fields.gradientLinearBtn && fields.gradientRadialBtn && fields.gradientStyle) {
     fields.gradientLinearBtn.addEventListener('click', () => {
@@ -371,13 +383,17 @@ function createStatsPanel(stats) {
   const filesItem = storage.items.find((item) => item.key === "files/") || { label: "lumaris/files/", bytes: 0 };
   const notesItem = storage.items.find((item) => item.key === "study-notes/") || { label: "lumaris/study-notes/", bytes: 0 };
 
+  // Always use simplified labels
+  const filesLabel = "Files";
+  const notesLabel = "Study notes";
+
   const filesLegend = clone.querySelector(".legend-files .legend-text");
   const notesLegend = clone.querySelector(".legend-notes .legend-text");
   if (filesLegend) {
-    filesLegend.textContent = `${filesItem.label} — ${formatBytesToGB(filesItem.bytes)} GB`;
+    filesLegend.textContent = `${filesLabel} — ${formatBytesToGB(filesItem.bytes)} GB`;
   }
   if (notesLegend) {
-    notesLegend.textContent = `${notesItem.label} — ${formatBytesToGB(notesItem.bytes)} GB`;
+    notesLegend.textContent = `${notesLabel} — ${formatBytesToGB(notesItem.bytes)} GB`;
   }
 
   updateStorageRing(clone, storage);
@@ -482,6 +498,10 @@ async function showView(view) {
         const filesItem = storage.items.find((item) => item.key === "files/") || { label: "Files", bytes: 0 };
         const notesItem = storage.items.find((item) => item.key === "study-notes/") || { label: "Study notes", bytes: 0 };
         
+        // Always use simplified labels
+        const filesLabel = "Files";
+        const notesLabel = "Study notes";
+        
         storageSection.innerHTML = `
           <div class="panel-header">
             <span class="block-eyebrow">Storage</span>
@@ -500,8 +520,8 @@ async function showView(view) {
               </div>
             </div>
             <div class="storage-legend">
-              <div class="legend-item legend-files"><span class="legend-dot files"></span><span class="legend-text">${filesItem.label} — ${formatBytesToGB(filesItem.bytes)} GB</span></div>
-              <div class="legend-item legend-notes"><span class="legend-dot notes"></span><span class="legend-text">${notesItem.label} — ${formatBytesToGB(notesItem.bytes)} GB</span></div>
+              <div class="legend-item legend-files"><span class="legend-dot files"></span><span class="legend-text">${filesLabel} — ${formatBytesToGB(filesItem.bytes)} GB</span></div>
+              <div class="legend-item legend-notes"><span class="legend-dot notes"></span><span class="legend-text">${notesLabel} — ${formatBytesToGB(notesItem.bytes)} GB</span></div>
             </div>
           </div>
         `;

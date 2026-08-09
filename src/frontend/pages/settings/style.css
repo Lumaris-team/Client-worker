@@ -199,20 +199,12 @@ body {
   transition: border-color 180ms ease, transform 180ms ease;
   -webkit-appearance: none;
   -moz-appearance: textfield;
+  box-sizing: border-box;
 }
 
 .field-input[type="number"] {
-  -moz-appearance: textfield;
-}
-
-.field-input[type="number"]::-webkit-inner-spin-button,
-.field-input[type="number"]::-webkit-outer-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
-
-.field-input[type="number"]::-webkit-outer-spin-button {
-  -webkit-appearance: none;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .field-input:focus {
@@ -224,6 +216,7 @@ body {
   display: grid;
   gap: 18px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 20px;
 }
 
 /* Background type toggle buttons */
