@@ -19,6 +19,9 @@ body {
   grid-template-columns: var(--sidebar-w, 76px) minmax(0, 1fr);
   gap: 16px;
   align-items: start;
+  height: auto !important;
+  min-height: auto !important;
+  max-height: none !important;
 }
 
 .settings-main {

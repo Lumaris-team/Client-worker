@@ -280,9 +280,13 @@ function formatBytesToGB(bytes) {
 function createLoadingPanel() {
   const main = document.createElement('main');
   main.className = 'settings-main';
+  main.style.height = 'auto';
+  main.style.minHeight = 'auto';
   
   const hero = document.createElement('div');
   hero.className = 'settings-hero-copy bento-block';
+  hero.style.height = 'auto';
+  hero.style.minHeight = 'auto';
   hero.innerHTML = `
     <span class="block-eyebrow">Statistics</span>
     <h1>Usage overview</h1>
@@ -291,6 +295,8 @@ function createLoadingPanel() {
   
   const aiSection = document.createElement('section');
   aiSection.className = 'settings-panel bento-block settings-panel-ai';
+  aiSection.style.height = 'auto';
+  aiSection.style.minHeight = 'auto';
   aiSection.innerHTML = `
     <div class="panel-header">
       <span class="block-eyebrow">Artificial Intelligence</span>
@@ -301,6 +307,8 @@ function createLoadingPanel() {
   
   const storageSection = document.createElement('section');
   storageSection.className = 'settings-panel bento-block settings-panel-storage';
+  storageSection.style.height = 'auto';
+  storageSection.style.minHeight = 'auto';
   storageSection.innerHTML = `
     <div class="panel-header">
       <span class="block-eyebrow">Storage</span>
@@ -440,30 +448,66 @@ async function showView(view) {
       
       // Fetch actual data
       const stats = await fetchStatsData();
-      statsPanel.remove();
-      statsPanel = createStatsPanel(stats);
-      if (statsPanel && fields.pageMain) {
-        fields.pageMain.insertAdjacentElement('afterend', statsPanel);
+      
+      // Update the loading panel in place instead of replacing it
+      const hero = statsPanel.querySelector('.settings-hero-copy');
+      const aiSection = statsPanel.querySelector('.settings-panel-ai');
+      const storageSection = statsPanel.querySelector('.settings-panel-storage');
+      
+      if (hero) {
+        hero.innerHTML = `
+          <span class="block-eyebrow">Statistics</span>
+          <h1>Usage overview</h1>
+          <p>Monitor your AI usage and storage consumption across the dashboard.</p>
+        `;
+      }
+      
+      if (aiSection) {
+        aiSection.innerHTML = `
+          <div class="panel-header">
+            <span class="block-eyebrow">Artificial Intelligence</span>
+            <h2>Daily usage</h2>
+          </div>
+          <div class="stats-row">
+            <div>
+              <span class="stats-label">AI requests</span>
+              <strong class="stats-value-ai">${stats?.ai?.daily?.used || 0} / ${stats?.ai?.daily?.limit || 10000} ${stats?.ai?.daily?.unit || 'neurons'}</strong>
+            </div>
+          </div>
+          <div class="stats-description">Remaining AI requests reset daily and are shared across the dashboard.</div>
+        `;
+      }
+      
+      if (storageSection) {
+        const storage = stats?.storage || { totalBytes: 0, capacityGB: 20, items: [] };
+        const filesItem = storage.items.find((item) => item.key === "files/") || { label: "lumaris/files/", bytes: 0 };
+        const notesItem = storage.items.find((item) => item.key === "study-notes/") || { label: "lumaris/study-notes/", bytes: 0 };
         
-        // Force height recalculation on all blocks
-        const blocks = statsPanel.querySelectorAll('.settings-panel, .settings-hero-copy');
-        blocks.forEach(block => {
-          block.style.height = 'auto';
-          block.style.minHeight = 'auto';
-          block.style.maxHeight = 'none';
-        });
+        storageSection.innerHTML = `
+          <div class="panel-header">
+            <span class="block-eyebrow">Storage</span>
+            <h2>Storage usage</h2>
+          </div>
+          <div class="storage-content">
+            <div class="storage-chart" aria-hidden="true">
+              <svg viewBox="0 0 120 120" class="storage-ring">
+                <circle class="ring-bg" cx="60" cy="60" r="54" />
+                <circle class="ring-files" cx="60" cy="60" r="54" />
+                <circle class="ring-notes" cx="60" cy="60" r="54" />
+              </svg>
+              <div class="storage-center">
+                <span class="storage-percentage">0% used</span>
+                <small class="storage-capacity">of 20GB</small>
+              </div>
+            </div>
+            <div class="storage-legend">
+              <div class="legend-item legend-files"><span class="legend-dot files"></span><span class="legend-text">${filesItem.label} — ${formatBytesToGB(filesItem.bytes)} GB</span></div>
+              <div class="legend-item legend-notes"><span class="legend-dot notes"></span><span class="legend-text">${notesItem.label} — ${formatBytesToGB(notesItem.bytes)} GB</span></div>
+            </div>
+          </div>
+        `;
         
-        // Force reflow
-        statsPanel.offsetHeight;
-        
-        // Force another reflow after a delay
-        setTimeout(() => {
-          const blocks = statsPanel.querySelectorAll('.settings-panel, .settings-hero-copy');
-          blocks.forEach(block => {
-            block.style.height = 'auto';
-            block.offsetHeight;
-          });
-        }, 10);
+        updateStorageRing(statsPanel, storage);
       }
     }
     if (statsPanel) statsPanel.style.display = '';
