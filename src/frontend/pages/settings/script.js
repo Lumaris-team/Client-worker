@@ -444,15 +444,26 @@ async function showView(view) {
       statsPanel = createStatsPanel(stats);
       if (statsPanel && fields.pageMain) {
         fields.pageMain.insertAdjacentElement('afterend', statsPanel);
-        // Force complete grid recalculation
-        requestAnimationFrame(() => {
-          const settingsShell = document.querySelector('.settings-shell');
-          if (settingsShell) {
-            settingsShell.style.display = 'none';
-            settingsShell.offsetHeight; // Force reflow
-            settingsShell.style.display = 'grid';
-          }
+        
+        // Force height recalculation on all blocks
+        const blocks = statsPanel.querySelectorAll('.settings-panel, .settings-hero-copy');
+        blocks.forEach(block => {
+          block.style.height = 'auto';
+          block.style.minHeight = 'auto';
+          block.style.maxHeight = 'none';
         });
+        
+        // Force reflow
+        statsPanel.offsetHeight;
+        
+        // Force another reflow after a delay
+        setTimeout(() => {
+          const blocks = statsPanel.querySelectorAll('.settings-panel, .settings-hero-copy');
+          blocks.forEach(block => {
+            block.style.height = 'auto';
+            block.offsetHeight;
+          });
+        }, 10);
       }
     }
     if (statsPanel) statsPanel.style.display = '';

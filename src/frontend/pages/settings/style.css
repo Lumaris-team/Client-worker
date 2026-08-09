@@ -23,17 +23,18 @@ body {
 
 .settings-main {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   grid-auto-rows: auto;
   gap: 28px;
   align-items: start;
   justify-items: stretch;
+  overflow: visible;
 }
 
 .settings-main > * {
-  min-width: 0;
   align-self: start;
   justify-self: stretch;
+  width: 100%;
 }
 
 .settings-main > .settings-hero-copy,
@@ -141,6 +142,8 @@ body {
   display: grid;
   gap: 18px;
   box-sizing: border-box;
+  height: auto !important;
+  min-height: auto !important;
 }
 
 /* Ensure any direct child panels use the bento-block visuals for uniformity */
