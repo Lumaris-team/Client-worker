@@ -24,7 +24,7 @@ body {
 .settings-main {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  grid-auto-rows: minmax(0, auto);
+  grid-auto-rows: 1fr;
   gap: 28px;
   align-items: stretch;
   justify-items: stretch;
@@ -141,6 +141,9 @@ body {
   display: grid;
   gap: 18px;
   box-sizing: border-box;
+  overflow: hidden;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 /* Ensure any direct child panels use the bento-block visuals for uniformity */
@@ -511,6 +514,33 @@ label.field-group.range-group .field-input.range { flex: 1 1 auto; }
   color: var(--settings-muted);
   font-size: 0.85rem;
   margin-bottom: 10px;
+}
+
+.stats-description {
+  display: block;
+  color: var(--settings-muted);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.stats-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  color: var(--settings-muted);
+  font-size: 0.95rem;
+  font-weight: 500;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
 .stats-limit-chip {

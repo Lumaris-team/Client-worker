@@ -277,6 +277,45 @@ function formatBytesToGB(bytes) {
   return (bytes / 1024 / 1024 / 1024).toFixed(1);
 }
 
+function createLoadingPanel() {
+  const main = document.createElement('main');
+  main.className = 'settings-main';
+  
+  const hero = document.createElement('div');
+  hero.className = 'settings-hero-copy bento-block';
+  hero.innerHTML = `
+    <span class="block-eyebrow">Statistics</span>
+    <h1>Usage overview</h1>
+    <p>Monitor your AI usage and storage consumption across the dashboard.</p>
+  `;
+  
+  const aiSection = document.createElement('section');
+  aiSection.className = 'settings-panel bento-block settings-panel-ai';
+  aiSection.innerHTML = `
+    <div class="panel-header">
+      <span class="block-eyebrow">Artificial Intelligence</span>
+      <h2>Daily usage</h2>
+    </div>
+    <div class="stats-loading">Loading...</div>
+  `;
+  
+  const storageSection = document.createElement('section');
+  storageSection.className = 'settings-panel bento-block settings-panel-storage';
+  storageSection.innerHTML = `
+    <div class="panel-header">
+      <span class="block-eyebrow">Storage</span>
+      <h2>Storage usage</h2>
+    </div>
+    <div class="stats-loading">Loading...</div>
+  `;
+  
+  main.appendChild(hero);
+  main.appendChild(aiSection);
+  main.appendChild(storageSection);
+  
+  return main;
+}
+
 function createStatsPanel(stats) {
   if (!fields.statsTemplate) return null;
   const clone = fields.statsTemplate.content.firstElementChild.cloneNode(true);
@@ -393,7 +432,15 @@ async function showView(view) {
 
   if (!isCustomization) {
     if (!statsPanel) {
+      // Show loading indicator
+      statsPanel = createLoadingPanel();
+      if (statsPanel && fields.pageMain) {
+        fields.pageMain.insertAdjacentElement('afterend', statsPanel);
+      }
+      
+      // Fetch actual data
       const stats = await fetchStatsData();
+      statsPanel.remove();
       statsPanel = createStatsPanel(stats);
       if (statsPanel && fields.pageMain) {
         fields.pageMain.insertAdjacentElement('afterend', statsPanel);
