@@ -341,22 +341,7 @@ function createLoadingPanel() {
       <span class="block-eyebrow">Artificial Intelligence</span>
       <h2>Daily usage</h2>
     </div>
-    <div class="ai-content">
-      <div class="ai-chart" aria-hidden="true">
-        <svg viewBox="0 0 120 120" class="ai-ring">
-          <circle class="ring-bg" cx="60" cy="60" r="54" />
-          <circle class="ring-ai" cx="60" cy="60" r="54" />
-        </svg>
-        <div class="ai-center">
-          <span class="ai-percentage">0% used</span>
-          <small class="ai-capacity">of 10000 neurons</small>
-        </div>
-      </div>
-      <div class="ai-stats">
-        <div class="ai-usage">Loading...</div>
-        <div class="stats-description">Remaining AI requests reset daily and are shared across the dashboard.</div>
-      </div>
-    </div>
+    <div class="stats-loading">Loading...</div>
   `;
   
   main.appendChild(hero);
