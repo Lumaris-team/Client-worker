@@ -341,7 +341,22 @@ function createLoadingPanel() {
       <span class="block-eyebrow">Artificial Intelligence</span>
       <h2>Daily usage</h2>
     </div>
-    <div class="stats-loading">Loading...</div>
+    <div class="ai-content">
+      <div class="ai-chart" aria-hidden="true">
+        <svg viewBox="0 0 120 120" class="ai-ring">
+          <circle class="ring-bg" cx="60" cy="60" r="54" />
+          <circle class="ring-ai" cx="60" cy="60" r="54" />
+        </svg>
+        <div class="ai-center">
+          <span class="ai-percentage">0% used</span>
+          <small class="ai-capacity">of 10000 neurons</small>
+        </div>
+      </div>
+      <div class="ai-stats">
+        <div class="ai-usage">Loading...</div>
+        <div class="stats-description">Remaining AI requests reset daily and are shared across the dashboard.</div>
+      </div>
+    </div>
   `;
   
   main.appendChild(hero);
@@ -375,10 +390,25 @@ function createStatsPanel(stats) {
     ],
   };
 
-  const aiValue = clone.querySelector(".stats-value-ai");
-  if (aiValue) {
-    aiValue.textContent = `${aiData.daily.used} / ${aiData.daily.limit} ${aiData.daily.unit}`;
+  const aiUsed = aiData.daily.used || 0;
+  const aiLimit = aiData.daily.limit || 10000;
+  const aiPercentage = Math.round((aiUsed / aiLimit) * 100);
+  
+  const aiPercentageEl = clone.querySelector('.ai-percentage');
+  const aiCapacityEl = clone.querySelector('.ai-capacity');
+  const aiUsageEl = clone.querySelector('.ai-usage');
+  
+  if (aiPercentageEl) {
+    aiPercentageEl.textContent = `${aiPercentage}% used`;
   }
+  if (aiCapacityEl) {
+    aiCapacityEl.textContent = `of ${aiLimit} neurons`;
+  }
+  if (aiUsageEl) {
+    aiUsageEl.textContent = `${aiUsed} / ${aiLimit} neurons`;
+  }
+  
+  updateAIRing(clone, aiUsed, aiLimit);
 
   const filesItem = storage.items.find((item) => item.key === "files/") || { label: "lumaris/files/", bytes: 0 };
   const notesItem = storage.items.find((item) => item.key === "study-notes/") || { label: "lumaris/study-notes/", bytes: 0 };
@@ -398,6 +428,18 @@ function createStatsPanel(stats) {
 
   updateStorageRing(clone, storage);
   return clone;
+}
+
+function updateAIRing(panel, used, limit) {
+  const circumference = 339.292;
+  const percentage = limit ? Math.min(used / limit, 1) : 0;
+  const length = percentage * circumference;
+
+  const aiCircle = panel.querySelector('.ring-ai');
+  if (aiCircle) {
+    aiCircle.setAttribute('stroke-dasharray', `${length} ${circumference}`);
+    aiCircle.setAttribute('stroke-dashoffset', `${circumference}`);
+  }
 }
 
 function updateStorageRing(panel, storage) {
@@ -533,19 +575,35 @@ async function showView(view) {
       }
       
       if (aiSection) {
+        const aiUsed = stats?.ai?.daily?.used || 0;
+        const aiLimit = stats?.ai?.daily?.limit || 10000;
+        const aiPercentage = Math.round((aiUsed / aiLimit) * 100);
+        
         aiSection.innerHTML = `
           <div class="panel-header">
             <span class="block-eyebrow">Artificial Intelligence</span>
             <h2>Daily usage</h2>
           </div>
-          <div class="stats-row">
-            <div>
-              <span class="stats-label">AI requests</span>
-              <strong class="stats-value-ai">${stats?.ai?.daily?.used || 0} / ${stats?.ai?.daily?.limit || 10000} ${stats?.ai?.daily?.unit || 'neurons'}</strong>
+          <div class="ai-content">
+            <div class="ai-chart" aria-hidden="true">
+              <svg viewBox="0 0 120 120" class="ai-ring">
+                <circle class="ring-bg" cx="60" cy="60" r="54" />
+                <circle class="ring-ai" cx="60" cy="60" r="54" />
+              </svg>
+              <div class="ai-center">
+                <span class="ai-percentage">${aiPercentage}% used</span>
+                <small class="ai-capacity">of ${aiLimit} neurons</small>
+              </div>
+            </div>
+            <div class="ai-stats">
+              <div class="ai-usage">${aiUsed} / ${aiLimit} neurons</div>
+              <div class="stats-description">Remaining AI requests reset daily and are shared across the dashboard.</div>
             </div>
           </div>
-          <div class="stats-description">Remaining AI requests reset daily and are shared across the dashboard.</div>
         `;
+        
+        // Update AI ring
+        updateAIRing(statsPanel, aiUsed, aiLimit);
       }
       
       // Force final reflow on the entire stats panel
