@@ -611,7 +611,8 @@ label.field-group.range-group .field-input.range { flex: 1 1 auto; }
   stroke: rgba(255,255,255,0.08);
 }
 
-.ring-files {
+.ring-files,
+.ring-ai {
   stroke: #5e9cff;
   transition: stroke-dasharray 350ms ease, stroke-dashoffset 350ms ease;
 }
@@ -668,11 +669,6 @@ label.field-group.range-group .field-input.range { flex: 1 1 auto; }
   width: 100%;
   height: 100%;
   transform: rotate(-90deg);
-}
-
-.ring-ai {
-  stroke: #5e9cff;
-  transition: stroke-dasharray 350ms ease, stroke-dashoffset 350ms ease;
 }
 
 .ai-center {
