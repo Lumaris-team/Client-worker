@@ -422,6 +422,14 @@ function updateAIRing(panel, used, limit) {
 
   const aiCircle = panel.querySelector('.ring-ai');
   if (aiCircle) {
+    // Start with full circle (stroke-dasharray = circumference, stroke-dashoffset = 0)
+    aiCircle.setAttribute('stroke-dasharray', `${circumference} ${circumference}`);
+    aiCircle.setAttribute('stroke-dashoffset', '0');
+    
+    // Force reflow to ensure the initial state is rendered
+    aiCircle.getBoundingClientRect();
+    
+    // Animate to target state
     aiCircle.setAttribute('stroke-dasharray', `${length} ${circumference}`);
     aiCircle.setAttribute('stroke-dashoffset', `${circumference}`);
   }
