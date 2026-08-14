@@ -34,18 +34,6 @@ export default {
     const url = new URL(request.url);
     const method = request.method;
     const headers = request.headers
-
-    // =========================
-    // ✅ GOOGLE SITE VERIFICATION
-    // =========================
-    // Must stay reachable without any gating (no login, no production-mode
-    // block) so Google can verify domain ownership at any time.
-    if (env.GOOGLE_SITE_VERIFICATION && url.pathname === `/${env.GOOGLE_SITE_VERIFICATION}`) {
-      return new Response(`google-site-verification: ${env.GOOGLE_SITE_VERIFICATION}`, {
-        headers: { "content-type": "text/html" }
-      });
-    }
-
     let body;
     const contentType = request.headers.get('content-type') || '';
     
@@ -68,13 +56,6 @@ export default {
     const host = url.hostname;
     if (host.includes("workers.dev")) {
       return new Response("Access denied. Use custom domain only.", { status: 403 });
-    }
-
-    // =========================
-    // ⛔ PRODUCTION MODE DISABLED
-    // =========================
-    if (env.MODE !== "production") {
-      return new Response("Not Found", { status: 404 })
     }
 
     // =========================
@@ -200,30 +181,6 @@ export default {
       }
       
       return assetResponse;
-    }
-    
-    // Sitemap served from file
-    if (url.pathname === "/sitemap.xml") {
-      const sitemapResponse = await env.ASSETS.fetch(new Request(request.url.replace('/sitemap.xml', '/sitemap.xml'), request));
-      const sitemapContent = await sitemapResponse.text();
-      
-      return new Response(sitemapContent, {
-        headers: {
-          "Content-Type": "application/xml; charset=utf-8",
-          "Cache-Control": "public, max-age=3600"
-        }
-      });
-    }
-    
-    // Robots.txt with correct content-type
-    if (url.pathname === "/robots.txt") {
-      const assetResponse = await env.ASSETS.fetch(request);
-      const newHeaders = new Headers(assetResponse.headers);
-      newHeaders.set("Content-Type", "text/plain; charset=utf-8");
-      return new Response(assetResponse.body, {
-        status: assetResponse.status,
-        headers: newHeaders
-      });
     }
     
     // "/", "/pages" and "/pages/" all land on home. Supabase sends users to
