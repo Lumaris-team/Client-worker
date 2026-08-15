@@ -295,6 +295,19 @@ This code is distributed under MIT license. You are free to modify and adapt it 
 - Regularly backup your configuration
 - Stay informed about security updates
 
+## ⚠️ Important Warning
+
+**Any modification of this code will result in your account no longer being officially accessible on Lumaris.**
+
+If you modify the server code:
+- Your instance will no longer be supported by the official Lumaris platform
+- You will be entirely responsible for making your modified version publicly accessible
+- You must handle all deployment, maintenance, and security aspects yourself
+- No official support will be provided for modified versions
+- You will need to manage your own domain, hosting, and all technical requirements
+
+**Modification implies complete autonomy for deployment and maintenance.**
+
 ---
 
 ## 🛠️ Technologies used
